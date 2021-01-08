@@ -59,8 +59,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Godot Engine editor\n"
 "POT-Creation-Date: \n"
-"PO-Revision-Date: 2020-11-25 14:10+0000\n"
-"Last-Translator: Zsosu Ktosu <zktosu@gmail.com>\n"
+"PO-Revision-Date: 2020-12-14 11:03+0000\n"
+"Last-Translator: Oğuz Ersen <oguzersen@protonmail.com>\n"
 "Language-Team: Turkish <https://hosted.weblate.org/projects/godot-engine/"
 "godot/tr/>\n"
 "Language: tr\n"
@@ -1140,7 +1140,7 @@ msgstr "Orphan Kaynak Araştırıcı"
 
 #: editor/dependency_editor.cpp editor/editor_audio_buses.cpp
 #: editor/editor_file_dialog.cpp editor/editor_node.cpp
-#: editor/filesystem_dock.cpp editor/plugins/item_list_editor_plugin.cpp
+#: editor/plugins/item_list_editor_plugin.cpp
 #: editor/plugins/sprite_frames_editor_plugin.cpp editor/project_export.cpp
 #: editor/project_settings_editor.cpp editor/scene_tree_dock.cpp
 msgid "Delete"
@@ -2150,7 +2150,7 @@ msgstr "Metot"
 
 #: editor/editor_help_search.cpp editor/plugins/script_text_editor.cpp
 msgid "Signal"
-msgstr "Sinyaller"
+msgstr "Sinyal"
 
 #: editor/editor_help_search.cpp editor/plugins/theme_editor_plugin.cpp
 msgid "Constant"
@@ -3753,6 +3753,22 @@ msgid "Name contains invalid characters."
 msgstr "İsim geçersiz karkterler içeriyor."
 
 #: editor/filesystem_dock.cpp
+msgid ""
+"The following files or folders conflict with items in the target location "
+"'%s':\n"
+"\n"
+"%s\n"
+"\n"
+"Do you wish to overwrite them?"
+msgstr ""
+"Aşağıdaki dosyalar veya klasörler '%s' hedef konumundaki ögelerle "
+"çakışıyor:\n"
+"\n"
+"%s\n"
+"\n"
+"Bunların üzerine yazmak ister misiniz?"
+
+#: editor/filesystem_dock.cpp
 msgid "Renaming file:"
 msgstr "Dosya yeniden-adlandırma:"
 
@@ -3800,21 +3816,9 @@ msgstr "Bağımlılıkları Düzenle..."
 msgid "View Owners..."
 msgstr "Sahipleri Görüntüle..."
 
-#: editor/filesystem_dock.cpp editor/plugins/animation_player_editor_plugin.cpp
-msgid "Rename..."
-msgstr "Yeniden Adlandır..."
-
-#: editor/filesystem_dock.cpp
-msgid "Duplicate..."
-msgstr "Çoğalt..."
-
 #: editor/filesystem_dock.cpp
 msgid "Move To..."
 msgstr "Şuraya Taşı..."
-
-#: editor/filesystem_dock.cpp
-msgid "Move to Trash"
-msgstr "Çöpe At"
 
 #: editor/filesystem_dock.cpp
 msgid "New Scene..."
@@ -3839,11 +3843,16 @@ msgid "Collapse All"
 msgstr "Hepsini Daralt"
 
 #: editor/filesystem_dock.cpp
-#: editor/plugins/animation_tree_player_editor_plugin.cpp
-#: editor/project_manager.cpp editor/rename_dialog.cpp
-#: editor/scene_tree_dock.cpp
-msgid "Rename"
-msgstr "Yeniden Adlandır"
+msgid "Duplicate..."
+msgstr "Çoğalt..."
+
+#: editor/filesystem_dock.cpp
+msgid "Move to Trash"
+msgstr "Çöpe At"
+
+#: editor/filesystem_dock.cpp editor/plugins/animation_player_editor_plugin.cpp
+msgid "Rename..."
+msgstr "Yeniden Adlandır..."
 
 #: editor/filesystem_dock.cpp
 msgid "Previous Folder/File"
@@ -3878,8 +3887,11 @@ msgid "Move"
 msgstr "Taşı"
 
 #: editor/filesystem_dock.cpp
-msgid "There is already file or folder with the same name in this location."
-msgstr "Bu konumda zaten aynı ada sahip bir dosya veya klasör var."
+#: editor/plugins/animation_tree_player_editor_plugin.cpp
+#: editor/project_manager.cpp editor/rename_dialog.cpp
+#: editor/scene_tree_dock.cpp
+msgid "Rename"
+msgstr "Yeniden Adlandır"
 
 #: editor/filesystem_dock.cpp
 msgid "Overwrite"
@@ -3947,8 +3959,19 @@ msgid "Searching..."
 msgstr "Aranıyor..."
 
 #: editor/find_in_files.cpp
-msgid "Search complete"
-msgstr "Arama tamamlandı"
+#, fuzzy
+msgid "%d match in %d file."
+msgstr "%d eşleşme."
+
+#: editor/find_in_files.cpp
+#, fuzzy
+msgid "%d matches in %d file."
+msgstr "%d eşleşme."
+
+#: editor/find_in_files.cpp
+#, fuzzy
+msgid "%d matches in %d files."
+msgstr "%d eşleşme."
 
 #: editor/groups_editor.cpp
 msgid "Add to Group"
@@ -8361,23 +8384,20 @@ msgid "Create a new rectangle."
 msgstr "Yeni dikdörtgen oluştur."
 
 #: editor/plugins/tile_set_editor_plugin.cpp
-#, fuzzy
 msgid "New Rectangle"
-msgstr "Dikdörtgen Boya"
+msgstr "Dolu Dikdörtgen"
 
 #: editor/plugins/tile_set_editor_plugin.cpp
 msgid "Create a new polygon."
 msgstr "Yeni bir çokgen oluşturun."
 
 #: editor/plugins/tile_set_editor_plugin.cpp
-#, fuzzy
 msgid "New Polygon"
-msgstr "Çokgeni Taşı"
+msgstr "Yeni Çokgen"
 
 #: editor/plugins/tile_set_editor_plugin.cpp
-#, fuzzy
 msgid "Delete Selected Shape"
-msgstr "Seçilenleri Sil"
+msgstr "Seçilen Şekli Sil"
 
 #: editor/plugins/tile_set_editor_plugin.cpp
 msgid "Keep polygon inside region Rect."
@@ -8589,10 +8609,6 @@ msgid "Error"
 msgstr "Hata"
 
 #: editor/plugins/version_control_editor_plugin.cpp
-msgid "No commit message was provided"
-msgstr "Hiçbir işleme mesajı sağlanmadı"
-
-#: editor/plugins/version_control_editor_plugin.cpp
 msgid "No files added to stage"
 msgstr "Sahneye hiç dosya eklenmedi"
 
@@ -8647,10 +8663,6 @@ msgstr "Sahne Seçildi"
 #: editor/plugins/version_control_editor_plugin.cpp
 msgid "Stage All"
 msgstr "Tümünü Sahneye Al"
-
-#: editor/plugins/version_control_editor_plugin.cpp
-msgid "Add a commit message"
-msgstr "İşleme Mesajı Ekle"
 
 #: editor/plugins/version_control_editor_plugin.cpp
 msgid "Commit Changes"
@@ -9847,6 +9859,10 @@ msgstr "Oluşturucu:"
 #: editor/project_manager.cpp
 msgid "OpenGL ES 3.0"
 msgstr "OpenGL ES 3"
+
+#: editor/project_manager.cpp
+msgid "Not supported by your GPU drivers."
+msgstr "GPU sürücüleriniz tarafından desteklenmiyor."
 
 #: editor/project_manager.cpp
 msgid ""
@@ -12415,6 +12431,26 @@ msgstr ""
 "CPUParçacık2B animasyonu \"Parçacık Animasyonu\" seçimi etkin olarak "
 "CanvasÖgesiMalzemesi kullanımı gerektirir."
 
+#: scene/2d/joints_2d.cpp
+msgid "Node A and Node B must be PhysicsBody2Ds"
+msgstr "Düğüm A ve Düğüm B, PhysicsBody2D olmalıdır"
+
+#: scene/2d/joints_2d.cpp
+msgid "Node A must be a PhysicsBody2D"
+msgstr "Düğüm A bir PhysicsBody2D olmalıdır"
+
+#: scene/2d/joints_2d.cpp
+msgid "Node B must be a PhysicsBody2D"
+msgstr "Düğüm B bir PhysicsBody2D olmalıdır"
+
+#: scene/2d/joints_2d.cpp
+msgid "Joint is not connected to two PhysicsBody2Ds"
+msgstr "Kesişim, iki PhysicsBody2D'ye bağlı değil"
+
+#: scene/2d/joints_2d.cpp
+msgid "Node A and Node B must be different PhysicsBody2Ds"
+msgstr "Düğüm A ve Düğüm B, farklı PhysicsBody2D olmalıdır"
+
 #: scene/2d/light_2d.cpp
 msgid ""
 "A texture with the shape of the light must be supplied to the \"Texture\" "
@@ -12746,6 +12782,26 @@ msgstr ""
 "çalıştığında geçersiz kılınacak.\n"
 "Boyu değişikliğini bunun yerine çocuk çarpışma şekilleri içinden yapın."
 
+#: scene/3d/physics_joint.cpp
+msgid "Node A and Node B must be PhysicsBodies"
+msgstr "Düğüm A ve Düğüm B, PhysicsBody olmalıdır"
+
+#: scene/3d/physics_joint.cpp
+msgid "Node A must be a PhysicsBody"
+msgstr "Düğüm A bir PhysicsBody olmalıdır"
+
+#: scene/3d/physics_joint.cpp
+msgid "Node B must be a PhysicsBody"
+msgstr "Düğüm B bir PhysicsBody olmalıdır"
+
+#: scene/3d/physics_joint.cpp
+msgid "Joint is not connected to any PhysicsBodies"
+msgstr "Kesişim, herhangi bir PhysicsBody'ye bağlı değil"
+
+#: scene/3d/physics_joint.cpp
+msgid "Node A and Node B must be different PhysicsBodies"
+msgstr "Düğüm A ve Düğüm B, farklı PhysicsBody olmalıdır"
+
 #: scene/3d/remote_transform.cpp
 msgid ""
 "The \"Remote Path\" property must point to a valid Spatial or Spatial-"
@@ -12907,6 +12963,11 @@ msgstr "Uyarı!"
 msgid "Please Confirm..."
 msgstr "Lütfen Doğrulayın..."
 
+#: scene/gui/graph_edit.cpp
+#, fuzzy
+msgid "Enable grid minimap."
+msgstr "Yapışmayı Enkinleştir"
+
 #: scene/gui/popup.cpp
 msgid ""
 "Popups will hide by default unless you call popup() or any of the popup*() "
@@ -12987,6 +13048,18 @@ msgstr "varyings yalnızca vertex işlevinde atanabilir."
 #: servers/visual/shader_language.cpp
 msgid "Constants cannot be modified."
 msgstr "Sabit değerler değiştirilemez."
+
+#~ msgid "Search complete"
+#~ msgstr "Arama tamamlandı"
+
+#~ msgid "No commit message was provided"
+#~ msgstr "Hiçbir işleme mesajı sağlanmadı"
+
+#~ msgid "Add a commit message"
+#~ msgstr "İşleme Mesajı Ekle"
+
+#~ msgid "There is already file or folder with the same name in this location."
+#~ msgstr "Bu konumda zaten aynı ada sahip bir dosya veya klasör var."
 
 #~ msgid "Missing 'build-tools' directory!"
 #~ msgstr "Eksik 'inşa-araçları' dizini!"

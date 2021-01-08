@@ -44,11 +44,12 @@
 # Roman Skiba <romanskiba0@gmail.com>, 2020.
 # Piotr Grodzki <ziemniakglados@gmail.com>, 2020.
 # Dzejkop <jakubtrad@gmail.com>, 2020.
+# Mateusz Grzonka <alpinus4@gmail.com>, 2020.
 msgid ""
 msgstr ""
 "Project-Id-Version: Godot Engine editor\n"
 "POT-Creation-Date: \n"
-"PO-Revision-Date: 2020-11-20 23:08+0000\n"
+"PO-Revision-Date: 2020-12-14 11:03+0000\n"
 "Last-Translator: Tomek <kobewi4e@gmail.com>\n"
 "Language-Team: Polish <https://hosted.weblate.org/projects/godot-engine/"
 "godot/pl/>\n"
@@ -1127,7 +1128,7 @@ msgstr "Eksplorator osieroconych zasobów"
 
 #: editor/dependency_editor.cpp editor/editor_audio_buses.cpp
 #: editor/editor_file_dialog.cpp editor/editor_node.cpp
-#: editor/filesystem_dock.cpp editor/plugins/item_list_editor_plugin.cpp
+#: editor/plugins/item_list_editor_plugin.cpp
 #: editor/plugins/sprite_frames_editor_plugin.cpp editor/project_export.cpp
 #: editor/project_settings_editor.cpp editor/scene_tree_dock.cpp
 msgid "Delete"
@@ -3733,6 +3734,22 @@ msgid "Name contains invalid characters."
 msgstr "Nazwa zawiera niedozwolone znaki."
 
 #: editor/filesystem_dock.cpp
+msgid ""
+"The following files or folders conflict with items in the target location "
+"'%s':\n"
+"\n"
+"%s\n"
+"\n"
+"Do you wish to overwrite them?"
+msgstr ""
+"Następujące pliki lub foldery konfliktują z pozycjami w lokalizacji "
+"docelowej \"%s\":\n"
+"\n"
+"%s\n"
+"\n"
+"Czy chcesz je nadpisać?"
+
+#: editor/filesystem_dock.cpp
 msgid "Renaming file:"
 msgstr "Zmiana nazwy pliku:"
 
@@ -3780,21 +3797,9 @@ msgstr "Edytuj zależności..."
 msgid "View Owners..."
 msgstr "Pokaż właścicieli..."
 
-#: editor/filesystem_dock.cpp editor/plugins/animation_player_editor_plugin.cpp
-msgid "Rename..."
-msgstr "Zmień nazwę..."
-
-#: editor/filesystem_dock.cpp
-msgid "Duplicate..."
-msgstr "Duplikuj..."
-
 #: editor/filesystem_dock.cpp
 msgid "Move To..."
 msgstr "Przenieś do..."
-
-#: editor/filesystem_dock.cpp
-msgid "Move to Trash"
-msgstr "Przenieś do kosza"
 
 #: editor/filesystem_dock.cpp
 msgid "New Scene..."
@@ -3819,11 +3824,16 @@ msgid "Collapse All"
 msgstr "Zwiń wszystko"
 
 #: editor/filesystem_dock.cpp
-#: editor/plugins/animation_tree_player_editor_plugin.cpp
-#: editor/project_manager.cpp editor/rename_dialog.cpp
-#: editor/scene_tree_dock.cpp
-msgid "Rename"
-msgstr "Zmień nazwę"
+msgid "Duplicate..."
+msgstr "Duplikuj..."
+
+#: editor/filesystem_dock.cpp
+msgid "Move to Trash"
+msgstr "Przenieś do kosza"
+
+#: editor/filesystem_dock.cpp editor/plugins/animation_player_editor_plugin.cpp
+msgid "Rename..."
+msgstr "Zmień nazwę..."
 
 #: editor/filesystem_dock.cpp
 msgid "Previous Folder/File"
@@ -3858,8 +3868,11 @@ msgid "Move"
 msgstr "Przenieś"
 
 #: editor/filesystem_dock.cpp
-msgid "There is already file or folder with the same name in this location."
-msgstr "W tej lokalizacji istnieje już plik lub folder o podanej nazwie."
+#: editor/plugins/animation_tree_player_editor_plugin.cpp
+#: editor/project_manager.cpp editor/rename_dialog.cpp
+#: editor/scene_tree_dock.cpp
+msgid "Rename"
+msgstr "Zmień nazwę"
 
 #: editor/filesystem_dock.cpp
 msgid "Overwrite"
@@ -3927,8 +3940,19 @@ msgid "Searching..."
 msgstr "Wyszukiwanie..."
 
 #: editor/find_in_files.cpp
-msgid "Search complete"
-msgstr "Wyszukiwanie zakończone"
+#, fuzzy
+msgid "%d match in %d file."
+msgstr "%d dopasowań."
+
+#: editor/find_in_files.cpp
+#, fuzzy
+msgid "%d matches in %d file."
+msgstr "%d dopasowań."
+
+#: editor/find_in_files.cpp
+#, fuzzy
+msgid "%d matches in %d files."
+msgstr "%d dopasowań."
 
 #: editor/groups_editor.cpp
 msgid "Add to Group"
@@ -8348,23 +8372,20 @@ msgid "Create a new rectangle."
 msgstr "Utwórz nowy prostokąt."
 
 #: editor/plugins/tile_set_editor_plugin.cpp
-#, fuzzy
 msgid "New Rectangle"
-msgstr "Malowanie prostokątne"
+msgstr "Nowy prostokąt"
 
 #: editor/plugins/tile_set_editor_plugin.cpp
 msgid "Create a new polygon."
 msgstr "Utwórz nowy wielokąt."
 
 #: editor/plugins/tile_set_editor_plugin.cpp
-#, fuzzy
 msgid "New Polygon"
-msgstr "Przesuń Wielokąt"
+msgstr "Nowy Wielokąt"
 
 #: editor/plugins/tile_set_editor_plugin.cpp
-#, fuzzy
 msgid "Delete Selected Shape"
-msgstr "Usuń zaznaczone"
+msgstr "Usuń Zaznaczony Kształt"
 
 #: editor/plugins/tile_set_editor_plugin.cpp
 msgid "Keep polygon inside region Rect."
@@ -8573,10 +8594,6 @@ msgid "Error"
 msgstr "Błąd"
 
 #: editor/plugins/version_control_editor_plugin.cpp
-msgid "No commit message was provided"
-msgstr "Nie podano wiadomości commitu"
-
-#: editor/plugins/version_control_editor_plugin.cpp
 msgid "No files added to stage"
 msgstr "Brak plików dodanych do stage'a"
 
@@ -8631,10 +8648,6 @@ msgstr "Stage'uj zaznaczone"
 #: editor/plugins/version_control_editor_plugin.cpp
 msgid "Stage All"
 msgstr "Stage'uj wszystko"
-
-#: editor/plugins/version_control_editor_plugin.cpp
-msgid "Add a commit message"
-msgstr "Dodaj wiadomość comittu"
 
 #: editor/plugins/version_control_editor_plugin.cpp
 msgid "Commit Changes"
@@ -9838,6 +9851,10 @@ msgstr "Renderer:"
 #: editor/project_manager.cpp
 msgid "OpenGL ES 3.0"
 msgstr "OpenGL ES 3.0"
+
+#: editor/project_manager.cpp
+msgid "Not supported by your GPU drivers."
+msgstr "Nie obsługiwany przez twój sterownik GPU."
 
 #: editor/project_manager.cpp
 msgid ""
@@ -12420,6 +12437,26 @@ msgstr ""
 "Animacja CPUParticles2D wymaga użycia CanvasItemMaterial z włączonym "
 "\"Particles Animation\"."
 
+#: scene/2d/joints_2d.cpp
+msgid "Node A and Node B must be PhysicsBody2Ds"
+msgstr "Node A i Node B muszą być węzłami PhysicsBody2D"
+
+#: scene/2d/joints_2d.cpp
+msgid "Node A must be a PhysicsBody2D"
+msgstr "Node A musi być węzłem PhysicsBody2D"
+
+#: scene/2d/joints_2d.cpp
+msgid "Node B must be a PhysicsBody2D"
+msgstr "Node B musi być węzłem PhysicsBody2D"
+
+#: scene/2d/joints_2d.cpp
+msgid "Joint is not connected to two PhysicsBody2Ds"
+msgstr "Złącze nie jest połączone do dwóch węzłów PhysicsBody2D"
+
+#: scene/2d/joints_2d.cpp
+msgid "Node A and Node B must be different PhysicsBody2Ds"
+msgstr "Node A i Node B muszą być różnymi węzłami PhysicsBody2D"
+
 #: scene/2d/light_2d.cpp
 msgid ""
 "A texture with the shape of the light must be supplied to the \"Texture\" "
@@ -12751,6 +12788,26 @@ msgstr ""
 "nadpisane przez silnik fizyki podczas działania.\n"
 "Zamiast tego, zmień rozmiary kształtów kolizji w węzłach podrzędnych."
 
+#: scene/3d/physics_joint.cpp
+msgid "Node A and Node B must be PhysicsBodies"
+msgstr "Node A i Node B muszą być węzłami PhysicsBody"
+
+#: scene/3d/physics_joint.cpp
+msgid "Node A must be a PhysicsBody"
+msgstr "Node A musi być węzłem PhysicsBody"
+
+#: scene/3d/physics_joint.cpp
+msgid "Node B must be a PhysicsBody"
+msgstr "Node B musi być węzłem PhysicsBody"
+
+#: scene/3d/physics_joint.cpp
+msgid "Joint is not connected to any PhysicsBodies"
+msgstr "Złącze nie jest połączone z żadnym węzłem PhysicsBody"
+
+#: scene/3d/physics_joint.cpp
+msgid "Node A and Node B must be different PhysicsBodies"
+msgstr "Node A i Node B muszą być różnymi węzłami PhysicsBody"
+
 #: scene/3d/remote_transform.cpp
 msgid ""
 "The \"Remote Path\" property must point to a valid Spatial or Spatial-"
@@ -12910,6 +12967,11 @@ msgstr "Alarm!"
 msgid "Please Confirm..."
 msgstr "Proszę potwierdzić..."
 
+#: scene/gui/graph_edit.cpp
+#, fuzzy
+msgid "Enable grid minimap."
+msgstr "Włączyć przyciąganie"
+
 #: scene/gui/popup.cpp
 msgid ""
 "Popups will hide by default unless you call popup() or any of the popup*() "
@@ -12989,6 +13051,18 @@ msgstr "Varying może być przypisane tylko w funkcji wierzchołków."
 #: servers/visual/shader_language.cpp
 msgid "Constants cannot be modified."
 msgstr "Stałe nie mogą być modyfikowane."
+
+#~ msgid "Search complete"
+#~ msgstr "Wyszukiwanie zakończone"
+
+#~ msgid "No commit message was provided"
+#~ msgstr "Nie podano wiadomości commitu"
+
+#~ msgid "Add a commit message"
+#~ msgstr "Dodaj wiadomość comittu"
+
+#~ msgid "There is already file or folder with the same name in this location."
+#~ msgstr "W tej lokalizacji istnieje już plik lub folder o podanej nazwie."
 
 #~ msgid "Missing 'build-tools' directory!"
 #~ msgstr "Brakuje folderu \"build-tools\"!"

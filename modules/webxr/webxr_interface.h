@@ -1,5 +1,5 @@
 /*************************************************************************/
-/*  file_access_jandroid.h                                               */
+/*  webxr_interface.h                                                    */
 /*************************************************************************/
 /*                       This file is part of:                           */
 /*                           GODOT ENGINE                                */
@@ -28,57 +28,38 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
 /*************************************************************************/
 
-#ifndef FILE_ACCESS_JANDROID_H
-#define FILE_ACCESS_JANDROID_H
+#ifndef WEBXR_INTERFACE_H
+#define WEBXR_INTERFACE_H
 
-#include "core/os/file_access.h"
-#include "java_godot_lib_jni.h"
-class FileAccessJAndroid : public FileAccess {
+#include "servers/arvr/arvr_interface.h"
+#include "servers/arvr/arvr_positional_tracker.h"
 
-	static jobject io;
-	static jclass cls;
+/**
+	@author David Snopek <david.snopek@snopekgames.com>
 
-	static jmethodID _file_open;
-	static jmethodID _file_get_size;
-	static jmethodID _file_seek;
-	static jmethodID _file_tell;
-	static jmethodID _file_eof;
-	static jmethodID _file_read;
-	static jmethodID _file_close;
+	The WebXR interface is a VR/AR interface that can be used on the web.
+*/
 
-	int id;
-	static FileAccess *create_jandroid();
+class WebXRInterface : public ARVRInterface {
+	GDCLASS(WebXRInterface, ARVRInterface);
+
+protected:
+	static void _bind_methods();
 
 public:
-	virtual Error _open(const String &p_path, int p_mode_flags); ///< open a file
-	virtual void close(); ///< close a file
-	virtual bool is_open() const; ///< true when file is open
-
-	virtual void seek(size_t p_position); ///< seek to a given position
-	virtual void seek_end(int64_t p_position = 0); ///< seek from the end of file
-	virtual size_t get_position() const; ///< get position in the file
-	virtual size_t get_len() const; ///< get size of the file
-
-	virtual bool eof_reached() const; ///< reading passed EOF
-
-	virtual uint8_t get_8() const; ///< get a byte
-	virtual int get_buffer(uint8_t *p_dst, int p_length) const;
-
-	virtual Error get_error() const; ///< get last error
-
-	virtual void flush();
-	virtual void store_8(uint8_t p_dest); ///< store a byte
-
-	virtual bool file_exists(const String &p_path); ///< return true if a file exists
-
-	static void setup(jobject p_io);
-
-	virtual uint64_t _get_modified_time(const String &p_file) { return 0; }
-	virtual uint32_t _get_unix_permissions(const String &p_file) { return 0; }
-	virtual Error _set_unix_permissions(const String &p_file, uint32_t p_permissions) { return FAILED; }
-
-	FileAccessJAndroid();
-	~FileAccessJAndroid();
+	virtual void is_session_supported(const String &p_session_mode) = 0;
+	virtual void set_session_mode(String p_session_mode) = 0;
+	virtual String get_session_mode() const = 0;
+	virtual void set_required_features(String p_required_features) = 0;
+	virtual String get_required_features() const = 0;
+	virtual void set_optional_features(String p_optional_features) = 0;
+	virtual String get_optional_features() const = 0;
+	virtual void set_requested_reference_space_types(String p_requested_reference_space_types) = 0;
+	virtual String get_requested_reference_space_types() const = 0;
+	virtual String get_reference_space_type() const = 0;
+	virtual ARVRPositionalTracker *get_controller(int p_controller_id) const = 0;
+	virtual String get_visibility_state() const = 0;
+	virtual PoolVector3Array get_bounds_geometry() const = 0;
 };
 
-#endif // FILE_ACCESS_JANDROID_H
+#endif // WEBXR_INTERFACE_H

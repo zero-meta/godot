@@ -66,6 +66,16 @@ else:
 
 sys_env.Depends(build[0], sys_env["JS_LIBS"])
 
+if "JS_PRE" in env:
+    for js in env["JS_PRE"]:
+        env.Append(LINKFLAGS=["--pre-js", env.File(js).path])
+    env.Depends(build, env["JS_PRE"])
+
+if "JS_EXTERNS" in env:
+    for ext in env["JS_EXTERNS"]:
+        env["ENV"]["EMCC_CLOSURE_ARGS"] += " --externs " + ext.path
+    env.Depends(build, env["JS_EXTERNS"])
+
 engine = [
     "js/engine/preloader.js",
     "js/engine/utils.js",
@@ -97,6 +107,12 @@ if env["gdnative_enabled"]:
 elif env["threads_enabled"]:
     in_files.append(build[2])  # Worker
     out_files.append(zip_dir.File(binary_name + ".worker.js"))
+
+if env["tools"]:
+    in_files.append("#misc/dist/html/logo.svg")
+    out_files.append(zip_dir.File("logo.svg"))
+    in_files.append("#icon.png")
+    out_files.append(zip_dir.File("favicon.png"))
 
 zip_files = env.InstallAs(out_files, in_files)
 env.Zip(

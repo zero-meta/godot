@@ -37,7 +37,10 @@
 #include "tools/import_utils.h"
 
 #include "core/bind/core_bind.h"
+#include "core/dictionary.h"
 #include "core/io/resource_importer.h"
+#include "core/local_vector.h"
+#include "core/ustring.h"
 #include "core/vector.h"
 #include "editor/import/resource_importer_scene.h"
 #include "editor/project_settings_editor.h"
@@ -112,7 +115,9 @@ private:
 
 	Spatial *_generate_scene(const String &p_path, const FBXDocParser::Document *p_document,
 			const uint32_t p_flags,
-			int p_bake_fps, const int32_t p_max_bone_weights);
+			int p_bake_fps,
+			const int32_t p_max_bone_weights,
+			bool p_is_blender_fbx);
 
 	template <class T>
 	T _interpolate_track(const Vector<float> &p_times, const Vector<T> &p_values, float p_time, AssetImportAnimation::Interpolation p_interp);

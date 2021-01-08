@@ -1103,7 +1103,7 @@ msgstr "미사용 리소스 탐색기"
 
 #: editor/dependency_editor.cpp editor/editor_audio_buses.cpp
 #: editor/editor_file_dialog.cpp editor/editor_node.cpp
-#: editor/filesystem_dock.cpp editor/plugins/item_list_editor_plugin.cpp
+#: editor/plugins/item_list_editor_plugin.cpp
 #: editor/plugins/sprite_frames_editor_plugin.cpp editor/project_export.cpp
 #: editor/project_settings_editor.cpp editor/scene_tree_dock.cpp
 msgid "Delete"
@@ -3693,6 +3693,16 @@ msgid "Name contains invalid characters."
 msgstr "이름에 잘못된 문자가 있습니다."
 
 #: editor/filesystem_dock.cpp
+msgid ""
+"The following files or folders conflict with items in the target location "
+"'%s':\n"
+"\n"
+"%s\n"
+"\n"
+"Do you wish to overwrite them?"
+msgstr ""
+
+#: editor/filesystem_dock.cpp
 msgid "Renaming file:"
 msgstr "파일 이름 바꾸기:"
 
@@ -3740,22 +3750,9 @@ msgstr "종속 관계 편집..."
 msgid "View Owners..."
 msgstr "소유자 보기..."
 
-#: editor/filesystem_dock.cpp editor/plugins/animation_player_editor_plugin.cpp
-msgid "Rename..."
-msgstr "이름 바꾸기..."
-
-#: editor/filesystem_dock.cpp
-msgid "Duplicate..."
-msgstr "복제..."
-
 #: editor/filesystem_dock.cpp
 msgid "Move To..."
 msgstr "여기로 이동..."
-
-#: editor/filesystem_dock.cpp
-#, fuzzy
-msgid "Move to Trash"
-msgstr "오토로드 이동"
 
 #: editor/filesystem_dock.cpp
 msgid "New Scene..."
@@ -3780,11 +3777,17 @@ msgid "Collapse All"
 msgstr "모두 접기"
 
 #: editor/filesystem_dock.cpp
-#: editor/plugins/animation_tree_player_editor_plugin.cpp
-#: editor/project_manager.cpp editor/rename_dialog.cpp
-#: editor/scene_tree_dock.cpp
-msgid "Rename"
-msgstr "이름 바꾸기"
+msgid "Duplicate..."
+msgstr "복제..."
+
+#: editor/filesystem_dock.cpp
+#, fuzzy
+msgid "Move to Trash"
+msgstr "오토로드 이동"
+
+#: editor/filesystem_dock.cpp editor/plugins/animation_player_editor_plugin.cpp
+msgid "Rename..."
+msgstr "이름 바꾸기..."
 
 #: editor/filesystem_dock.cpp
 msgid "Previous Folder/File"
@@ -3819,8 +3822,11 @@ msgid "Move"
 msgstr "이동"
 
 #: editor/filesystem_dock.cpp
-msgid "There is already file or folder with the same name in this location."
-msgstr "이 위치에는 같은 이름의 파일이나 폴더가 있습니다."
+#: editor/plugins/animation_tree_player_editor_plugin.cpp
+#: editor/project_manager.cpp editor/rename_dialog.cpp
+#: editor/scene_tree_dock.cpp
+msgid "Rename"
+msgstr "이름 바꾸기"
 
 #: editor/filesystem_dock.cpp
 msgid "Overwrite"
@@ -3888,8 +3894,19 @@ msgid "Searching..."
 msgstr "검색 중..."
 
 #: editor/find_in_files.cpp
-msgid "Search complete"
-msgstr "검색 완료"
+#, fuzzy
+msgid "%d match in %d file."
+msgstr "%d개 일치."
+
+#: editor/find_in_files.cpp
+#, fuzzy
+msgid "%d matches in %d file."
+msgstr "%d개 일치."
+
+#: editor/find_in_files.cpp
+#, fuzzy
+msgid "%d matches in %d files."
+msgstr "%d개 일치."
 
 #: editor/groups_editor.cpp
 msgid "Add to Group"
@@ -8520,10 +8537,6 @@ msgid "Error"
 msgstr "오류"
 
 #: editor/plugins/version_control_editor_plugin.cpp
-msgid "No commit message was provided"
-msgstr "커밋 메시지를 제공하지 않았습니다"
-
-#: editor/plugins/version_control_editor_plugin.cpp
 msgid "No files added to stage"
 msgstr "스테이지에 추가된 파일이 없습니다"
 
@@ -8578,10 +8591,6 @@ msgstr "선택 항목 스테이지로 보내기"
 #: editor/plugins/version_control_editor_plugin.cpp
 msgid "Stage All"
 msgstr "모두 스테이지로 보내기"
-
-#: editor/plugins/version_control_editor_plugin.cpp
-msgid "Add a commit message"
-msgstr "커밋 메시지 추가"
 
 #: editor/plugins/version_control_editor_plugin.cpp
 msgid "Commit Changes"
@@ -9761,6 +9770,10 @@ msgstr "렌더러:"
 #: editor/project_manager.cpp
 msgid "OpenGL ES 3.0"
 msgstr "OpenGL ES 3.0"
+
+#: editor/project_manager.cpp
+msgid "Not supported by your GPU drivers."
+msgstr ""
 
 #: editor/project_manager.cpp
 msgid ""
@@ -12302,6 +12315,26 @@ msgstr ""
 "CPUParticles2D 애니메이션에는 \"Particles Animation\"이 켜진 "
 "CanvasItemMaterial을 사용해야 합니다."
 
+#: scene/2d/joints_2d.cpp
+msgid "Node A and Node B must be PhysicsBody2Ds"
+msgstr ""
+
+#: scene/2d/joints_2d.cpp
+msgid "Node A must be a PhysicsBody2D"
+msgstr ""
+
+#: scene/2d/joints_2d.cpp
+msgid "Node B must be a PhysicsBody2D"
+msgstr ""
+
+#: scene/2d/joints_2d.cpp
+msgid "Joint is not connected to two PhysicsBody2Ds"
+msgstr ""
+
+#: scene/2d/joints_2d.cpp
+msgid "Node A and Node B must be different PhysicsBody2Ds"
+msgstr ""
+
 #: scene/2d/light_2d.cpp
 msgid ""
 "A texture with the shape of the light must be supplied to the \"Texture\" "
@@ -12619,6 +12652,26 @@ msgstr ""
 "큰 부담이 됩니다.\n"
 "대신 자식 충돌 모양의 크기를 변경하세요."
 
+#: scene/3d/physics_joint.cpp
+msgid "Node A and Node B must be PhysicsBodies"
+msgstr ""
+
+#: scene/3d/physics_joint.cpp
+msgid "Node A must be a PhysicsBody"
+msgstr ""
+
+#: scene/3d/physics_joint.cpp
+msgid "Node B must be a PhysicsBody"
+msgstr ""
+
+#: scene/3d/physics_joint.cpp
+msgid "Joint is not connected to any PhysicsBodies"
+msgstr ""
+
+#: scene/3d/physics_joint.cpp
+msgid "Node A and Node B must be different PhysicsBodies"
+msgstr ""
+
 #: scene/3d/remote_transform.cpp
 msgid ""
 "The \"Remote Path\" property must point to a valid Spatial or Spatial-"
@@ -12777,6 +12830,11 @@ msgstr "경고!"
 msgid "Please Confirm..."
 msgstr "확인해주세요..."
 
+#: scene/gui/graph_edit.cpp
+#, fuzzy
+msgid "Enable grid minimap."
+msgstr "스냅 켜기"
+
 #: scene/gui/popup.cpp
 msgid ""
 "Popups will hide by default unless you call popup() or any of the popup*() "
@@ -12855,6 +12913,18 @@ msgstr "Varying은 꼭짓점 함수에만 지정할 수 있습니다."
 #: servers/visual/shader_language.cpp
 msgid "Constants cannot be modified."
 msgstr "상수는 수정할 수 없습니다."
+
+#~ msgid "Search complete"
+#~ msgstr "검색 완료"
+
+#~ msgid "No commit message was provided"
+#~ msgstr "커밋 메시지를 제공하지 않았습니다"
+
+#~ msgid "Add a commit message"
+#~ msgstr "커밋 메시지 추가"
+
+#~ msgid "There is already file or folder with the same name in this location."
+#~ msgstr "이 위치에는 같은 이름의 파일이나 폴더가 있습니다."
 
 #~ msgid "Error trying to save layout!"
 #~ msgstr "레이아웃 저장 중 오류!"

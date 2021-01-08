@@ -28,7 +28,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Godot Engine editor\n"
 "POT-Creation-Date: \n"
-"PO-Revision-Date: 2020-11-20 23:08+0000\n"
+"PO-Revision-Date: 2020-12-14 11:03+0000\n"
 "Last-Translator: Václav Blažej <vaclavblazej@seznam.cz>\n"
 "Language-Team: Czech <https://hosted.weblate.org/projects/godot-engine/godot/"
 "cs/>\n"
@@ -1107,7 +1107,7 @@ msgstr "Průzkumník osiřelých zdrojů"
 
 #: editor/dependency_editor.cpp editor/editor_audio_buses.cpp
 #: editor/editor_file_dialog.cpp editor/editor_node.cpp
-#: editor/filesystem_dock.cpp editor/plugins/item_list_editor_plugin.cpp
+#: editor/plugins/item_list_editor_plugin.cpp
 #: editor/plugins/sprite_frames_editor_plugin.cpp editor/project_export.cpp
 #: editor/project_settings_editor.cpp editor/scene_tree_dock.cpp
 msgid "Delete"
@@ -3709,6 +3709,22 @@ msgid "Name contains invalid characters."
 msgstr "Jméno obsahuje neplatné znaky."
 
 #: editor/filesystem_dock.cpp
+msgid ""
+"The following files or folders conflict with items in the target location "
+"'%s':\n"
+"\n"
+"%s\n"
+"\n"
+"Do you wish to overwrite them?"
+msgstr ""
+"Následující soubory nebo složky jsou v konfliktu s položkami v cílovém "
+"umístění '%s':\n"
+"\n"
+"%s\n"
+"\n"
+"Přejete si je přepsat?"
+
+#: editor/filesystem_dock.cpp
 msgid "Renaming file:"
 msgstr "Přejmenovávání souboru:"
 
@@ -3756,21 +3772,9 @@ msgstr "Upravit závislosti..."
 msgid "View Owners..."
 msgstr "Zobrazit vlastníky..."
 
-#: editor/filesystem_dock.cpp editor/plugins/animation_player_editor_plugin.cpp
-msgid "Rename..."
-msgstr "Přejmenovat..."
-
-#: editor/filesystem_dock.cpp
-msgid "Duplicate..."
-msgstr "Duplikovat..."
-
 #: editor/filesystem_dock.cpp
 msgid "Move To..."
 msgstr "Přesunout do..."
-
-#: editor/filesystem_dock.cpp
-msgid "Move to Trash"
-msgstr "Přesunout do koše"
 
 #: editor/filesystem_dock.cpp
 msgid "New Scene..."
@@ -3795,11 +3799,16 @@ msgid "Collapse All"
 msgstr "Sbalit vše"
 
 #: editor/filesystem_dock.cpp
-#: editor/plugins/animation_tree_player_editor_plugin.cpp
-#: editor/project_manager.cpp editor/rename_dialog.cpp
-#: editor/scene_tree_dock.cpp
-msgid "Rename"
-msgstr "Přejmenovat"
+msgid "Duplicate..."
+msgstr "Duplikovat..."
+
+#: editor/filesystem_dock.cpp
+msgid "Move to Trash"
+msgstr "Přesunout do koše"
+
+#: editor/filesystem_dock.cpp editor/plugins/animation_player_editor_plugin.cpp
+msgid "Rename..."
+msgstr "Přejmenovat..."
 
 #: editor/filesystem_dock.cpp
 msgid "Previous Folder/File"
@@ -3834,8 +3843,11 @@ msgid "Move"
 msgstr "Přesunout"
 
 #: editor/filesystem_dock.cpp
-msgid "There is already file or folder with the same name in this location."
-msgstr "Soubor nebo složka se stejným názvem již na tomto místě existuje."
+#: editor/plugins/animation_tree_player_editor_plugin.cpp
+#: editor/project_manager.cpp editor/rename_dialog.cpp
+#: editor/scene_tree_dock.cpp
+msgid "Rename"
+msgstr "Přejmenovat"
 
 #: editor/filesystem_dock.cpp
 msgid "Overwrite"
@@ -3903,8 +3915,19 @@ msgid "Searching..."
 msgstr "Hledám..."
 
 #: editor/find_in_files.cpp
-msgid "Search complete"
-msgstr "Vyhledávání dokončeno"
+#, fuzzy
+msgid "%d match in %d file."
+msgstr "%d shody."
+
+#: editor/find_in_files.cpp
+#, fuzzy
+msgid "%d matches in %d file."
+msgstr "%d shody."
+
+#: editor/find_in_files.cpp
+#, fuzzy
+msgid "%d matches in %d files."
+msgstr "%d shody."
 
 #: editor/groups_editor.cpp
 msgid "Add to Group"
@@ -8305,23 +8328,20 @@ msgid "Create a new rectangle."
 msgstr "Vytvořit nový obdélník."
 
 #: editor/plugins/tile_set_editor_plugin.cpp
-#, fuzzy
 msgid "New Rectangle"
-msgstr "Nakreslit obdélník"
+msgstr "Nový obdélník"
 
 #: editor/plugins/tile_set_editor_plugin.cpp
 msgid "Create a new polygon."
 msgstr "Vytvořit nový polygon."
 
 #: editor/plugins/tile_set_editor_plugin.cpp
-#, fuzzy
 msgid "New Polygon"
-msgstr "Přesunout polygon"
+msgstr "Nový polygon"
 
 #: editor/plugins/tile_set_editor_plugin.cpp
-#, fuzzy
 msgid "Delete Selected Shape"
-msgstr "Smazat vybraný"
+msgstr "Smazat vybraný tvar"
 
 #: editor/plugins/tile_set_editor_plugin.cpp
 msgid "Keep polygon inside region Rect."
@@ -8531,10 +8551,6 @@ msgid "Error"
 msgstr "Chyba"
 
 #: editor/plugins/version_control_editor_plugin.cpp
-msgid "No commit message was provided"
-msgstr "Nebyla poskytnuta commit message"
-
-#: editor/plugins/version_control_editor_plugin.cpp
 msgid "No files added to stage"
 msgstr "Zádné soubory nebyly přidány k zápisu"
 
@@ -8589,10 +8605,6 @@ msgstr "Připravit vybrané k zapsání"
 #: editor/plugins/version_control_editor_plugin.cpp
 msgid "Stage All"
 msgstr "Připravit k zapsání vše"
-
-#: editor/plugins/version_control_editor_plugin.cpp
-msgid "Add a commit message"
-msgstr "Přidat zprávu commitu"
 
 #: editor/plugins/version_control_editor_plugin.cpp
 msgid "Commit Changes"
@@ -9788,6 +9800,10 @@ msgstr "Renderer:"
 #: editor/project_manager.cpp
 msgid "OpenGL ES 3.0"
 msgstr "OpenGL ES 3.0"
+
+#: editor/project_manager.cpp
+msgid "Not supported by your GPU drivers."
+msgstr "Nepodporováno vašimi ovladači GPU."
 
 #: editor/project_manager.cpp
 msgid ""
@@ -12344,6 +12360,26 @@ msgstr ""
 "Animace CPUParticles2D vyžaduje použití CanvasItemMaterial se zapnutým "
 "\"Particles Animation\"."
 
+#: scene/2d/joints_2d.cpp
+msgid "Node A and Node B must be PhysicsBody2Ds"
+msgstr "Uzel A a uzel B musí být PhysicsBody2D"
+
+#: scene/2d/joints_2d.cpp
+msgid "Node A must be a PhysicsBody2D"
+msgstr "Uzel A musí být PhysicsBody2D"
+
+#: scene/2d/joints_2d.cpp
+msgid "Node B must be a PhysicsBody2D"
+msgstr "Uzel B musí být PhysicsBody2D"
+
+#: scene/2d/joints_2d.cpp
+msgid "Joint is not connected to two PhysicsBody2Ds"
+msgstr "Kloub není připojen ke dvěma PhysicsBody2D"
+
+#: scene/2d/joints_2d.cpp
+msgid "Node A and Node B must be different PhysicsBody2Ds"
+msgstr "Uzel A a uzel B musí být různé PhysicsBody2D"
+
 #: scene/2d/light_2d.cpp
 msgid ""
 "A texture with the shape of the light must be supplied to the \"Texture\" "
@@ -12664,6 +12700,26 @@ msgstr ""
 "přepsány fyzikálním enginem.\n"
 "Změňte velikost kolizních tvarů v uzlech potomků."
 
+#: scene/3d/physics_joint.cpp
+msgid "Node A and Node B must be PhysicsBodies"
+msgstr "Uzel A a uzel B musí být PhysicsBody"
+
+#: scene/3d/physics_joint.cpp
+msgid "Node A must be a PhysicsBody"
+msgstr "Uzel A musí být PhysicsBody"
+
+#: scene/3d/physics_joint.cpp
+msgid "Node B must be a PhysicsBody"
+msgstr "Uzel B musí být PhysicsBody"
+
+#: scene/3d/physics_joint.cpp
+msgid "Joint is not connected to any PhysicsBodies"
+msgstr "Kloub není připojen k PhysicsBody"
+
+#: scene/3d/physics_joint.cpp
+msgid "Node A and Node B must be different PhysicsBodies"
+msgstr "Uzel A a uzel B musí být odlišné PhysicsBody"
+
 #: scene/3d/remote_transform.cpp
 msgid ""
 "The \"Remote Path\" property must point to a valid Spatial or Spatial-"
@@ -12821,6 +12877,11 @@ msgstr "Pozor!"
 msgid "Please Confirm..."
 msgstr "Potvrďte prosím..."
 
+#: scene/gui/graph_edit.cpp
+#, fuzzy
+msgid "Enable grid minimap."
+msgstr "Povolit přichytávání"
+
 #: scene/gui/popup.cpp
 msgid ""
 "Popups will hide by default unless you call popup() or any of the popup*() "
@@ -12902,6 +12963,18 @@ msgstr "Odlišnosti mohou být přiřazeny pouze ve vertex funkci."
 #: servers/visual/shader_language.cpp
 msgid "Constants cannot be modified."
 msgstr "Konstanty není možné upravovat."
+
+#~ msgid "Search complete"
+#~ msgstr "Vyhledávání dokončeno"
+
+#~ msgid "No commit message was provided"
+#~ msgstr "Nebyla poskytnuta commit message"
+
+#~ msgid "Add a commit message"
+#~ msgstr "Přidat zprávu commitu"
+
+#~ msgid "There is already file or folder with the same name in this location."
+#~ msgstr "Soubor nebo složka se stejným názvem již na tomto místě existuje."
 
 #~ msgid "Missing 'build-tools' directory!"
 #~ msgstr "Chybí složka \"build-tools\"!"

@@ -32,7 +32,9 @@
 #define IMPORT_STATE_H
 
 #include "fbx_mesh_data.h"
-#include "modules/fbx/tools/import_utils.h"
+#include "tools/import_utils.h"
+#include "tools/validation_tools.h"
+
 #include "pivot_transform.h"
 
 #include "core/bind/core_bind.h"
@@ -62,6 +64,7 @@ struct FBXSkeleton;
 struct ImportState {
 	bool enable_material_import = true;
 	bool enable_animation_import = true;
+	bool is_blender_fbx = false;
 
 	Map<StringName, Ref<Texture> > cached_image_searches;
 	Map<uint64_t, Ref<SpatialMaterial> > cached_materials;

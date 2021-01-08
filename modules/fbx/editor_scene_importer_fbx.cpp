@@ -62,8 +62,7 @@ void EditorSceneImporterFBX::get_extensions(List<String> *r_extensions) const {
 	const String fbx_str = "fbx";
 	Vector<String> exts;
 	exts.push_back(fbx_str);
-	_register_project_setting_import(fbx_str, import_setting_string, exts, r_extensions,
-			true);
+	_register_project_setting_import(fbx_str, import_setting_string, exts, r_extensions, true);
 }
 
 void EditorSceneImporterFBX::_register_project_setting_import(const String generic,
@@ -128,7 +127,7 @@ Node *EditorSceneImporterFBX::import_scene(const String &p_path, uint32_t p_flag
 			FBXDocParser::TokenizeBinary(tokens, (const char *)data.write().ptr(), (size_t)data.size());
 		} else {
 			print_verbose("[doc] is ascii");
-			FBXDocParser::Tokenize(tokens, (const char *)data.write().ptr());
+			FBXDocParser::Tokenize(tokens, (const char *)data.write().ptr(), (size_t)data.size());
 		}
 
 		// The import process explained:
@@ -151,8 +150,43 @@ Node *EditorSceneImporterFBX::import_scene(const String &p_path, uint32_t p_flag
 
 		// safety for version handling
 		if (doc.IsSafeToImport()) {
-			Spatial *spatial = _generate_scene(p_path, &doc, p_flags, p_bake_fps, 8);
+			bool is_blender_fbx = false;
+			//const FBXDocParser::PropertyPtr app_vendor = p_document->GlobalSettingsPtr()->Props()
+			//	p_document->Creator()
+			const FBXDocParser::PropertyTable *import_props = doc.GetMetadataProperties();
+			const FBXDocParser::PropertyPtr app_name = import_props->Get("Original|ApplicationName");
+			const FBXDocParser::PropertyPtr app_vendor = import_props->Get("Original|ApplicationVendor");
+			const FBXDocParser::PropertyPtr app_version = import_props->Get("Original|ApplicationVersion");
+			//
+			if (app_name) {
+				const FBXDocParser::TypedProperty<std::string> *app_name_string = dynamic_cast<const FBXDocParser::TypedProperty<std::string> *>(app_name);
+				if (app_name_string) {
+					print_verbose("FBX App Name: " + String(app_name_string->Value().c_str()));
+				}
+			}
 
+			if (app_vendor) {
+				const FBXDocParser::TypedProperty<std::string> *app_vendor_string = dynamic_cast<const FBXDocParser::TypedProperty<std::string> *>(app_vendor);
+				if (app_vendor_string) {
+					print_verbose("FBX App Vendor: " + String(app_vendor_string->Value().c_str()));
+					is_blender_fbx = app_vendor_string->Value().find("Blender") != std::string::npos;
+				}
+			}
+
+			if (app_version) {
+				const FBXDocParser::TypedProperty<std::string> *app_version_string = dynamic_cast<const FBXDocParser::TypedProperty<std::string> *>(app_version);
+				if (app_version_string) {
+					print_verbose("FBX App Version: " + String(app_version_string->Value().c_str()));
+				}
+			}
+
+			if (is_blender_fbx) {
+				WARN_PRINT("We don't officially support Blender FBX animations yet, due to issues with upstream Blender,\n"
+						   "so please wait for us to work around remaining issues. We will continue to import the file but it may be broken.\n"
+						   "For minimal breakage, please export FBX from Blender with -Z forward, and Y up.");
+			}
+
+			Spatial *spatial = _generate_scene(p_path, &doc, p_flags, p_bake_fps, 8, is_blender_fbx);
 			// todo: move to document shutdown (will need to be validated after moving; this code has been validated already)
 			for (FBXDocParser::TokenPtr token : tokens) {
 				if (token) {
@@ -162,8 +196,9 @@ Node *EditorSceneImporterFBX::import_scene(const String &p_path, uint32_t p_flag
 			}
 
 			return spatial;
+
 		} else {
-			print_error("Cannot import file: " + p_path + " version of file is unsupported, please re-export in your modelling package file version is: " + itos(doc.FBXVersion()));
+			ERR_PRINT(vformat("Cannot import FBX file: %s. It uses file format %d which is unsupported by Godot. Please re-export it or convert it to a newer format.", p_path, doc.FBXVersion()));
 		}
 	}
 
@@ -335,9 +370,11 @@ Spatial *EditorSceneImporterFBX::_generate_scene(
 		const FBXDocParser::Document *p_document,
 		const uint32_t p_flags,
 		int p_bake_fps,
-		const int32_t p_max_bone_weights) {
+		const int32_t p_max_bone_weights,
+		bool p_is_blender_fbx) {
 
 	ImportState state;
+	state.is_blender_fbx = p_is_blender_fbx;
 	state.path = p_path;
 	state.animation_player = NULL;
 
@@ -356,6 +393,7 @@ Spatial *EditorSceneImporterFBX::_generate_scene(
 	// Size relative to cm.
 	const real_t fbx_unit_scale = p_document->GlobalSettingsPtr()->UnitScaleFactor();
 
+	print_verbose("FBX unit scale import value: " + rtos(fbx_unit_scale));
 	// Set FBX file scale is relative to CM must be converted to M
 	state.scale = fbx_unit_scale / 100.0;
 	print_verbose("FBX unit scale is: " + rtos(state.scale));
@@ -366,6 +404,11 @@ Spatial *EditorSceneImporterFBX::_generate_scene(
 	state.enable_animation_import = true;
 	Ref<FBXNode> root_node;
 	root_node.instance();
+
+	// make sure fake noFBXDocParser::PropertyPtr ptrde always has a transform too ;)
+	Ref<PivotTransform> pivot_transform;
+	pivot_transform.instance();
+	root_node->pivot_transform = pivot_transform;
 	root_node->node_name = "root node";
 	root_node->current_node_id = 0;
 	root_node->godot_node = state.root;
@@ -376,9 +419,16 @@ Spatial *EditorSceneImporterFBX::_generate_scene(
 	// cache basic node information from FBX document
 	// grabs all FBX bones
 	BuildDocumentBones(Ref<FBXBone>(), state, p_document, 0L);
-	BuildDocumentNodes(nullptr, state, p_document, 0L, nullptr);
+	BuildDocumentNodes(Ref<PivotTransform>(), state, p_document, 0L, nullptr);
 
 	// Build document skinning information
+
+	// Algorithm is this:
+	// Get Deformer: object with "Skin" class.
+	// Deformer:: has link to Geometry:: (correct mesh for skin)
+	// Deformer:: has Source which is the SubDeformer:: (e.g. the Cluster)
+	// Notes at the end it configures the vertex weight mapping.
+
 	for (uint64_t skin_id : p_document->GetSkinIDs()) {
 		// Validate the parser
 		FBXDocParser::LazyObject *lazy_skin = p_document->GetObject(skin_id);
@@ -389,7 +439,6 @@ Spatial *EditorSceneImporterFBX::_generate_scene(
 		ERR_CONTINUE_MSG(skin == nullptr, "invalid skin added to skin list [parser bug]");
 
 		const std::vector<const FBXDocParser::Connection *> source_to_destination = p_document->GetConnectionsBySourceSequenced(skin_id);
-		const std::vector<const FBXDocParser::Connection *> destination_to_source = p_document->GetConnectionsByDestinationSequenced(skin_id);
 		FBXDocParser::MeshGeometry *mesh = nullptr;
 		uint64_t mesh_id = 0;
 
@@ -409,21 +458,13 @@ Spatial *EditorSceneImporterFBX::_generate_scene(
 
 		// Validate the mesh exists and was retrieved
 		ERR_CONTINUE_MSG(mesh_id == 0, "mesh id is invalid");
+		const std::vector<const FBXDocParser::Cluster *> clusters = skin->Clusters();
 
 		// NOTE: this will ONLY work on skinned bones (it is by design.)
 		// A cluster is a skinned bone so SKINS won't contain unskinned bones so we need to pre-add all bones and parent them in a step beforehand.
-		for (const FBXDocParser::Connection *con : destination_to_source) {
-			FBXDocParser::Object *ob = con->SourceObject();
-
-			//
-			// Read the FBX Document bone information
-			//
-
-			// Get bone weight data
-			const FBXDocParser::Cluster *deformer = dynamic_cast<const FBXDocParser::Cluster *>(ob);
-			ERR_CONTINUE_MSG(deformer == nullptr, "invalid bone cluster");
-
-			const uint64_t deformer_id = deformer->ID();
+		for (const FBXDocParser::Cluster *cluster : clusters) {
+			ERR_CONTINUE_MSG(cluster == nullptr, "invalid bone cluster");
+			const uint64_t deformer_id = cluster->ID();
 			std::vector<const FBXDocParser::Connection *> connections = p_document->GetConnectionsByDestinationSequenced(deformer_id);
 
 			// Weight data always has a node in the scene lets grab the limb's node in the scene :) (reverse set to true since it's the opposite way around)
@@ -444,8 +485,8 @@ Spatial *EditorSceneImporterFBX::_generate_scene(
 			//
 
 			// Cache Weight Information into bone for later usage if you want the raw data.
-			const std::vector<unsigned int> &indexes = deformer->GetIndices();
-			const std::vector<float> &weights = deformer->GetWeights();
+			const std::vector<unsigned int> &indexes = cluster->GetIndices();
+			const std::vector<float> &weights = cluster->GetWeights();
 			Ref<FBXMeshData> mesh_vertex_data;
 
 			// this data will pre-exist if vertex weight information is found
@@ -468,7 +509,7 @@ Spatial *EditorSceneImporterFBX::_generate_scene(
 
 				VertexWeightMapping &vm = mesh_vertex_data->vertex_weights[vertex_index];
 				vm.weights.push_back(influence_weight);
-				vm.bones.push_back(0);
+				vm.bones.push_back(0); // bone id is pushed on here during sanitization phase
 				vm.bones_ref.push_back(bone_element);
 			}
 
@@ -531,31 +572,6 @@ Spatial *EditorSceneImporterFBX::_generate_scene(
 		// we opted to merge the entire scene onto one skeleton for now
 		// if we need to change this we have an archive of the old code.
 
-		const std::vector<uint64_t> &bind_pose_ids = p_document->GetBindPoseIDs();
-
-		for (uint64_t skin_id : bind_pose_ids) {
-
-			FBXDocParser::LazyObject *lazy_skin = p_document->GetObject(skin_id);
-			const FBXDocParser::FbxPose *active_skin = lazy_skin->Get<FBXDocParser::FbxPose>();
-
-			if (active_skin) {
-				const std::vector<FBXDocParser::FbxPoseNode *> &bind_poses = active_skin->GetBindPoses();
-
-				for (FBXDocParser::FbxPoseNode *pose_node : bind_poses) {
-					Transform t = pose_node->GetBindPose();
-					uint64_t fbx_node_id = pose_node->GetNodeID();
-					if (state.fbx_bone_map.has(fbx_node_id)) {
-						Ref<FBXBone> bone = state.fbx_bone_map[fbx_node_id];
-						if (bone.is_valid()) {
-							print_verbose("assigned skin pose from the file for bone " + bone->bone_name + ", transform: " + t);
-							bone->pose_node = t;
-							bone->assigned_pose_node = true;
-						}
-					}
-				}
-			}
-		}
-
 		// bind pose normally only has 1 per mesh but can have more than one
 		// this is the point of skins
 		// in FBX first bind pose is the master for the first skin
@@ -580,21 +596,28 @@ Spatial *EditorSceneImporterFBX::_generate_scene(
 
 			print_verbose("populating skeleton with bone: " + bone->bone_name);
 
-			//			// populate bone skeleton - since fbx has no DOM for the skeleton just a node.
-			//			bone->bone_skeleton = fbx_skeleton_inst;
+			//// populate bone skeleton - since fbx has no DOM for the skeleton just a node.
+			//bone->bone_skeleton = fbx_skeleton_inst;
 
 			// now populate bone on the armature node list
 			fbx_skeleton_inst->skeleton_bones.push_back(bone);
 
+			CRASH_COND_MSG(!state.fbx_target_map.has(armature_id), "invalid armature [serious]");
+
+			Ref<FBXNode> node = state.fbx_target_map[armature_id];
+
+			CRASH_COND_MSG(node.is_null(), "invalid node [serious]");
+			CRASH_COND_MSG(node->pivot_transform.is_null(), "invalid pivot transform [serious]");
+			fbx_skeleton_inst->fbx_node = node;
+
+			ERR_CONTINUE_MSG(fbx_skeleton_inst->fbx_node.is_null(), "invalid skeleton node [serious]");
+
 			// we need to have a valid armature id and the model configured for the bone to be assigned fully.
 			// happens once per skeleton
-			if (state.fbx_target_map.has(armature_id) && !fbx_skeleton_inst->has_model()) {
-				Ref<FBXNode> node = state.fbx_target_map[armature_id];
 
-				fbx_skeleton_inst->set_model(node->get_model());
-				fbx_skeleton_inst->fbx_node = node;
-				print_verbose("allocated fbx skeleton primary / armature node for the level: " + node->node_name);
-			} else if (!state.fbx_target_map.has(armature_id) && !fbx_skeleton_inst->has_model()) {
+			if (state.fbx_target_map.has(armature_id) && !fbx_skeleton_inst->fbx_node->has_model()) {
+				print_verbose("allocated fbx skeleton primary / armature node for the level: " + fbx_skeleton_inst->fbx_node->node_name);
+			} else if (!state.fbx_target_map.has(armature_id) && !fbx_skeleton_inst->fbx_node->has_model()) {
 				print_error("bones are not mapped to an armature node for armature id: " + itos(armature_id) + " bone: " + bone->bone_name);
 				// this means bone will be removed and not used, which is safe actually and no skeleton will be created.
 			}
@@ -602,7 +625,14 @@ Spatial *EditorSceneImporterFBX::_generate_scene(
 
 		// setup skeleton instances if required :)
 		for (Map<uint64_t, Ref<FBXSkeleton> >::Element *skeleton_node = state.skeleton_map.front(); skeleton_node; skeleton_node = skeleton_node->next()) {
-			skeleton_node->value()->init_skeleton(state);
+			Ref<FBXSkeleton> &skeleton = skeleton_node->value();
+			skeleton->init_skeleton(state);
+
+			ERR_CONTINUE_MSG(skeleton->fbx_node.is_null(), "invalid fbx target map, missing skeleton");
+		}
+
+		// This list is not populated
+		for (Map<uint64_t, Ref<FBXNode> >::Element *skin_mesh = state.MeshNodes.front(); skin_mesh; skin_mesh = skin_mesh->next()) {
 		}
 	}
 
@@ -637,6 +667,8 @@ Spatial *EditorSceneImporterFBX::_generate_scene(
 							mesh_data_precached.instance();
 							state.renderer_mesh_data.insert(mesh_id, mesh_data_precached);
 						}
+
+						mesh_data_precached->mesh_node = fbx_node;
 
 						// mesh node, mesh id
 						mesh_node = mesh_data_precached->create_fbx_mesh(state, mesh_geometry, fbx_node->fbx_model, (p_flags & IMPORT_USE_COMPRESSION) != 0);
@@ -681,33 +713,69 @@ Spatial *EditorSceneImporterFBX::_generate_scene(
 		}
 	}
 
-	for (Map<uint64_t, Ref<FBXNode> >::Element *skin_mesh = state.MeshNodes.front(); skin_mesh; skin_mesh = skin_mesh->next()) {
-		const uint64_t mesh_id = skin_mesh->key();
-		Ref<FBXNode> fbx_node = skin_mesh->value();
+	for (Map<uint64_t, Ref<FBXMeshData> >::Element *mesh_data = state.renderer_mesh_data.front(); mesh_data; mesh_data = mesh_data->next()) {
+		const uint64_t mesh_id = mesh_data->key();
+		Ref<FBXMeshData> mesh = mesh_data->value();
 
-		ERR_CONTINUE_MSG(state.MeshSkins.has(skin_mesh->key()), "invalid skin already exists for this mesh?");
-		print_verbose("[doc] caching skin for " + itos(mesh_id) + ", mesh node name: " + fbx_node->node_name);
-		Ref<Skin> skin;
-		skin.instance();
+		const FBXDocParser::MeshGeometry *mesh_geometry = p_document->GetObject(mesh_id)->Get<FBXDocParser::MeshGeometry>();
 
-		for (Map<uint64_t, Ref<FBXBone> >::Element *elem = state.fbx_bone_map.front(); elem; elem = elem->next()) {
-			Ref<FBXBone> bone = elem->value();
-			Transform ignore_t;
-			Ref<FBXSkeleton> skeleton = bone->fbx_skeleton;
-			// grab the skin bind
-			bool valid_bind = false;
-			Transform bind = bone->get_vertex_skin_xform(state, fbx_node->pivot_transform->GlobalTransform, valid_bind);
+		ERR_CONTINUE_MSG(mesh->mesh_node.is_null(), "invalid mesh allocation");
 
-			ERR_CONTINUE_MSG(!valid_bind, "invalid bind");
+		const FBXDocParser::Skin *mesh_skin = mesh_geometry->DeformerSkin();
 
-			if (bind.basis.determinant() == 0) {
-				bind = Transform(Basis(), bind.origin);
-			}
-
-			skin->add_named_bind(bone->bone_name, get_unscaled_transform(bind, state.scale));
+		if (!mesh_skin) {
+			continue; // safe to continue
 		}
 
-		state.MeshSkins.insert(mesh_id, skin);
+		//
+		// Skin bone configuration
+		//
+
+		//
+		// Get Mesh Node Xform only
+		//
+		//ERR_CONTINUE_MSG(!state.fbx_target_map.has(mesh_id), "invalid xform for the skin pose: " + itos(mesh_id));
+		//Ref<FBXNode> mesh_node_xform_data = state.fbx_target_map[mesh_id];
+
+		if (!mesh_skin) {
+			continue; // not a deformer.
+		}
+
+		if (mesh_skin->Clusters().size() == 0) {
+			continue; // possibly buggy mesh
+		}
+
+		// Lookup skin or create it if it's not found.
+		Ref<Skin> skin;
+		if (!state.MeshSkins.has(mesh_id)) {
+			print_verbose("Created new skin");
+			skin.instance();
+			state.MeshSkins.insert(mesh_id, skin);
+		} else {
+			print_verbose("Grabbed skin");
+			skin = state.MeshSkins[mesh_id];
+		}
+
+		for (const FBXDocParser::Cluster *cluster : mesh_skin->Clusters()) {
+			// node or bone this cluster targets (in theory will only be a bone target)
+			uint64_t skin_target_id = cluster->TargetNode()->ID();
+
+			print_verbose("adding cluster [" + itos(cluster->ID()) + "] " + String(cluster->Name().c_str()) + " for target: [" + itos(skin_target_id) + "] " + String(cluster->TargetNode()->Name().c_str()));
+			ERR_CONTINUE_MSG(!state.fbx_bone_map.has(skin_target_id), "no bone found by that ID? locator");
+
+			const Ref<FBXBone> bone = state.fbx_bone_map[skin_target_id];
+			const Ref<FBXSkeleton> skeleton = bone->fbx_skeleton;
+			const Ref<FBXNode> skeleton_node = skeleton->fbx_node;
+
+			skin->add_named_bind(
+					bone->bone_name,
+					get_unscaled_transform(
+							skeleton_node->pivot_transform->GlobalTransform.affine_inverse() * cluster->TransformLink().affine_inverse(), state.scale));
+		}
+
+		print_verbose("cluster name / id: " + String(mesh_skin->Name().c_str()) + " [" + itos(mesh_skin->ID()) + "]");
+		print_verbose("skeleton has " + itos(state.fbx_bone_map.size()) + " binds");
+		print_verbose("fbx skin has " + itos(mesh_skin->Clusters().size()) + " binds");
 	}
 
 	// mesh data iteration for populating skeleton mapping
@@ -1211,7 +1279,7 @@ Spatial *EditorSceneImporterFBX::_generate_scene(
 	for (Map<uint64_t, Ref<FBXBone> >::Element *element = state.fbx_bone_map.front(); element; element = element->next()) {
 		Ref<FBXBone> bone = element->value();
 		bone->parent_bone.unref();
-		bone->pivot_xform.unref();
+		bone->node.unref();
 		bone->fbx_skeleton.unref();
 	}
 
@@ -1303,26 +1371,9 @@ void EditorSceneImporterFBX::BuildDocumentBones(Ref<FBXBone> p_parent_bone,
 				}
 
 				uint64_t limb_id = limb_node->ID();
-				const FBXDocParser::Cluster *deformer = ProcessDOMConnection<FBXDocParser::Cluster>(p_doc, limb_id);
-
+				bone_element->bone_id = limb_id;
 				bone_element->bone_name = ImportUtils::FBXNodeToName(model->Name());
 				bone_element->parent_bone = p_parent_bone;
-
-				if (deformer != nullptr) {
-
-					print_verbose("[doc] Mesh Cluster: " + String(deformer->Name().c_str()) + ", " + deformer->TransformLink());
-					print_verbose("fbx node: debug name: " + String(model->Name().c_str()) + "bone name: " + String(deformer->Name().c_str()));
-
-					// assign FBX animation bind pose compensation data;
-					bone_element->transform_link = deformer->TransformLink();
-					bone_element->transform_matrix = deformer->GetTransform();
-					bone_element->cluster = deformer;
-
-					// skin configures target node ID.
-					bone_element->target_node_id = deformer->TargetNode()->ID();
-					bone_element->valid_target = true;
-					bone_element->bone_id = limb_id;
-				}
 
 				// insert limb by ID into list.
 				state.fbx_bone_map.insert(limb_node->ID(), bone_element);
@@ -1389,7 +1440,7 @@ void EditorSceneImporterFBX::BuildDocumentNodes(
 			if (state.fbx_bone_map.has(current_node_id)) {
 				Ref<FBXBone> bone = state.fbx_bone_map[current_node_id];
 				if (bone.is_valid()) {
-					bone->set_pivot_xform(fbx_transform);
+					bone->set_node(new_node);
 					print_verbose("allocated bone data: " + bone->bone_name);
 				}
 			}
@@ -1403,11 +1454,14 @@ void EditorSceneImporterFBX::BuildDocumentNodes(
 				new_node->set_parent(state.fbx_root_node);
 			}
 
+			CRASH_COND_MSG(new_node->pivot_transform.is_null(), "invalid fbx target map pivot transform [serious]");
+
 			// populate lookup tables with references
 			// [fbx_node_id, fbx_node]
 
 			state.fbx_node_list.push_back(new_node);
 			if (!state.fbx_target_map.has(new_node->current_node_id)) {
+
 				state.fbx_target_map[new_node->current_node_id] = new_node;
 			}
 

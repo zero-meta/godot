@@ -121,6 +121,10 @@ public:
 	StringName _unhandled_input;
 	StringName _unhandled_key_input;
 
+	StringName _edit_get_rect;
+	StringName _edit_is_selected_on_click;
+	StringName _edit_use_rect;
+
 	StringName _pressed;
 	StringName _toggled;
 

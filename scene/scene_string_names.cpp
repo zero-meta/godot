@@ -134,6 +134,10 @@ SceneStringNames::SceneStringNames() {
 	_unhandled_input = StaticCString::create("_unhandled_input");
 	_unhandled_key_input = StaticCString::create("_unhandled_key_input");
 
+	_edit_get_rect = StaticCString::create("_edit_get_rect");
+	_edit_use_rect = StaticCString::create("_edit_use_rect");
+	_edit_is_selected_on_click = StaticCString::create("_edit_is_selected_on_click");
+
 	changed = StaticCString::create("changed");
 	_shader_changed = StaticCString::create("_shader_changed");
 

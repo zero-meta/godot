@@ -43,6 +43,9 @@ Rect2 Path2D::_edit_get_rect() const {
 	if (!curve.is_valid() || curve->get_point_count() == 0)
 		return Rect2(0, 0, 0, 0);
 
+	if (get_script_instance() && get_script_instance()->has_method(SceneStringNames::get_singleton()->_edit_get_rect))
+		return get_script_instance()->call(SceneStringNames::get_singleton()->_edit_get_rect);
+
 	Rect2 aabb = Rect2(curve->get_point_position(0), Vector2(0, 0));
 
 	for (int i = 0; i < curve->get_point_count(); i++) {
@@ -59,6 +62,8 @@ Rect2 Path2D::_edit_get_rect() const {
 }
 
 bool Path2D::_edit_use_rect() const {
+	if (get_script_instance() && get_script_instance()->has_method(SceneStringNames::get_singleton()->_edit_use_rect))
+		return get_script_instance()->call(SceneStringNames::get_singleton()->_edit_use_rect);
 	return curve.is_valid() && curve->get_point_count() != 0;
 }
 
@@ -68,23 +73,28 @@ bool Path2D::_edit_is_selected_on_click(const Point2 &p_point, double p_toleranc
 		return false;
 	}
 
-	for (int i = 0; i < curve->get_point_count(); i++) {
-		Vector2 s[2];
-		s[0] = curve->get_point_position(i);
+	bool result = false;
+	if (get_script_instance() && get_script_instance()->has_method(SceneStringNames::get_singleton()->_edit_is_selected_on_click))
+		result = get_script_instance()->call(SceneStringNames::get_singleton()->_edit_is_selected_on_click, p_point, p_tolerance);
+	if (!result) {
+		for (int i = 0; i < curve->get_point_count(); i++) {
+			Vector2 s[2];
+			s[0] = curve->get_point_position(i);
 
-		for (int j = 1; j <= 8; j++) {
-			real_t frac = j / 8.0;
-			s[1] = curve->interpolate(i, frac);
+			for (int j = 1; j <= 8; j++) {
+				real_t frac = j / 8.0;
+				s[1] = curve->interpolate(i, frac);
 
-			Vector2 p = Geometry::get_closest_point_to_segment_2d(p_point, s);
-			if (p.distance_to(p_point) <= p_tolerance)
-				return true;
+				Vector2 p = Geometry::get_closest_point_to_segment_2d(p_point, s);
+				if (p.distance_to(p_point) <= p_tolerance)
+					return true;
 
-			s[0] = s[1];
+				s[0] = s[1];
+			}
 		}
 	}
 
-	return false;
+	return result;
 }
 #endif
 
@@ -112,7 +122,7 @@ void Path2D::_notification(int p_what) {
 
 				real_t frac = j / 8.0;
 				Vector2 p = curve->interpolate(i, frac);
-				draw_line(prev_p, p, color, line_width, true);
+				draw_line(prev_p, p, color, line_width, false);
 				prev_p = p;
 			}
 		}

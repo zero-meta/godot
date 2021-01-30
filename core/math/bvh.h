@@ -90,6 +90,12 @@ public:
 
 	BVHHandle create(T *p_userdata, const AABB &p_aabb = AABB(), int p_subindex = 0, bool p_pairable = false, uint32_t p_pairable_type = 0, uint32_t p_pairable_mask = 1) {
 
+		// not sure if absolutely necessary to flush collisions here. It will cost performance to, instead
+		// of waiting for update, so only uncomment this if there are bugs.
+		if (USE_PAIRS) {
+			//_check_for_collisions();
+		}
+
 #ifdef TOOLS_ENABLED
 		if (!USE_PAIRS) {
 			if (p_pairable) {
@@ -101,7 +107,15 @@ public:
 		BVHHandle h = tree.item_add(p_userdata, p_aabb, p_subindex, p_pairable, p_pairable_type, p_pairable_mask);
 
 		if (USE_PAIRS) {
-			_add_changed_item(h, p_aabb);
+			// for safety initialize the expanded AABB
+			AABB &expanded_aabb = tree._pairs[h.id()].expanded_aabb;
+			expanded_aabb = p_aabb;
+			expanded_aabb.grow_by(tree._pairing_expansion);
+
+			// force a collision check no matter the AABB
+			_add_changed_item(h, p_aabb, false);
+
+			_check_for_collisions(true);
 		}
 
 		return h;
@@ -164,6 +178,8 @@ public:
 		}
 
 		tree.item_remove(p_handle);
+
+		_check_for_collisions(true);
 	}
 
 	// call e.g. once per frame (this does a trickle optimize)
@@ -175,11 +191,21 @@ public:
 #endif
 	}
 
+	// this can be called more frequently than per frame if necessary
+	void update_collisions() {
+		_check_for_collisions();
+	}
+
 	// prefer calling this directly as type safe
 	void set_pairable(const BVHHandle &p_handle, bool p_pairable, uint32_t p_pairable_type, uint32_t p_pairable_mask) {
 		tree.item_set_pairable(p_handle, p_pairable, p_pairable_type, p_pairable_mask);
 
 		if (USE_PAIRS) {
+
+			// not sure if absolutely necessary to flush collisions here. It will cost performance to, instead
+			// of waiting for update, so only uncomment this if there are bugs.
+			//_check_for_collisions();
+
 			// when the pairable state changes, we need to force a collision check because newly pairable
 			// items may be in collision, and unpairable items might move out of collision.
 			// We cannot depend on waiting for the next update, because that may come much later.
@@ -191,7 +217,10 @@ public:
 			_add_changed_item(p_handle, aabb, false);
 
 			// force an immediate collision check (probably just for this one item)
-			_check_for_collisions();
+			// but it must be a FULL collision check, also checking pairable state and masks.
+			// This is because AABB intersecting objects may have changed pairable state / mask
+			// such that they should no longer be paired. E.g. lights.
+			_check_for_collisions(true);
 		}
 	}
 
@@ -275,7 +304,12 @@ public:
 
 private:
 	// do this after moving etc.
-	void _check_for_collisions() {
+	void _check_for_collisions(bool p_full_check = false) {
+		if (!changed_items.size()) {
+			// noop
+			return;
+		}
+
 		AABB bb;
 
 		typename BVHTREE_CLASS::CullParams params;
@@ -297,7 +331,7 @@ private:
 
 			// find all the existing paired aabbs that are no longer
 			// paired, and send callbacks
-			_find_leavers(h, abb);
+			_find_leavers(h, abb, p_full_check);
 
 			uint32_t changed_item_ref_id = h.id();
 
@@ -369,13 +403,31 @@ private:
 	}
 
 	// returns true if unpair
-	bool _find_leavers_process_pair(typename BVHTREE_CLASS::ItemPairs &p_pairs_from, const BVH_ABB &p_abb_from, BVHHandle p_from, BVHHandle p_to) {
+	bool _find_leavers_process_pair(typename BVHTREE_CLASS::ItemPairs &p_pairs_from, const BVH_ABB &p_abb_from, BVHHandle p_from, BVHHandle p_to, bool p_full_check) {
 		BVH_ABB abb_to;
 		tree.item_get_ABB(p_to, abb_to);
 
 		// do they overlap?
-		if (p_abb_from.intersects(abb_to))
-			return false;
+		if (p_abb_from.intersects(abb_to)) {
+			// the full check for pairable / non pairable and mask changes is extra expense
+			// this need not be done in most cases (for speed) except in the case where set_pairable is called
+			// where the masks etc of the objects in question may have changed
+			if (!p_full_check) {
+				return false;
+			}
+			const typename BVHTREE_CLASS::ItemExtra &exa = _get_extra(p_from);
+			const typename BVHTREE_CLASS::ItemExtra &exb = _get_extra(p_to);
+
+			// one of the two must be pairable to still pair
+			// if neither are pairable, we always unpair
+			if (exa.pairable || exb.pairable) {
+				// the masks must still be compatible to pair
+				// i.e. if there is a hit between the two, then they should stay paired
+				if (tree._cull_pairing_mask_test_hit(exa.pairable_mask, exa.pairable_type, exb.pairable_mask, exb.pairable_type)) {
+					return false;
+				}
+			}
+		}
 
 		_unpair(p_from, p_to);
 		return true;
@@ -383,18 +435,15 @@ private:
 
 	// find all the existing paired aabbs that are no longer
 	// paired, and send callbacks
-	void _find_leavers(BVHHandle p_handle, const BVH_ABB &expanded_abb_from) {
+	void _find_leavers(BVHHandle p_handle, const BVH_ABB &expanded_abb_from, bool p_full_check) {
 		typename BVHTREE_CLASS::ItemPairs &p_from = tree._pairs[p_handle.id()];
-
-		// opportunity to de-extend pairs, before removing leavers
-		p_from.update();
 
 		BVH_ABB abb_from = expanded_abb_from;
 
 		// remove from pairing list for every partner
 		for (unsigned int n = 0; n < p_from.extended_pairs.size(); n++) {
 			BVHHandle h_to = p_from.extended_pairs[n].handle;
-			if (_find_leavers_process_pair(p_from, abb_from, p_handle, h_to)) {
+			if (_find_leavers_process_pair(p_from, abb_from, p_handle, h_to, p_full_check)) {
 				// we need to keep the counter n up to date if we deleted a pair
 				// as the number of items in p_from.extended_pairs will have decreased by 1
 				// and we don't want to miss an item
@@ -465,11 +514,12 @@ private:
 
 	void _add_changed_item(BVHHandle p_handle, const AABB &aabb, bool p_check_aabb = true) {
 
-		// only if uses pairing
-		// no .. non pairable items seem to be able to pair with pairable
+		// Note that non pairable items can pair with pairable,
+		// so all types must be added to the list
 
 		// aabb check with expanded aabb. This greatly decreases processing
 		// at the cost of slightly less accurate pairing checks
+		// Note this pairing AABB is separate from the AABB in the actual tree
 		AABB &expanded_aabb = tree._pairs[p_handle.id()].expanded_aabb;
 
 		// passing p_check_aabb false disables the optimization which prevents collision checks if
@@ -478,6 +528,13 @@ private:
 		if (p_check_aabb && expanded_aabb.encloses(aabb))
 			return;
 
+		// ALWAYS update the new expanded aabb, even if already changed once
+		// this tick, because it is vital that the AABB is kept up to date
+		expanded_aabb = aabb;
+		expanded_aabb.grow_by(tree._pairing_expansion);
+
+		// this code is to ensure that changed items only appear once on the updated list
+		// collision checking them multiple times is not needed, and repeats the same thing
 		uint32_t &last_updated_tick = tree._extra[p_handle.id()].last_updated_tick;
 
 		if (last_updated_tick == _tick)
@@ -486,12 +543,7 @@ private:
 		// mark as on list
 		last_updated_tick = _tick;
 
-		// opportunity to de-extend pairs (before collision detection, which will delete then recreate pairs)
-
-		// new expanded aabb
-		expanded_aabb = aabb;
-		expanded_aabb.grow_by(tree._pairing_expansion);
-
+		// add to the list
 		changed_items.push_back(p_handle);
 	}
 
@@ -505,9 +557,15 @@ private:
 		_remove_pairs_containing(p_handle);
 
 		// remove from changed items (not very efficient yet)
-		for (unsigned int n = 0; n < changed_items.size(); n++) {
+		for (int n = 0; n < (int)changed_items.size(); n++) {
 			if (changed_items[n] == p_handle) {
 				changed_items.remove_unordered(n);
+
+				// because we are using an unordered remove,
+				// the last changed item will now be at spot 'n',
+				// and we need to redo it, so we prevent moving on to
+				// the next n at the next for iteration.
+				n--;
 			}
 		}
 

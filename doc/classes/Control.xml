@@ -16,6 +16,7 @@
 	<tutorials>
 		<link title="GUI tutorial index">https://docs.godotengine.org/en/3.2/tutorials/gui/index.html</link>
 		<link title="Custom drawing in 2D">https://docs.godotengine.org/en/3.2/tutorials/2d/custom_drawing_in_2d.html</link>
+		<link title="Control node gallery">https://docs.godotengine.org/en/latest/tutorials/ui/control_node_gallery.html</link>
 		<link title="All GUI Demos">https://github.com/godotengine/godot-demo-projects/tree/master/gui</link>
 	</tutorials>
 	<methods>
@@ -692,7 +693,7 @@
 			<argument index="0" name="control" type="Control">
 			</argument>
 			<description>
-				Shows the given control at the mouse pointer. A good time to call this method is in [method get_drag_data]. The control must not be in the scene tree.
+				Shows the given control at the mouse pointer. A good time to call this method is in [method get_drag_data]. The control must not be in the scene tree. You should not free the control, and you should not keep a reference to the control beyond the duration of the drag. It will be deleted automatically after the drag has ended.
 				[codeblock]
 				export (Color, RGBA) var color = Color(1, 0, 0, 1)
 

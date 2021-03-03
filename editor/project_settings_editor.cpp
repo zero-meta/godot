@@ -59,7 +59,13 @@ static const char *_button_names[JOY_BUTTON_MAX] = {
 	"D-Pad Up",
 	"D-Pad Down",
 	"D-Pad Left",
-	"D-Pad Right"
+	"D-Pad Right",
+	"Xbox Share, PS5 Microphone, Nintendo Capture",
+	"Xbox Paddle 1",
+	"Xbox Paddle 2",
+	"Xbox Paddle 3",
+	"Xbox Paddle 4",
+	"PS4/5 Touchpad",
 };
 
 static const char *_axis_names[JOY_AXIS_MAX * 2] = {
@@ -809,6 +815,7 @@ void ProjectSettingsEditor::popup_project_settings() {
 	_update_translations();
 	autoload_settings->update_autoload();
 	plugin_settings->update_plugins();
+	import_defaults_editor->clear();
 	set_process_unhandled_input(true);
 }
 
@@ -1697,6 +1704,7 @@ TabContainer *ProjectSettingsEditor::get_tabs() {
 }
 
 void ProjectSettingsEditor::_editor_restart() {
+	ProjectSettings::get_singleton()->save();
 	EditorNode::get_singleton()->save_all_scenes();
 	EditorNode::get_singleton()->restart_editor();
 }
@@ -2130,6 +2138,11 @@ ProjectSettingsEditor::ProjectSettingsEditor(EditorData *p_data) {
 	plugin_settings = memnew(EditorPluginSettings);
 	plugin_settings->set_name(TTR("Plugins"));
 	tab_container->add_child(plugin_settings);
+
+	import_defaults_editor = memnew(ImportDefaultsEditor);
+	import_defaults_editor->set_name(TTR("Import Defaults"));
+	tab_container->add_child(import_defaults_editor);
+	import_defaults_editor->connect("project_settings_changed", this, "_settings_changed");
 
 	timer = memnew(Timer);
 	timer->set_wait_time(1.5);

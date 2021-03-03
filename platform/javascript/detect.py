@@ -59,7 +59,7 @@ def get_flags():
 def configure(env):
     try:
         env["initial_memory"] = int(env["initial_memory"])
-    except:
+    except Exception:
         print("Initial memory must be a valid integer")
         sys.exit(255)
 
@@ -227,7 +227,7 @@ def configure(env):
     env.Append(LINKFLAGS=["-s", "OFFSCREEN_FRAMEBUFFER=1"])
 
     # callMain for manual start.
-    env.Append(LINKFLAGS=["-s", "EXTRA_EXPORTED_RUNTIME_METHODS=['callMain']"])
+    env.Append(LINKFLAGS=["-s", "EXTRA_EXPORTED_RUNTIME_METHODS=['callMain','cwrap']"])
 
     # Add code that allow exiting runtime.
     env.Append(LINKFLAGS=["-s", "EXIT_RUNTIME=1"])

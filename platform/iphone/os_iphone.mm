@@ -45,8 +45,6 @@
 #include "core/project_settings.h"
 #include "drivers/unix/syslog_logger.h"
 
-#include "semaphore_iphone.h"
-
 #import "app_delegate.h"
 #import "device_metrics.h"
 #import "godot_view.h"
@@ -104,7 +102,6 @@ String OSIPhone::get_unique_id() const {
 void OSIPhone::initialize_core() {
 
 	OS_Unix::initialize_core();
-	SemaphoreIphone::make_default();
 
 	set_data_dir(data_dir);
 };
@@ -114,6 +111,8 @@ int OSIPhone::get_current_video_driver() const {
 }
 
 void OSIPhone::start() {
+	godot_ios_plugins_initialize();
+
 	Main::start();
 
 	if (joypad_iphone) {
@@ -195,8 +194,6 @@ MainLoop *OSIPhone::get_main_loop() const {
 };
 
 void OSIPhone::set_main_loop(MainLoop *p_main_loop) {
-	godot_ios_plugins_initialize();
-
 	main_loop = p_main_loop;
 
 	if (main_loop) {

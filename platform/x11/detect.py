@@ -350,7 +350,7 @@ def configure(env):
         env.ParseConfig("pkg-config zlib --cflags --libs")
 
     env.Prepend(CPPPATH=["#platform/x11"])
-    env.Append(CPPDEFINES=["X11_ENABLED", "UNIX_ENABLED", "OPENGL_ENABLED", "GLES_ENABLED"])
+    env.Append(CPPDEFINES=["X11_ENABLED", "UNIX_ENABLED", "OPENGL_ENABLED", "GLES_ENABLED", ("_FILE_OFFSET_BITS", 64)])
     env.Append(LIBS=["GL", "pthread"])
 
     if platform.system() == "Linux":
@@ -389,10 +389,7 @@ def configure(env):
 
     # Link those statically for portability
     if env["use_static_cpp"]:
-        # Workaround for GH-31743, Ubuntu 18.04 i386 crashes when it's used.
-        # That doesn't make any sense but it's likely a Ubuntu bug?
-        if is64 or env["bits"] == "64":
-            env.Append(LINKFLAGS=["-static-libgcc", "-static-libstdc++"])
+        env.Append(LINKFLAGS=["-static-libgcc", "-static-libstdc++"])
         if env["use_llvm"]:
             env["LINKCOM"] = env["LINKCOM"] + " -l:libatomic.a"
 

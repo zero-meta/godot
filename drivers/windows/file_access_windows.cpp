@@ -97,7 +97,7 @@ Error FileAccessWindows::_open(const String &p_path, int p_mode_flags) {
 			if (fname != String()) {
 				String base_file = path.get_file();
 				if (base_file != fname && base_file.findn(fname) == 0) {
-					WARN_PRINTS("Case mismatch opening requested file '" + base_file + "', stored as '" + fname + "' in the filesystem. This file will not open when exported to other case-sensitive platforms.");
+					WARN_PRINT("Case mismatch opening requested file '" + base_file + "', stored as '" + fname + "' in the filesystem. This file will not open when exported to other case-sensitive platforms.");
 				}
 			}
 			FindClose(f);
@@ -287,6 +287,7 @@ void FileAccessWindows::store_8(uint8_t p_dest) {
 
 void FileAccessWindows::store_buffer(const uint8_t *p_src, uint64_t p_length) {
 	ERR_FAIL_COND(!f);
+	ERR_FAIL_COND(!p_src && p_length > 0);
 	if (flags == READ_WRITE || flags == WRITE_READ) {
 		if (prev_op == READ) {
 			if (last_error != ERR_FILE_EOF) {

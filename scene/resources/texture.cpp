@@ -516,7 +516,7 @@ Error StreamTexture::_load_data(const String &p_path, int &tw, int &th, int &tw_
 		p_size_limit = 0;
 	}
 
-	if (df & FORMAT_BIT_LOSSLESS || df & FORMAT_BIT_LOSSY) {
+	if (df & FORMAT_BIT_PNG || df & FORMAT_BIT_WEBP) {
 		//look for a PNG or WEBP file inside
 
 		int sw = tw;
@@ -554,10 +554,11 @@ Error StreamTexture::_load_data(const String &p_path, int &tw, int &th, int &tw_
 			}
 
 			Ref<Image> img;
-			if (df & FORMAT_BIT_LOSSLESS) {
-				img = Image::lossless_unpacker(pv);
-			} else {
-				img = Image::lossy_unpacker(pv);
+			bool is_png = df & FORMAT_BIT_PNG;
+			if (is_png && Image::png_unpacker) {
+				img = Image::png_unpacker(pv);
+			} else if (!is_png && Image::webp_unpacker) {
+				img = Image::webp_unpacker(pv);
 			}
 
 			if (img.is_null() || img->empty()) {
@@ -1601,7 +1602,7 @@ void CurveTexture::_bind_methods() {
 
 	ClassDB::bind_method(D_METHOD("_update"), &CurveTexture::_update);
 
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "width", PROPERTY_HINT_RANGE, "32,4096"), "set_width", "get_width");
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "width", PROPERTY_HINT_RANGE, "1,4096"), "set_width", "get_width");
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "curve", PROPERTY_HINT_RESOURCE_TYPE, "Curve"), "set_curve", "get_curve");
 }
 
@@ -1715,7 +1716,7 @@ void GradientTexture::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("_update"), &GradientTexture::_update);
 
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "gradient", PROPERTY_HINT_RESOURCE_TYPE, "Gradient"), "set_gradient", "get_gradient");
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "width", PROPERTY_HINT_RANGE, "1,2048,1,or_greater"), "set_width", "get_width");
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "width", PROPERTY_HINT_RANGE, "1,4096"), "set_width", "get_width");
 }
 
 void GradientTexture::set_gradient(Ref<Gradient> p_gradient) {
@@ -2182,7 +2183,7 @@ Error TextureLayered::load(const String &p_path) {
 					f->get_buffer(w.ptr(), size);
 				}
 
-				Ref<Image> img = Image::lossless_unpacker(pv);
+				Ref<Image> img = Image::png_unpacker(pv);
 
 				if (img.is_null() || img->empty() || format != img->get_format()) {
 					f->close();

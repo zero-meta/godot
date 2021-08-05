@@ -682,7 +682,7 @@ bool GridMapEditor::forward_spatial_input_event(Camera *p_camera, const Ref<Inpu
 			}
 
 			if (mb->get_button_index() == BUTTON_LEFT && input_action == INPUT_SELECT) {
-				undo_redo->create_action("GridMap Selection");
+				undo_redo->create_action(TTR("GridMap Selection"));
 				undo_redo->add_do_method(this, "_set_selection", selection.active, selection.begin, selection.end);
 				undo_redo->add_undo_method(this, "_set_selection", last_selection.active, last_selection.begin, last_selection.end);
 				undo_redo->commit_action();
@@ -1097,6 +1097,16 @@ void GridMapEditor::_notification(int p_what) {
 		case NOTIFICATION_THEME_CHANGED: {
 			options->set_icon(get_icon("GridMap", "EditorIcons"));
 			search_box->set_right_icon(get_icon("Search", "EditorIcons"));
+		} break;
+
+		case NOTIFICATION_WM_FOCUS_OUT: {
+			if (input_action == INPUT_PAINT) {
+				// Simulate mouse released event to stop drawing when editor focus exists.
+				Ref<InputEventMouseButton> release;
+				release.instance();
+				release->set_button_index(BUTTON_LEFT);
+				forward_spatial_input_event(nullptr, release);
+			}
 		} break;
 	}
 }

@@ -79,6 +79,7 @@
 #include "editor/editor_log.h"
 #include "editor/editor_plugin.h"
 #include "editor/editor_properties.h"
+#include "editor/editor_resource_picker.h"
 #include "editor/editor_resource_preview.h"
 #include "editor/editor_run_native.h"
 #include "editor/editor_run_script.h"
@@ -90,7 +91,6 @@
 #include "editor/fileserver/editor_file_server.h"
 #include "editor/filesystem_dock.h"
 #include "editor/import/editor_import_collada.h"
-#include "editor/import/editor_scene_importer_gltf.h"
 #include "editor/import/resource_importer_bitmask.h"
 #include "editor/import/resource_importer_csv_translation.h"
 #include "editor/import/resource_importer_image.h"
@@ -142,6 +142,7 @@
 #include "editor/plugins/physical_bone_plugin.h"
 #include "editor/plugins/polygon_2d_editor_plugin.h"
 #include "editor/plugins/resource_preloader_editor_plugin.h"
+#include "editor/plugins/room_manager_editor_plugin.h"
 #include "editor/plugins/root_motion_editor_plugin.h"
 #include "editor/plugins/script_editor_plugin.h"
 #include "editor/plugins/script_text_editor.h"
@@ -160,6 +161,7 @@
 #include "editor/plugins/tile_map_editor_plugin.h"
 #include "editor/plugins/tile_set_editor_plugin.h"
 #include "editor/plugins/version_control_editor_plugin.h"
+#include "editor/plugins/viewport_preview_editor_plugin.h"
 #include "editor/plugins/visual_shader_editor_plugin.h"
 #include "editor/progress_dialog.h"
 #include "editor/project_export.h"
@@ -515,7 +517,7 @@ void EditorNode::_notification(int p_what) {
 		} break;
 
 		case MainLoop::NOTIFICATION_WM_FOCUS_IN: {
-			// Restore the original FPS cap after focusing back on the editor
+			// Restore the original FPS cap after focusing back on the editor.
 			OS::get_singleton()->set_low_processor_usage_mode_sleep_usec(int(EDITOR_GET("interface/editor/low_processor_mode_sleep_usec")));
 
 			EditorFileSystem::get_singleton()->scan_changes();
@@ -523,7 +525,12 @@ void EditorNode::_notification(int p_what) {
 		} break;
 
 		case MainLoop::NOTIFICATION_WM_FOCUS_OUT: {
-			// Set a low FPS cap to decrease CPU/GPU usage while the editor is unfocused
+			// Save on focus loss before applying the FPS limit to avoid slowing down the saving process.
+			if (EDITOR_GET("interface/editor/save_on_focus_loss")) {
+				_menu_option_confirm(FILE_SAVE_SCENE, false);
+			}
+
+			// Set a low FPS cap to decrease CPU/GPU usage while the editor is unfocused.
 			OS::get_singleton()->set_low_processor_usage_mode_sleep_usec(int(EDITOR_GET("interface/editor/unfocused_low_processor_mode_sleep_usec")));
 		} break;
 
@@ -604,6 +611,7 @@ void EditorNode::_notification(int p_what) {
 			p->set_item_icon(p->get_item_index(HELP_DOCS), gui_base->get_icon("Instance", "EditorIcons"));
 			p->set_item_icon(p->get_item_index(HELP_QA), gui_base->get_icon("Instance", "EditorIcons"));
 			p->set_item_icon(p->get_item_index(HELP_REPORT_A_BUG), gui_base->get_icon("Instance", "EditorIcons"));
+			p->set_item_icon(p->get_item_index(HELP_SUGGEST_A_FEATURE), gui_base->get_icon("Instance", "EditorIcons"));
 			p->set_item_icon(p->get_item_index(HELP_SEND_DOCS_FEEDBACK), gui_base->get_icon("Instance", "EditorIcons"));
 			p->set_item_icon(p->get_item_index(HELP_COMMUNITY), gui_base->get_icon("Instance", "EditorIcons"));
 			p->set_item_icon(p->get_item_index(HELP_ABOUT), gui_base->get_icon("Godot", "EditorIcons"));
@@ -1511,15 +1519,6 @@ void EditorNode::_save_scene(String p_file, int idx) {
 		return;
 	}
 
-	// force creation of node path cache
-	// (hacky but needed for the tree to update properly)
-	Node *dummy_scene = sdata->instance(PackedScene::GEN_EDIT_STATE_INSTANCE);
-	if (!dummy_scene) {
-		show_accept(TTR("Couldn't save scene. Likely dependencies (instances or inheritance) couldn't be satisfied."), TTR("OK"));
-		return;
-	}
-	memdelete(dummy_scene);
-
 	int flg = 0;
 	if (EditorSettings::get_singleton()->get("filesystem/on_save/compress_binary_resources")) {
 		flg |= ResourceSaver::FLAG_COMPRESS;
@@ -2073,9 +2072,14 @@ void EditorNode::_edit_current() {
 	if (!inspector_only) {
 		EditorPlugin *main_plugin = editor_data.get_editor(current_obj);
 
-		for (int i = 0; i < editor_table.size(); i++) {
-			if (editor_table[i] == main_plugin && !main_editor_buttons[i]->is_visible()) {
-				main_plugin = nullptr; //if button is not visible, then no plugin active
+		int plugin_index = 0;
+		for (; plugin_index < editor_table.size(); plugin_index++) {
+			if (editor_table[plugin_index] == main_plugin) {
+				if (!main_editor_buttons[plugin_index]->is_visible()) {
+					main_plugin = nullptr; //if button is not visible, then no plugin active
+				}
+
+				break;
 			}
 		}
 
@@ -2089,26 +2093,8 @@ void EditorNode::_edit_current() {
 
 			else if (main_plugin != editor_plugin_screen && (!ScriptEditor::get_singleton() || !ScriptEditor::get_singleton()->is_visible_in_tree() || ScriptEditor::get_singleton()->can_take_away_focus())) {
 				// update screen main_plugin
-
-				if (!changing_scene) {
-					if (editor_plugin_screen) {
-						editor_plugin_screen->make_visible(false);
-					}
-					editor_plugin_screen = main_plugin;
-					editor_plugin_screen->edit(current_obj);
-
-					editor_plugin_screen->make_visible(true);
-
-					int plugin_count = editor_data.get_editor_plugin_count();
-					for (int i = 0; i < plugin_count; i++) {
-						editor_data.get_editor_plugin(i)->notify_main_screen_changed(editor_plugin_screen->get_name());
-					}
-
-					for (int i = 0; i < editor_table.size(); i++) {
-						main_editor_buttons[i]->set_pressed(editor_table[i] == main_plugin);
-					}
-				}
-
+				_editor_select(plugin_index);
+				main_plugin->edit(current_obj);
 			} else {
 				editor_plugin_screen->edit(current_obj);
 			}
@@ -2235,6 +2221,10 @@ void EditorNode::_run(bool p_current, const String &p_custom) {
 	stop_button->set_disabled(false);
 
 	_playing_edited = p_current;
+}
+
+void EditorNode::_android_build_source_selected(const String &p_file) {
+	export_template_manager->install_android_template_from_file(p_file);
 }
 
 void EditorNode::_menu_option_confirm(int p_option, bool p_confirmed) {
@@ -2645,6 +2635,9 @@ void EditorNode::_menu_option_confirm(int p_option, bool p_confirmed) {
 		case FILE_EXPLORE_ANDROID_BUILD_TEMPLATES: {
 			OS::get_singleton()->shell_open("file://" + ProjectSettings::get_singleton()->get_resource_path().plus_file("android"));
 		} break;
+		case RUN_RELOAD_CURRENT_PROJECT: {
+			restart_editor();
+		} break;
 		case FILE_QUIT:
 		case RUN_PROJECT_MANAGER: {
 			if (!p_confirmed) {
@@ -2671,7 +2664,7 @@ void EditorNode::_menu_option_confirm(int p_option, bool p_confirmed) {
 						}
 
 						save_confirmation->get_ok()->set_text(TTR("Save & Quit"));
-						save_confirmation->set_text((p_option == FILE_QUIT ? TTR("Save changes to the following scene(s) before quitting?") : TTR("Save changes the following scene(s) before opening Project Manager?")) + unsaved_scenes);
+						save_confirmation->set_text((p_option == FILE_QUIT ? TTR("Save changes to the following scene(s) before quitting?") : TTR("Save changes to the following scene(s) before opening Project Manager?")) + unsaved_scenes);
 						save_confirmation->popup_centered_minsize();
 					}
 				}
@@ -2764,6 +2757,10 @@ void EditorNode::_menu_option_confirm(int p_option, bool p_confirmed) {
 			export_template_manager->popup_manager();
 
 		} break;
+		case SETTINGS_INSTALL_ANDROID_BUILD_TEMPLATE: {
+			custom_build_manage_templates->hide();
+			file_android_build_source->popup_centered_ratio();
+		} break;
 		case SETTINGS_MANAGE_FEATURE_PROFILES: {
 			feature_profile_manager->popup_centered_clamped(Size2(900, 800) * EDSCALE, 0.8);
 		} break;
@@ -2807,6 +2804,9 @@ void EditorNode::_menu_option_confirm(int p_option, bool p_confirmed) {
 		} break;
 		case HELP_REPORT_A_BUG: {
 			OS::get_singleton()->shell_open("https://github.com/godotengine/godot/issues");
+		} break;
+		case HELP_SUGGEST_A_FEATURE: {
+			OS::get_singleton()->shell_open("https://github.com/godotengine/godot-proposals#readme");
 		} break;
 		case HELP_SEND_DOCS_FEEDBACK: {
 			OS::get_singleton()->shell_open("https://github.com/godotengine/godot-docs/issues");
@@ -2871,7 +2871,7 @@ void EditorNode::_tool_menu_option(int p_idx) {
 				handler->call(callback, (const Variant **)&ud, 1, ce);
 				if (ce.error != Variant::CallError::CALL_OK) {
 					String err = Variant::get_call_error_text(handler, callback, (const Variant **)&ud, 1, ce);
-					ERR_PRINTS("Error calling function from tool menu: " + err);
+					ERR_PRINT("Error calling function from tool menu: " + err);
 				}
 			} // else it's a submenu so don't do anything.
 		} break;
@@ -3800,6 +3800,8 @@ void EditorNode::register_editor_types() {
 	ClassDB::register_class<ScriptCreateDialog>();
 	ClassDB::register_class<EditorFeatureProfile>();
 	ClassDB::register_class<EditorSpinSlider>();
+	ClassDB::register_class<EditorResourcePicker>();
+	ClassDB::register_class<EditorScriptPicker>();
 	ClassDB::register_virtual_class<FileSystemDock>();
 
 	// FIXME: Is this stuff obsolete, or should it be ported to new APIs?
@@ -3809,6 +3811,8 @@ void EditorNode::register_editor_types() {
 
 void EditorNode::unregister_editor_types() {
 	_init_callbacks.clear();
+
+	EditorResourcePicker::clear_caches();
 }
 
 void EditorNode::stop_child_process() {
@@ -3895,6 +3899,21 @@ Ref<ImageTexture> EditorNode::_load_custom_class_icon(const String &p_path) cons
 
 String EditorNode::_to_absolute_plugin_path(const String &p_plugin_name) {
 	return "res://addons/" + p_plugin_name + "/plugin.cfg";
+}
+
+void EditorNode::_pick_main_scene_custom_action(const String &p_custom_action_name) {
+	if (p_custom_action_name == "select_current") {
+		Node *scene = editor_data.get_edited_scene_root();
+
+		if (!scene) {
+			show_accept(TTR("There is no defined scene to run."), TTR("OK"));
+			return;
+		}
+
+		pick_main_scene->hide();
+		current_option = SETTINGS_PICK_MAIN_SCENE;
+		_dialog_action(scene->get_filename());
+	}
 }
 
 Ref<Texture> EditorNode::get_object_icon(const Object *p_object, const String &p_fallback) const {
@@ -4102,7 +4121,7 @@ void EditorNode::show_warning(const String &p_text, const String &p_title) {
 		warning->set_title(p_title);
 		warning->popup_centered_minsize();
 	} else {
-		WARN_PRINTS(p_title + " " + p_text);
+		WARN_PRINT(p_title + " " + p_text);
 	}
 }
 
@@ -4613,6 +4632,14 @@ bool EditorNode::ensure_main_scene(bool p_from_native) {
 		current_option = -1;
 		pick_main_scene->set_text(TTR("No main scene has ever been defined, select one?\nYou can change it later in \"Project Settings\" under the 'application' category."));
 		pick_main_scene->popup_centered_minsize();
+
+		if (editor_data.get_edited_scene_root()) {
+			select_current_scene_button->set_disabled(false);
+			select_current_scene_button->grab_focus();
+		} else {
+			select_current_scene_button->set_disabled(true);
+		}
+
 		return false;
 	}
 
@@ -5496,6 +5523,7 @@ void EditorNode::_bind_methods() {
 	ClassDB::bind_method("_unhandled_input", &EditorNode::_unhandled_input);
 	ClassDB::bind_method("_update_file_menu_opened", &EditorNode::_update_file_menu_opened);
 	ClassDB::bind_method("_update_file_menu_closed", &EditorNode::_update_file_menu_closed);
+	ClassDB::bind_method("_android_build_source_selected", &EditorNode::_android_build_source_selected);
 
 	ClassDB::bind_method(D_METHOD("push_item", "object", "property", "inspector_only"), &EditorNode::push_item, DEFVAL(""), DEFVAL(false));
 
@@ -5545,6 +5573,7 @@ void EditorNode::_bind_methods() {
 	ClassDB::bind_method("_update_scene_tabs", &EditorNode::_update_scene_tabs);
 	ClassDB::bind_method("_discard_changes", &EditorNode::_discard_changes);
 	ClassDB::bind_method("_update_recent_scenes", &EditorNode::_update_recent_scenes);
+	ClassDB::bind_method("_pick_main_scene_custom_action", &EditorNode::_pick_main_scene_custom_action);
 
 	ClassDB::bind_method("_clear_undo_history", &EditorNode::_clear_undo_history);
 	ClassDB::bind_method("_dropped_files", &EditorNode::_dropped_files);
@@ -5699,34 +5728,10 @@ EditorNode::EditorNode() {
 		int display_scale = EditorSettings::get_singleton()->get("interface/editor/display_scale");
 
 		switch (display_scale) {
-			case 0: {
+			case 0:
 				// Try applying a suitable display scale automatically.
-				// The code below is adapted in `editor/editor_settings.cpp` and `editor/project_manager.cpp`.
-				// Make sure to update those when modifying the code below.
-#ifdef OSX_ENABLED
-				editor_set_scale(OS::get_singleton()->get_screen_max_scale());
-#else
-				const int screen = OS::get_singleton()->get_current_screen();
-				float scale;
-				if (OS::get_singleton()->get_screen_dpi(screen) >= 192 && OS::get_singleton()->get_screen_size(screen).y >= 1400) {
-					// hiDPI display.
-					scale = 2.0;
-				} else if (OS::get_singleton()->get_screen_size(screen).y >= 1700) {
-					// Likely a hiDPI display, but we aren't certain due to the returned DPI.
-					// Use an intermediate scale to handle this situation.
-					scale = 1.5;
-				} else if (OS::get_singleton()->get_screen_size(screen).y <= 800) {
-					// Small loDPI display. Use a smaller display scale so that editor elements fit more easily.
-					// Icons won't look great, but this is better than having editor elements overflow from its window.
-					scale = 0.75;
-				} else {
-					scale = 1.0;
-				}
-
-				editor_set_scale(scale);
-#endif
-			} break;
-
+				editor_set_scale(EditorSettings::get_singleton()->get_auto_display_scale());
+				break;
 			case 1:
 				editor_set_scale(0.75);
 				break;
@@ -5809,10 +5814,6 @@ EditorNode::EditorNode() {
 			import_obj2.instance();
 			import_scene->add_importer(import_obj2);
 
-			Ref<EditorSceneImporterGLTF> import_gltf;
-			import_gltf.instance();
-			import_scene->add_importer(import_gltf);
-
 			Ref<EditorSceneImporterESCN> import_escn;
 			import_escn.instance();
 			import_scene->add_importer(import_escn);
@@ -5869,6 +5870,7 @@ EditorNode::EditorNode() {
 	EDITOR_DEF("run/output/always_open_output_on_play", true);
 	EDITOR_DEF("run/output/always_close_output_on_stop", true);
 	EDITOR_DEF("run/auto_save/save_before_running", true);
+	EDITOR_DEF("interface/editor/save_on_focus_loss", false);
 	EDITOR_DEF_RST("interface/editor/save_each_scene_on_quit", true);
 	EDITOR_DEF("interface/editor/quit_confirmation", true);
 	EDITOR_DEF("interface/editor/show_update_spinner", false);
@@ -6271,6 +6273,7 @@ EditorNode::EditorNode() {
 	tool_menu->add_item(TTR("Orphan Resource Explorer..."), TOOLS_ORPHAN_RESOURCES);
 
 	p->add_separator();
+	p->add_shortcut(ED_SHORTCUT("editor/reload_current_project", TTR("Reload Current Project")), RUN_RELOAD_CURRENT_PROJECT);
 #ifdef OSX_ENABLED
 	p->add_shortcut(ED_SHORTCUT("editor/quit_to_project_list", TTR("Quit to Project List"), KEY_MASK_SHIFT + KEY_MASK_ALT + KEY_Q), RUN_PROJECT_MANAGER, true);
 #else
@@ -6393,6 +6396,7 @@ EditorNode::EditorNode() {
 	p->add_icon_shortcut(gui_base->get_icon("Instance", "EditorIcons"), ED_SHORTCUT("editor/online_docs", TTR("Online Documentation")), HELP_DOCS);
 	p->add_icon_shortcut(gui_base->get_icon("Instance", "EditorIcons"), ED_SHORTCUT("editor/q&a", TTR("Questions & Answers")), HELP_QA);
 	p->add_icon_shortcut(gui_base->get_icon("Instance", "EditorIcons"), ED_SHORTCUT("editor/report_a_bug", TTR("Report a Bug")), HELP_REPORT_A_BUG);
+	p->add_icon_shortcut(gui_base->get_icon("Instance", "EditorIcons"), ED_SHORTCUT("editor/suggest_a_feature", TTR("Suggest a Feature")), HELP_SUGGEST_A_FEATURE);
 	p->add_icon_shortcut(gui_base->get_icon("Instance", "EditorIcons"), ED_SHORTCUT("editor/send_docs_feedback", TTR("Send Docs Feedback")), HELP_SEND_DOCS_FEEDBACK);
 	p->add_icon_shortcut(gui_base->get_icon("Instance", "EditorIcons"), ED_SHORTCUT("editor/community", TTR("Community")), HELP_COMMUNITY);
 	p->add_separator();
@@ -6618,7 +6622,7 @@ EditorNode::EditorNode() {
 	version_btn->set_text(VERSION_FULL_CONFIG);
 	String hash = String(VERSION_HASH);
 	if (hash.length() != 0) {
-		hash = "." + hash.left(9);
+		hash = " " + vformat("[%s]", hash.left(9));
 	}
 	// Set the text to copy in metadata as it slightly differs from the button's text.
 	version_btn->set_meta(META_TEXT_TO_COPY, "v" VERSION_FULL_BUILD + hash);
@@ -6667,8 +6671,17 @@ EditorNode::EditorNode() {
 	custom_build_manage_templates = memnew(ConfirmationDialog);
 	custom_build_manage_templates->set_text(TTR("Android build template is missing, please install relevant templates."));
 	custom_build_manage_templates->get_ok()->set_text(TTR("Manage Templates"));
+	custom_build_manage_templates->add_button(TTR("Install from file"))->connect("pressed", this, "_menu_option", varray(SETTINGS_INSTALL_ANDROID_BUILD_TEMPLATE));
 	custom_build_manage_templates->connect("confirmed", this, "_menu_option", varray(SETTINGS_MANAGE_EXPORT_TEMPLATES));
 	gui_base->add_child(custom_build_manage_templates);
+
+	file_android_build_source = memnew(EditorFileDialog);
+	file_android_build_source->set_title(TTR("Select android sources file"));
+	file_android_build_source->set_access(EditorFileDialog::ACCESS_FILESYSTEM);
+	file_android_build_source->set_mode(EditorFileDialog::MODE_OPEN_FILE);
+	file_android_build_source->add_filter("*.zip");
+	file_android_build_source->connect("file_selected", this, "_android_build_source_selected");
+	gui_base->add_child(file_android_build_source);
 
 	install_android_build_template = memnew(ConfirmationDialog);
 	install_android_build_template->set_text(TTR("This will set up your project for custom Android builds by installing the source template to \"res://android/build\".\nYou can then apply modifications and build your own custom APK on export (adding modules, changing the AndroidManifest.xml, etc.).\nNote that in order to make custom builds instead of using pre-built APKs, the \"Use Custom Build\" option should be enabled in the Android export preset."));
@@ -6807,6 +6820,9 @@ EditorNode::EditorNode() {
 	add_editor_plugin(memnew(Particles2DEditorPlugin(this)));
 	add_editor_plugin(memnew(GIProbeEditorPlugin(this)));
 	add_editor_plugin(memnew(BakedLightmapEditorPlugin(this)));
+	add_editor_plugin(memnew(RoomManagerEditorPlugin(this)));
+	add_editor_plugin(memnew(RoomEditorPlugin(this)));
+	add_editor_plugin(memnew(PortalEditorPlugin(this)));
 	add_editor_plugin(memnew(Path2DEditorPlugin(this)));
 	add_editor_plugin(memnew(PathEditorPlugin(this)));
 	add_editor_plugin(memnew(Line2DEditorPlugin(this)));
@@ -6824,6 +6840,7 @@ EditorNode::EditorNode() {
 	add_editor_plugin(memnew(PhysicalBonePlugin(this)));
 	add_editor_plugin(memnew(MeshEditorPlugin(this)));
 	add_editor_plugin(memnew(MaterialEditorPlugin(this)));
+	add_editor_plugin(memnew(ViewportPreviewEditorPlugin(this)));
 
 	for (int i = 0; i < EditorPlugins::get_plugin_count(); i++) {
 		add_editor_plugin(EditorPlugins::create(i, this));
@@ -6936,6 +6953,8 @@ EditorNode::EditorNode() {
 	gui_base->add_child(pick_main_scene);
 	pick_main_scene->get_ok()->set_text(TTR("Select"));
 	pick_main_scene->connect("confirmed", this, "_menu_option", varray(SETTINGS_PICK_MAIN_SCENE));
+	select_current_scene_button = pick_main_scene->add_button(TTR("Select Current"), true, "select_current");
+	pick_main_scene->connect("custom_action", this, "_pick_main_scene_custom_action");
 
 	for (int i = 0; i < _init_callbacks.size(); i++) {
 		_init_callbacks[i]();

@@ -33,13 +33,14 @@
 void BakedLightmapEditorPlugin::_bake_select_file(const String &p_file) {
 	if (lightmap) {
 		BakedLightmap::BakeError err;
+		uint32_t time_started = OS::get_singleton()->get_ticks_msec();
 		if (get_tree()->get_edited_scene_root() && get_tree()->get_edited_scene_root() == lightmap) {
 			err = lightmap->bake(lightmap, p_file);
 		} else {
 			err = lightmap->bake(lightmap->get_parent(), p_file);
 		}
 
-		bake_func_end();
+		bake_func_end(time_started);
 
 		switch (err) {
 			case BakedLightmap::BAKE_ERROR_NO_SAVE_PATH: {
@@ -58,7 +59,7 @@ void BakedLightmapEditorPlugin::_bake_select_file(const String &p_file) {
 
 			} break;
 			case BakedLightmap::BAKE_ERROR_NO_MESHES:
-				EditorNode::get_singleton()->show_warning(TTR("No meshes to bake. Make sure they contain an UV2 channel and that the 'Bake Light' flag is on."));
+				EditorNode::get_singleton()->show_warning(TTR("No meshes to bake. Make sure they contain an UV2 channel and that the 'Use In Baked Light' and 'Generate Lightmap' flags are on."));
 				break;
 			case BakedLightmap::BAKE_ERROR_CANT_CREATE_IMAGE:
 				EditorNode::get_singleton()->show_warning(TTR("Failed creating lightmap images, make sure path is writable."));
@@ -122,7 +123,7 @@ bool BakedLightmapEditorPlugin::bake_func_substep(float p_progress, const String
 	return tmp_subprogress->step(p_description, p_progress * 1000, p_force_refresh);
 }
 
-void BakedLightmapEditorPlugin::bake_func_end() {
+void BakedLightmapEditorPlugin::bake_func_end(uint32_t p_time_started) {
 	if (tmp_progress != nullptr) {
 		memdelete(tmp_progress);
 		tmp_progress = nullptr;
@@ -131,6 +132,19 @@ void BakedLightmapEditorPlugin::bake_func_end() {
 	if (tmp_subprogress != nullptr) {
 		memdelete(tmp_subprogress);
 		tmp_subprogress = nullptr;
+	}
+
+	const int time_taken = (OS::get_singleton()->get_ticks_msec() - p_time_started) * 0.001;
+	if (time_taken >= 1) {
+		// Only print a message and request attention if baking lightmaps took at least 1 second.
+		// Otherwise, attempting to bake in an erroneous situation (e.g. no meshes to bake)
+		// would print the "done baking lightmaps" message and request attention for no good reason.
+		print_line(vformat("Done baking lightmaps in %02d:%02d:%02d.", time_taken / 3600, (time_taken % 3600) / 60, time_taken % 60));
+
+		// Request attention in case the user was doing something else.
+		// Baking lightmaps is likely the editor task that can take the most time,
+		// so only request the attention for baking lightmaps.
+		OS::get_singleton()->request_attention();
 	}
 }
 

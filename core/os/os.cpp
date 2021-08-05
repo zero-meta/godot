@@ -176,7 +176,7 @@ int OS::get_process_id() const {
 };
 
 void OS::vibrate_handheld(int p_duration_ms) {
-	WARN_PRINTS("vibrate_handheld() only works with Android and iOS");
+	WARN_PRINT("vibrate_handheld() only works with Android and iOS");
 }
 
 bool OS::is_stdout_verbose() const {
@@ -332,6 +332,11 @@ String OS::get_bundle_resource_dir() const {
 // OS specific path for user://
 String OS::get_user_data_dir() const {
 	return ".";
+};
+
+// Android OS path to app's external data storage
+String OS::get_external_data_dir() const {
+	return get_user_data_dir();
 };
 
 // Absolute path to res://
@@ -582,6 +587,14 @@ bool OS::is_vsync_via_compositor_enabled() const {
 	return _vsync_via_compositor;
 }
 
+void OS::set_delta_smoothing(bool p_enabled) {
+	_delta_smoothing_enabled = p_enabled;
+}
+
+bool OS::is_delta_smoothing_enabled() const {
+	return _delta_smoothing_enabled;
+}
+
 OS::PowerState OS::get_power_state() {
 	return POWERSTATE_UNKNOWN;
 }
@@ -793,6 +806,7 @@ OS::OS() {
 	_no_window = false;
 	_exit_code = 0;
 	_orientation = SCREEN_LANDSCAPE;
+	_delta_smoothing_enabled = false;
 
 	_render_thread_mode = RENDER_THREAD_SAFE;
 

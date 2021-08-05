@@ -1029,7 +1029,7 @@ public:
 	void sort_projects();
 	int get_project_count() const;
 	void select_project(int p_index);
-	void erase_selected_projects();
+	void erase_selected_projects(bool p_delete_project_contents);
 	Vector<Item> get_selected_projects() const;
 	const Set<String> &get_selected_project_keys() const;
 	void ensure_project_visible(int p_index);
@@ -1442,16 +1442,7 @@ Vector<ProjectList::Item> ProjectList::get_selected_projects() const {
 
 void ProjectList::ensure_project_visible(int p_index) {
 	const Item &item = _projects[p_index];
-
-	int item_top = item.control->get_position().y;
-	int item_bottom = item.control->get_position().y + item.control->get_size().y;
-
-	if (item_top < get_v_scroll()) {
-		set_v_scroll(item_top);
-
-	} else if (item_bottom > get_v_scroll() + get_size().y) {
-		set_v_scroll(item_bottom - get_size().y);
-	}
+	ensure_control_visible(item.control);
 }
 
 int ProjectList::get_single_selected_index() const {
@@ -1642,7 +1633,7 @@ void ProjectList::toggle_select(int p_index) {
 	item.control->update();
 }
 
-void ProjectList::erase_selected_projects() {
+void ProjectList::erase_selected_projects(bool p_delete_project_contents) {
 	if (_selected_project_keys.size() == 0) {
 		return;
 	}
@@ -1652,6 +1643,10 @@ void ProjectList::erase_selected_projects() {
 		if (_selected_project_keys.has(item.project_key) && item.control->is_visible()) {
 			EditorSettings::get_singleton()->erase("projects/" + item.project_key);
 			EditorSettings::get_singleton()->erase("favorite_projects/" + item.project_key);
+
+			if (p_delete_project_contents) {
+				OS::get_singleton()->move_to_trash(item.path);
+			}
 
 			memdelete(item.control);
 			_projects.remove(i);
@@ -1856,9 +1851,6 @@ void ProjectManager::_unhandled_input(const Ref<InputEvent> &p_ev) {
 		switch (k->get_scancode()) {
 			case KEY_ENTER: {
 				_open_selected_projects_ask();
-			} break;
-			case KEY_DELETE: {
-				_erase_project();
 			} break;
 			case KEY_HOME: {
 				if (_project_list->get_project_count() > 0) {
@@ -2191,7 +2183,7 @@ void ProjectManager::_rename_project() {
 }
 
 void ProjectManager::_erase_project_confirm() {
-	_project_list->erase_selected_projects();
+	_project_list->erase_selected_projects(delete_project_contents->is_pressed());
 	_update_project_buttons();
 }
 
@@ -2209,12 +2201,13 @@ void ProjectManager::_erase_project() {
 
 	String confirm_message;
 	if (selected_list.size() >= 2) {
-		confirm_message = vformat(TTR("Remove %d projects from the list?\nThe project folders' contents won't be modified."), selected_list.size());
+		confirm_message = vformat(TTR("Remove %d projects from the list?"), selected_list.size());
 	} else {
-		confirm_message = TTR("Remove this project from the list?\nThe project folder's contents won't be modified.");
+		confirm_message = TTR("Remove this project from the list?");
 	}
 
-	erase_ask->set_text(confirm_message);
+	erase_ask_label->set_text(confirm_message);
+	delete_project_contents->set_pressed(false);
 	erase_ask->popup_centered_minsize();
 }
 
@@ -2318,6 +2311,20 @@ void ProjectManager::_on_filter_option_changed() {
 	_project_list->sort_projects();
 }
 
+void ProjectManager::_on_tab_changed(int p_tab) {
+	if (p_tab == 0) { // Projects
+		// Automatically grab focus when the user moves from the Templates tab
+		// back to the Projects tab.
+		LineEdit *search_box = project_filter->get_search_box();
+		if (search_box) {
+			search_box->grab_focus();
+		}
+	}
+
+	// The Templates tab's search field is focused on display in the asset
+	// library editor plugin code.
+}
+
 void ProjectManager::_bind_methods() {
 	ClassDB::bind_method("_open_selected_projects_ask", &ProjectManager::_open_selected_projects_ask);
 	ClassDB::bind_method("_open_selected_projects", &ProjectManager::_open_selected_projects);
@@ -2339,6 +2346,7 @@ void ProjectManager::_bind_methods() {
 	ClassDB::bind_method("_restart_confirm", &ProjectManager::_restart_confirm);
 	ClassDB::bind_method("_on_order_option_changed", &ProjectManager::_on_order_option_changed);
 	ClassDB::bind_method("_on_filter_option_changed", &ProjectManager::_on_filter_option_changed);
+	ClassDB::bind_method("_on_tab_changed", &ProjectManager::_on_tab_changed);
 	ClassDB::bind_method("_on_projects_updated", &ProjectManager::_on_projects_updated);
 	ClassDB::bind_method("_on_project_created", &ProjectManager::_on_project_created);
 	ClassDB::bind_method("_unhandled_input", &ProjectManager::_unhandled_input);
@@ -2372,34 +2380,10 @@ ProjectManager::ProjectManager() {
 		float custom_display_scale = EditorSettings::get_singleton()->get("interface/editor/custom_display_scale");
 
 		switch (display_scale) {
-			case 0: {
+			case 0:
 				// Try applying a suitable display scale automatically.
-				// The code below is adapted in `editor/editor_settings.cpp` and `editor/editor_node.cpp`.
-				// Make sure to update those when modifying the code below.
-#ifdef OSX_ENABLED
-				editor_set_scale(OS::get_singleton()->get_screen_max_scale());
-#else
-				const int screen = OS::get_singleton()->get_current_screen();
-				float scale;
-				if (OS::get_singleton()->get_screen_dpi(screen) >= 192 && OS::get_singleton()->get_screen_size(screen).y >= 1400) {
-					// hiDPI display.
-					scale = 2.0;
-				} else if (OS::get_singleton()->get_screen_size(screen).y >= 1700) {
-					// Likely a hiDPI display, but we aren't certain due to the returned DPI.
-					// Use an intermediate scale to handle this situation.
-					scale = 1.5;
-				} else if (OS::get_singleton()->get_screen_size(screen).y <= 800) {
-					// Small loDPI display. Use a smaller display scale so that editor elements fit more easily.
-					// Icons won't look great, but this is better than having editor elements overflow from its window.
-					scale = 0.75;
-				} else {
-					scale = 1.0;
-				}
-
-				editor_set_scale(scale);
-#endif
-			} break;
-
+				editor_set_scale(EditorSettings::get_singleton()->get_auto_display_scale());
+				break;
 			case 1:
 				editor_set_scale(0.75);
 				break;
@@ -2461,11 +2445,12 @@ ProjectManager::ProjectManager() {
 	center_box->add_child(tabs);
 	tabs->set_anchors_and_margins_preset(Control::PRESET_WIDE);
 	tabs->set_tab_align(TabContainer::ALIGN_LEFT);
+	tabs->connect("tab_changed", this, "_on_tab_changed");
 
 	HBoxContainer *tree_hb = memnew(HBoxContainer);
 	projects_hb = tree_hb;
 
-	projects_hb->set_name(TTR("Projects"));
+	projects_hb->set_name(TTR("Local Projects"));
 
 	tabs->add_child(tree_hb);
 
@@ -2524,12 +2509,14 @@ ProjectManager::ProjectManager() {
 
 	Button *open = memnew(Button);
 	open->set_text(TTR("Edit"));
+	open->set_shortcut(ED_SHORTCUT("project_manager/edit_project", TTR("Edit Project"), KEY_MASK_CMD | KEY_E));
 	tree_vb->add_child(open);
 	open->connect("pressed", this, "_open_selected_projects_ask");
 	open_btn = open;
 
 	Button *run = memnew(Button);
 	run->set_text(TTR("Run"));
+	run->set_shortcut(ED_SHORTCUT("project_manager/run_project", TTR("Run Project"), KEY_MASK_CMD | KEY_R));
 	tree_vb->add_child(run);
 	run->connect("pressed", this, "_run_project");
 	run_btn = run;
@@ -2538,6 +2525,7 @@ ProjectManager::ProjectManager() {
 
 	Button *scan = memnew(Button);
 	scan->set_text(TTR("Scan"));
+	scan->set_shortcut(ED_SHORTCUT("project_manager/scan_projects", TTR("Scan Projects"), KEY_MASK_CMD | KEY_S));
 	tree_vb->add_child(scan);
 	scan->connect("pressed", this, "_scan_projects");
 
@@ -2553,22 +2541,26 @@ ProjectManager::ProjectManager() {
 
 	Button *create = memnew(Button);
 	create->set_text(TTR("New Project"));
+	create->set_shortcut(ED_SHORTCUT("project_manager/new_project", TTR("New Project"), KEY_MASK_CMD | KEY_N));
 	tree_vb->add_child(create);
 	create->connect("pressed", this, "_new_project");
 
 	Button *import = memnew(Button);
 	import->set_text(TTR("Import"));
+	import->set_shortcut(ED_SHORTCUT("project_manager/import_project", TTR("Import Project"), KEY_MASK_CMD | KEY_I));
 	tree_vb->add_child(import);
 	import->connect("pressed", this, "_import_project");
 
 	Button *rename = memnew(Button);
 	rename->set_text(TTR("Rename"));
+	rename->set_shortcut(ED_SHORTCUT("project_manager/rename_project", TTR("Rename Project"), KEY_F2));
 	tree_vb->add_child(rename);
 	rename->connect("pressed", this, "_rename_project");
 	rename_btn = rename;
 
 	Button *erase = memnew(Button);
 	erase->set_text(TTR("Remove"));
+	erase->set_shortcut(ED_SHORTCUT("project_manager/remove_project", TTR("Remove Project"), KEY_DELETE));
 	tree_vb->add_child(erase);
 	erase->connect("pressed", this, "_erase_project");
 	erase_btn = erase;
@@ -2588,7 +2580,7 @@ ProjectManager::ProjectManager() {
 
 	if (StreamPeerSSL::is_available()) {
 		asset_library = memnew(EditorAssetLibrary(true));
-		asset_library->set_name(TTR("Templates"));
+		asset_library->set_name(TTR("Asset Library Projects"));
 		tabs->add_child(asset_library);
 		asset_library->connect("install_asset", this, "_install_project");
 	} else {
@@ -2609,7 +2601,7 @@ ProjectManager::ProjectManager() {
 	version_btn = memnew(LinkButton);
 	String hash = String(VERSION_HASH);
 	if (hash.length() != 0) {
-		hash = "." + hash.left(9);
+		hash = " " + vformat("[%s]", hash.left(9));
 	}
 	version_btn->set_text("v" VERSION_FULL_BUILD + hash);
 	// Fade the version label to be less prominent, but still readable.
@@ -2673,6 +2665,16 @@ ProjectManager::ProjectManager() {
 	erase_ask->get_ok()->set_text(TTR("Remove"));
 	erase_ask->get_ok()->connect("pressed", this, "_erase_project_confirm");
 	gui_base->add_child(erase_ask);
+
+	VBoxContainer *erase_ask_vb = memnew(VBoxContainer);
+	erase_ask->add_child(erase_ask_vb);
+
+	erase_ask_label = memnew(Label);
+	erase_ask_vb->add_child(erase_ask_label);
+
+	delete_project_contents = memnew(CheckBox);
+	delete_project_contents->set_text(TTR("Also delete project contents (no undo!)"));
+	erase_ask_vb->add_child(delete_project_contents);
 
 	multi_open_ask = memnew(ConfirmationDialog);
 	multi_open_ask->get_ok()->set_text(TTR("Edit"));
@@ -2805,14 +2807,17 @@ void ProjectListFilter::add_filter_option() {
 
 void ProjectListFilter::add_search_box() {
 	search_box = memnew(LineEdit);
-	search_box->set_placeholder(TTR("Search"));
-	search_box->set_tooltip(
-			TTR("The search box filters projects by name and last path component.\nTo filter projects by name and full path, the query must contain at least one `/` character."));
+	search_box->set_placeholder(TTR("Filter projects"));
+	search_box->set_tooltip(TTR("This field filters projects by name and last path component.\nTo filter projects by name and full path, the query must contain at least one `/` character."));
 	search_box->connect("text_changed", this, "_search_text_changed");
 	search_box->set_h_size_flags(SIZE_EXPAND_FILL);
 	add_child(search_box);
 
 	has_search_box = true;
+}
+
+LineEdit *ProjectListFilter::get_search_box() const {
+	return search_box;
 }
 
 void ProjectListFilter::set_filter_size(int h_size) {

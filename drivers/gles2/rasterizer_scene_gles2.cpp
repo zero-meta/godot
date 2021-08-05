@@ -125,7 +125,7 @@ void RasterizerSceneGLES2::shadow_atlas_set_size(RID p_atlas, int p_size) {
 		glBindFramebuffer(GL_FRAMEBUFFER, shadow_atlas->fbo);
 
 		if (shadow_atlas->size > storage->config.max_viewport_dimensions[0] || shadow_atlas->size > storage->config.max_viewport_dimensions[1]) {
-			WARN_PRINTS("Cannot set shadow atlas size larger than maximum hardware supported size of (" + itos(storage->config.max_viewport_dimensions[0]) + ", " + itos(storage->config.max_viewport_dimensions[1]) + "). Setting size to maximum.");
+			WARN_PRINT("Cannot set shadow atlas size larger than maximum hardware supported size of (" + itos(storage->config.max_viewport_dimensions[0]) + ", " + itos(storage->config.max_viewport_dimensions[1]) + "). Setting size to maximum.");
 			shadow_atlas->size = MIN(shadow_atlas->size, storage->config.max_viewport_dimensions[0]);
 			shadow_atlas->size = MIN(shadow_atlas->size, storage->config.max_viewport_dimensions[1]);
 		}
@@ -2417,6 +2417,8 @@ void RasterizerSceneGLES2::_render_render_list(RenderList::Element **p_elements,
 	RasterizerStorageGLES2::Skeleton *prev_skeleton = nullptr;
 	RasterizerStorageGLES2::GeometryOwner *prev_owner = nullptr;
 
+	bool prev_octahedral_compression = false;
+
 	Transform view_transform_inverse = p_view_transform.inverse();
 	CameraMatrix projection_inverse = p_projection.inverse();
 
@@ -2666,6 +2668,12 @@ void RasterizerSceneGLES2::_render_render_list(RenderList::Element **p_elements,
 			storage->info.render.surface_switch_count++;
 		}
 
+		bool octahedral_compression = ((RasterizerStorageGLES2::Surface *)e->geometry)->format & VisualServer::ArrayFormat::ARRAY_FLAG_USE_OCTAHEDRAL_COMPRESSION;
+		if (octahedral_compression != prev_octahedral_compression) {
+			state.scene_shader.set_conditional(SceneShaderGLES2::ENABLE_OCTAHEDRAL_COMPRESSION, octahedral_compression);
+			rebind = true;
+		}
+
 		bool shader_rebind = false;
 		if (rebind || material != prev_material) {
 			storage->info.render.material_switch_count++;
@@ -2783,6 +2791,7 @@ void RasterizerSceneGLES2::_render_render_list(RenderList::Element **p_elements,
 		prev_material = material;
 		prev_skeleton = skeleton;
 		prev_instancing = instancing;
+		prev_octahedral_compression = octahedral_compression;
 		prev_light = light;
 		prev_refprobe_1 = refprobe_1;
 		prev_refprobe_2 = refprobe_2;
@@ -2791,6 +2800,7 @@ void RasterizerSceneGLES2::_render_render_list(RenderList::Element **p_elements,
 	}
 
 	_setup_light_type(nullptr, nullptr); //clear light stuff
+	state.scene_shader.set_conditional(SceneShaderGLES2::ENABLE_OCTAHEDRAL_COMPRESSION, false);
 	state.scene_shader.set_conditional(SceneShaderGLES2::USE_SKELETON, false);
 	state.scene_shader.set_conditional(SceneShaderGLES2::SHADELESS, false);
 	state.scene_shader.set_conditional(SceneShaderGLES2::BASE_PASS, false);
@@ -2989,23 +2999,36 @@ void RasterizerSceneGLES2::_post_process(Environment *env, const CameraMatrix &p
 
 	// DOF Blur
 
-	if (env && env->dof_blur_far_enabled) {
+	if (env && (env->dof_blur_near_enabled || env->dof_blur_far_enabled)) {
 		int vp_h = storage->frame.current_rt->height;
 		int vp_w = storage->frame.current_rt->width;
 
+		// If both near and far are used, we use the far quality and amount settings.
+		// We should just have one setting like in Godot 4 but that would be a serious breaking change.
+		// This is defendable.
+		float dof_blur_amount = env->dof_blur_far_enabled ? env->dof_blur_far_amount : env->dof_blur_near_amount;
+		VS::EnvironmentDOFBlurQuality quality = env->dof_blur_far_enabled ? env->dof_blur_far_quality : env->dof_blur_near_quality;
+
 		state.effect_blur_shader.set_conditional(EffectBlurShaderGLES2::USE_ORTHOGONAL_PROJECTION, p_cam_projection.is_orthogonal());
-		state.effect_blur_shader.set_conditional(EffectBlurShaderGLES2::DOF_FAR_BLUR, true);
-		state.effect_blur_shader.set_conditional(EffectBlurShaderGLES2::DOF_QUALITY_LOW, env->dof_blur_far_quality == VS::ENV_DOF_BLUR_QUALITY_LOW);
-		state.effect_blur_shader.set_conditional(EffectBlurShaderGLES2::DOF_QUALITY_MEDIUM, env->dof_blur_far_quality == VS::ENV_DOF_BLUR_QUALITY_MEDIUM);
-		state.effect_blur_shader.set_conditional(EffectBlurShaderGLES2::DOF_QUALITY_HIGH, env->dof_blur_far_quality == VS::ENV_DOF_BLUR_QUALITY_HIGH);
+		state.effect_blur_shader.set_conditional(EffectBlurShaderGLES2::DOF_FAR_BLUR, env->dof_blur_far_enabled);
+		state.effect_blur_shader.set_conditional(EffectBlurShaderGLES2::DOF_NEAR_BLUR, env->dof_blur_near_enabled);
+		state.effect_blur_shader.set_conditional(EffectBlurShaderGLES2::DOF_QUALITY_LOW, quality == VS::ENV_DOF_BLUR_QUALITY_LOW);
+		state.effect_blur_shader.set_conditional(EffectBlurShaderGLES2::DOF_QUALITY_MEDIUM, quality == VS::ENV_DOF_BLUR_QUALITY_MEDIUM);
+		state.effect_blur_shader.set_conditional(EffectBlurShaderGLES2::DOF_QUALITY_HIGH, quality == VS::ENV_DOF_BLUR_QUALITY_HIGH);
 
 		state.effect_blur_shader.bind();
 		int qsteps[3] = { 4, 10, 20 };
 
-		float radius = (env->dof_blur_far_amount * env->dof_blur_far_amount) / qsteps[env->dof_blur_far_quality];
+		float radius = (dof_blur_amount * dof_blur_amount) / qsteps[quality];
 
-		state.effect_blur_shader.set_uniform(EffectBlurShaderGLES2::DOF_BEGIN, env->dof_blur_far_distance);
-		state.effect_blur_shader.set_uniform(EffectBlurShaderGLES2::DOF_END, env->dof_blur_far_distance + env->dof_blur_far_transition);
+		if (env->dof_blur_far_enabled) {
+			state.effect_blur_shader.set_uniform(EffectBlurShaderGLES2::DOF_FAR_BEGIN, env->dof_blur_far_distance);
+			state.effect_blur_shader.set_uniform(EffectBlurShaderGLES2::DOF_FAR_END, env->dof_blur_far_distance + env->dof_blur_far_transition);
+		}
+		if (env->dof_blur_near_enabled) {
+			state.effect_blur_shader.set_uniform(EffectBlurShaderGLES2::DOF_NEAR_BEGIN, env->dof_blur_near_distance);
+			state.effect_blur_shader.set_uniform(EffectBlurShaderGLES2::DOF_NEAR_END, env->dof_blur_near_distance - env->dof_blur_near_transition);
+		}
 		state.effect_blur_shader.set_uniform(EffectBlurShaderGLES2::DOF_DIR, Vector2(1, 0));
 		state.effect_blur_shader.set_uniform(EffectBlurShaderGLES2::DOF_RADIUS, radius);
 		state.effect_blur_shader.set_uniform(EffectBlurShaderGLES2::PIXEL_SIZE, Vector2(1.0 / vp_w, 1.0 / vp_h));
@@ -3039,97 +3062,12 @@ void RasterizerSceneGLES2::_post_process(Environment *env, const CameraMatrix &p
 		storage->_copy_screen();
 
 		state.effect_blur_shader.set_conditional(EffectBlurShaderGLES2::DOF_FAR_BLUR, false);
-		state.effect_blur_shader.set_conditional(EffectBlurShaderGLES2::DOF_QUALITY_LOW, false);
-		state.effect_blur_shader.set_conditional(EffectBlurShaderGLES2::DOF_QUALITY_MEDIUM, false);
-		state.effect_blur_shader.set_conditional(EffectBlurShaderGLES2::DOF_QUALITY_HIGH, false);
-		state.effect_blur_shader.set_conditional(EffectBlurShaderGLES2::USE_ORTHOGONAL_PROJECTION, false);
-	}
-
-	if (env && env->dof_blur_near_enabled) {
-		//convert texture to RGBA format if not already
-		if (!storage->frame.current_rt->used_dof_blur_near) {
-			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_2D, storage->frame.current_rt->color);
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, storage->frame.current_rt->width, storage->frame.current_rt->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
-		}
-
-		int vp_h = storage->frame.current_rt->height;
-		int vp_w = storage->frame.current_rt->width;
-
-		state.effect_blur_shader.set_conditional(EffectBlurShaderGLES2::USE_ORTHOGONAL_PROJECTION, p_cam_projection.is_orthogonal());
-		state.effect_blur_shader.set_conditional(EffectBlurShaderGLES2::DOF_NEAR_BLUR, true);
-		state.effect_blur_shader.set_conditional(EffectBlurShaderGLES2::DOF_NEAR_FIRST_TAP, true);
-
-		state.effect_blur_shader.set_conditional(EffectBlurShaderGLES2::DOF_QUALITY_LOW, env->dof_blur_near_quality == VS::ENV_DOF_BLUR_QUALITY_LOW);
-		state.effect_blur_shader.set_conditional(EffectBlurShaderGLES2::DOF_QUALITY_MEDIUM, env->dof_blur_near_quality == VS::ENV_DOF_BLUR_QUALITY_MEDIUM);
-		state.effect_blur_shader.set_conditional(EffectBlurShaderGLES2::DOF_QUALITY_HIGH, env->dof_blur_near_quality == VS::ENV_DOF_BLUR_QUALITY_HIGH);
-
-		state.effect_blur_shader.bind();
-		int qsteps[3] = { 4, 10, 20 };
-
-		float radius = (env->dof_blur_near_amount * env->dof_blur_near_amount) / qsteps[env->dof_blur_near_quality];
-
-		state.effect_blur_shader.set_uniform(EffectBlurShaderGLES2::DOF_BEGIN, env->dof_blur_near_distance);
-		state.effect_blur_shader.set_uniform(EffectBlurShaderGLES2::DOF_END, env->dof_blur_near_distance - env->dof_blur_near_transition);
-		state.effect_blur_shader.set_uniform(EffectBlurShaderGLES2::DOF_DIR, Vector2(1, 0));
-		state.effect_blur_shader.set_uniform(EffectBlurShaderGLES2::DOF_RADIUS, radius);
-		state.effect_blur_shader.set_uniform(EffectBlurShaderGLES2::PIXEL_SIZE, Vector2(1.0 / vp_w, 1.0 / vp_h));
-		state.effect_blur_shader.set_uniform(EffectBlurShaderGLES2::CAMERA_Z_NEAR, p_cam_projection.get_z_near());
-		state.effect_blur_shader.set_uniform(EffectBlurShaderGLES2::CAMERA_Z_FAR, p_cam_projection.get_z_far());
-
-		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, storage->frame.current_rt->depth);
-
-		glActiveTexture(GL_TEXTURE0);
-		if (storage->frame.current_rt->mip_maps[0].color) {
-			glBindTexture(GL_TEXTURE_2D, storage->frame.current_rt->mip_maps[0].color);
-		} else {
-			glBindTexture(GL_TEXTURE_2D, storage->frame.current_rt->mip_maps[0].sizes[0].color);
-		}
-
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-		glBindFramebuffer(GL_FRAMEBUFFER, storage->frame.current_rt->fbo); //copy to front first
-
-		storage->_copy_screen();
-
-		state.effect_blur_shader.set_conditional(EffectBlurShaderGLES2::DOF_NEAR_FIRST_TAP, false);
-		state.effect_blur_shader.bind();
-
-		state.effect_blur_shader.set_uniform(EffectBlurShaderGLES2::DOF_BEGIN, env->dof_blur_near_distance);
-		state.effect_blur_shader.set_uniform(EffectBlurShaderGLES2::DOF_END, env->dof_blur_near_distance - env->dof_blur_near_transition);
-		state.effect_blur_shader.set_uniform(EffectBlurShaderGLES2::DOF_DIR, Vector2(0, 1));
-		state.effect_blur_shader.set_uniform(EffectBlurShaderGLES2::DOF_RADIUS, radius);
-		state.effect_blur_shader.set_uniform(EffectBlurShaderGLES2::PIXEL_SIZE, Vector2(1.0 / vp_w, 1.0 / vp_h));
-		state.effect_blur_shader.set_uniform(EffectBlurShaderGLES2::CAMERA_Z_NEAR, p_cam_projection.get_z_near());
-		state.effect_blur_shader.set_uniform(EffectBlurShaderGLES2::CAMERA_Z_FAR, p_cam_projection.get_z_far());
-
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, storage->frame.current_rt->color);
-
-		glBindFramebuffer(GL_FRAMEBUFFER, storage->frame.current_rt->mip_maps[0].sizes[0].fbo); // copy to base level
-
-		glEnable(GL_BLEND);
-		glBlendEquation(GL_FUNC_ADD);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-		storage->_copy_screen();
-
-		glDisable(GL_BLEND);
-
 		state.effect_blur_shader.set_conditional(EffectBlurShaderGLES2::DOF_NEAR_BLUR, false);
-		state.effect_blur_shader.set_conditional(EffectBlurShaderGLES2::DOF_NEAR_FIRST_TAP, false);
 		state.effect_blur_shader.set_conditional(EffectBlurShaderGLES2::DOF_QUALITY_LOW, false);
 		state.effect_blur_shader.set_conditional(EffectBlurShaderGLES2::DOF_QUALITY_MEDIUM, false);
 		state.effect_blur_shader.set_conditional(EffectBlurShaderGLES2::DOF_QUALITY_HIGH, false);
 		state.effect_blur_shader.set_conditional(EffectBlurShaderGLES2::USE_ORTHOGONAL_PROJECTION, false);
-		storage->frame.current_rt->used_dof_blur_near = true;
-	}
 
-	if (env && (env->dof_blur_near_enabled || env->dof_blur_far_enabled)) {
 		//these needed to disable filtering, reenamble
 		glActiveTexture(GL_TEXTURE0);
 		if (storage->frame.current_rt->mip_maps[0].color) {
@@ -4129,7 +4067,8 @@ void RasterizerSceneGLES2::initialize() {
 		//default material and shader
 
 		default_overdraw_shader = storage->shader_create();
-		storage->shader_set_code(default_overdraw_shader, "shader_type spatial;\nrender_mode blend_add,unshaded;\n void fragment() { ALBEDO=vec3(0.4,0.8,0.8); ALPHA=0.2; }");
+		// Use relatively low opacity so that more "layers" of overlapping objects can be distinguished.
+		storage->shader_set_code(default_overdraw_shader, "shader_type spatial;\nrender_mode blend_add,unshaded;\n void fragment() { ALBEDO=vec3(0.4,0.8,0.8); ALPHA=0.1; }");
 		default_overdraw_material = storage->material_create();
 		storage->material_set_shader(default_overdraw_material, default_overdraw_shader);
 	}
@@ -4196,7 +4135,7 @@ void RasterizerSceneGLES2::initialize() {
 		directional_shadow.size = next_power_of_2(GLOBAL_GET("rendering/quality/directional_shadow/size"));
 
 		if (directional_shadow.size > storage->config.max_viewport_dimensions[0] || directional_shadow.size > storage->config.max_viewport_dimensions[1]) {
-			WARN_PRINTS("Cannot set directional shadow size larger than maximum hardware supported size of (" + itos(storage->config.max_viewport_dimensions[0]) + ", " + itos(storage->config.max_viewport_dimensions[1]) + "). Setting size to maximum.");
+			WARN_PRINT("Cannot set directional shadow size larger than maximum hardware supported size of (" + itos(storage->config.max_viewport_dimensions[0]) + ", " + itos(storage->config.max_viewport_dimensions[1]) + "). Setting size to maximum.");
 			directional_shadow.size = MIN(directional_shadow.size, storage->config.max_viewport_dimensions[0]);
 			directional_shadow.size = MIN(directional_shadow.size, storage->config.max_viewport_dimensions[1]);
 		}

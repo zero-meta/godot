@@ -196,20 +196,23 @@ Transform2D Camera2D::get_camera_transform() {
 	}
 
 	Rect2 screen_rect(-screen_offset + ret_camera_pos, screen_size * zoom);
-	if (screen_rect.position.x < limit[MARGIN_LEFT]) {
-		screen_rect.position.x = limit[MARGIN_LEFT];
-	}
 
-	if (screen_rect.position.x + screen_rect.size.x > limit[MARGIN_RIGHT]) {
-		screen_rect.position.x = limit[MARGIN_RIGHT] - screen_rect.size.x;
-	}
+	if (!limit_smoothing_enabled) {
+		if (screen_rect.position.x < limit[MARGIN_LEFT]) {
+			screen_rect.position.x = limit[MARGIN_LEFT];
+		}
 
-	if (screen_rect.position.y + screen_rect.size.y > limit[MARGIN_BOTTOM]) {
-		screen_rect.position.y = limit[MARGIN_BOTTOM] - screen_rect.size.y;
-	}
+		if (screen_rect.position.x + screen_rect.size.x > limit[MARGIN_RIGHT]) {
+			screen_rect.position.x = limit[MARGIN_RIGHT] - screen_rect.size.x;
+		}
 
-	if (screen_rect.position.y < limit[MARGIN_TOP]) {
-		screen_rect.position.y = limit[MARGIN_TOP];
+		if (screen_rect.position.y + screen_rect.size.y > limit[MARGIN_BOTTOM]) {
+			screen_rect.position.y = limit[MARGIN_BOTTOM] - screen_rect.size.y;
+		}
+
+		if (screen_rect.position.y < limit[MARGIN_TOP]) {
+			screen_rect.position.y = limit[MARGIN_TOP];
+		}
 	}
 
 	if (offset != Vector2()) {
@@ -245,9 +248,13 @@ void Camera2D::_notification(int p_what) {
 			canvas = get_canvas();
 
 			_setup_viewport();
-
 			_update_process_mode();
-			_update_scroll();
+
+			// if a camera enters the tree that is set to current,
+			// it should take over as the current camera, and mark
+			// all other cameras as non current
+			_set_current(current);
+
 			first = true;
 
 		} break;
@@ -272,11 +279,10 @@ void Camera2D::_notification(int p_what) {
 			}
 
 			if (screen_drawing_enabled) {
-				Color area_axis_color(0.5, 0.42, 0.87, 0.63);
+				Color area_axis_color(1, 0.4, 1, 0.63);
 				float area_axis_width = 1;
 				if (is_current()) {
 					area_axis_width = 3;
-					area_axis_color.a = 0.83;
 				}
 
 				Transform2D inv_camera_transform = get_camera_transform().affine_inverse();
@@ -297,10 +303,9 @@ void Camera2D::_notification(int p_what) {
 			}
 
 			if (limit_drawing_enabled) {
-				Color limit_drawing_color(1, 1, 0, 0.63);
+				Color limit_drawing_color(1, 1, 0.25, 0.63);
 				float limit_drawing_width = 1;
 				if (is_current()) {
-					limit_drawing_color.a = 0.83;
 					limit_drawing_width = 3;
 				}
 
@@ -319,11 +324,10 @@ void Camera2D::_notification(int p_what) {
 			}
 
 			if (margin_drawing_enabled) {
-				Color margin_drawing_color(0, 1, 1, 0.63);
+				Color margin_drawing_color(0.25, 1, 1, 0.63);
 				float margin_drawing_width = 1;
 				if (is_current()) {
 					margin_drawing_width = 3;
-					margin_drawing_color.a = 0.83;
 				}
 
 				Transform2D inv_camera_transform = get_camera_transform().affine_inverse();
@@ -468,8 +472,8 @@ void Camera2D::force_update_scroll() {
 }
 
 void Camera2D::reset_smoothing() {
-	smoothed_camera_pos = camera_pos;
 	_update_scroll();
+	smoothed_camera_pos = camera_pos;
 }
 
 void Camera2D::align() {

@@ -29,6 +29,7 @@
 /*************************************************************************/
 
 #include "navigation_mesh_generator.h"
+
 #include "core/math/convex_hull.h"
 #include "core/os/thread.h"
 #include "editor/editor_settings.h"
@@ -45,10 +46,10 @@
 #include "scene/resources/shape.h"
 #include "scene/resources/sphere_shape.h"
 
+#include "modules/modules_enabled.gen.h"
 #ifdef MODULE_CSG_ENABLED
 #include "modules/csg/csg_shape.h"
 #endif
-
 #ifdef MODULE_GRIDMAP_ENABLED
 #include "modules/gridmap/grid_map.h"
 #endif
@@ -431,7 +432,7 @@ EditorNavigationMeshGenerator::~EditorNavigationMeshGenerator() {
 
 void EditorNavigationMeshGenerator::bake(Ref<NavigationMesh> p_nav_mesh, Node *p_node) {
 	if (!Engine::get_singleton()->is_editor_hint()) {
-		ERR_PRINTS("Invoking EditorNavigationMeshGenerator::bake(...) in-game is not supported in Godot 3.2 or below. Aborting bake...");
+		ERR_PRINT("Invoking EditorNavigationMeshGenerator::bake(...) in-game is not supported in Godot 3.2 or below. Aborting bake...");
 		return;
 	}
 

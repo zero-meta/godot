@@ -87,6 +87,7 @@ uint32_t CSGShape::get_collision_mask() const {
 }
 
 void CSGShape::set_collision_mask_bit(int p_bit, bool p_value) {
+	ERR_FAIL_INDEX_MSG(p_bit, 32, "Collision mask bit must be between 0 and 31 inclusive.");
 	uint32_t mask = get_collision_mask();
 	if (p_value) {
 		mask |= 1 << p_bit;
@@ -97,20 +98,23 @@ void CSGShape::set_collision_mask_bit(int p_bit, bool p_value) {
 }
 
 bool CSGShape::get_collision_mask_bit(int p_bit) const {
+	ERR_FAIL_INDEX_V_MSG(p_bit, 32, false, "Collision mask bit must be between 0 and 31 inclusive.");
 	return get_collision_mask() & (1 << p_bit);
 }
 
 void CSGShape::set_collision_layer_bit(int p_bit, bool p_value) {
-	uint32_t mask = get_collision_layer();
+	ERR_FAIL_INDEX_MSG(p_bit, 32, "Collision layer bit must be between 0 and 31 inclusive.");
+	uint32_t layer = get_collision_layer();
 	if (p_value) {
-		mask |= 1 << p_bit;
+		layer |= 1 << p_bit;
 	} else {
-		mask &= ~(1 << p_bit);
+		layer &= ~(1 << p_bit);
 	}
-	set_collision_layer(mask);
+	set_collision_layer(layer);
 }
 
 bool CSGShape::get_collision_layer_bit(int p_bit) const {
+	ERR_FAIL_INDEX_V_MSG(p_bit, 32, false, "Collision layer bit must be between 0 and 31 inclusive.");
 	return get_collision_layer() & (1 << p_bit);
 }
 
@@ -572,6 +576,17 @@ void CSGShape::_validate_property(PropertyInfo &property) const {
 	}
 }
 
+// Calling _make_dirty() normally calls a deferred _update_shape.
+// This is problematic if we need to read the geometry immediately.
+// This function provides a means to make sure the shape is updated
+// immediately. It should only be used where necessary to prevent
+// updating CSGs multiple times per frame. Use _make_dirty in preference.
+void CSGShape::force_update_shape() {
+	if (dirty) {
+		_update_shape();
+	}
+}
+
 Array CSGShape::get_meshes() const {
 	if (root_mesh.is_valid()) {
 		Array arr;
@@ -934,47 +949,51 @@ CSGBrush *CSGSphere::_build_brush() {
 		PoolVector<Ref<Material>>::Write materialsw = materials.write();
 		PoolVector<bool>::Write invertw = invert.write();
 
+		// We want to follow an order that's convenient for UVs.
+		// For latitude step we start at the top and move down like in an image.
+		const double latitude_step = -Math_PI / rings;
+		const double longitude_step = Math_TAU / radial_segments;
 		int face = 0;
+		for (int i = 0; i < rings; i++) {
+			double latitude0 = latitude_step * i + Math_TAU / 4;
+			double cos0 = Math::cos(latitude0);
+			double sin0 = Math::sin(latitude0);
+			double v0 = double(i) / rings;
 
-		for (int i = 1; i <= rings; i++) {
-			double lat0 = Math_PI * (-0.5 + (double)(i - 1) / rings);
-			double z0 = Math::sin(lat0);
-			double zr0 = Math::cos(lat0);
-			double u0 = double(i - 1) / rings;
+			double latitude1 = latitude_step * (i + 1) + Math_TAU / 4;
+			double cos1 = Math::cos(latitude1);
+			double sin1 = Math::sin(latitude1);
+			double v1 = double(i + 1) / rings;
 
-			double lat1 = Math_PI * (-0.5 + (double)i / rings);
-			double z1 = Math::sin(lat1);
-			double zr1 = Math::cos(lat1);
-			double u1 = double(i) / rings;
+			for (int j = 0; j < radial_segments; j++) {
+				double longitude0 = longitude_step * j;
+				// We give sin to X and cos to Z on purpose.
+				// This allows UVs to be CCW on +X so it maps to images well.
+				double x0 = Math::sin(longitude0);
+				double z0 = Math::cos(longitude0);
+				double u0 = double(j) / radial_segments;
 
-			for (int j = radial_segments; j >= 1; j--) {
-				double lng0 = 2 * Math_PI * (double)(j - 1) / radial_segments;
-				double x0 = Math::cos(lng0);
-				double y0 = Math::sin(lng0);
-				double v0 = double(i - 1) / radial_segments;
-
-				double lng1 = 2 * Math_PI * (double)(j) / radial_segments;
-				double x1 = Math::cos(lng1);
-				double y1 = Math::sin(lng1);
-				double v1 = double(i) / radial_segments;
+				double longitude1 = longitude_step * (j + 1);
+				double x1 = Math::sin(longitude1);
+				double z1 = Math::cos(longitude1);
+				double u1 = double(j + 1) / radial_segments;
 
 				Vector3 v[4] = {
-					Vector3(x1 * zr0, z0, y1 * zr0) * radius,
-					Vector3(x1 * zr1, z1, y1 * zr1) * radius,
-					Vector3(x0 * zr1, z1, y0 * zr1) * radius,
-					Vector3(x0 * zr0, z0, y0 * zr0) * radius
+					Vector3(x0 * cos0, sin0, z0 * cos0) * radius,
+					Vector3(x1 * cos0, sin0, z1 * cos0) * radius,
+					Vector3(x1 * cos1, sin1, z1 * cos1) * radius,
+					Vector3(x0 * cos1, sin1, z0 * cos1) * radius,
 				};
 
 				Vector2 u[4] = {
-					Vector2(v1, u0),
-					Vector2(v1, u1),
-					Vector2(v0, u1),
-					Vector2(v0, u0),
-
+					Vector2(u0, v0),
+					Vector2(u1, v0),
+					Vector2(u1, v1),
+					Vector2(u0, v1),
 				};
 
-				if (i < rings) {
-					//face 1
+				// Draw the first face, but skip this at the north pole (i == 0).
+				if (i > 0) {
 					facesw[face * 3 + 0] = v[0];
 					facesw[face * 3 + 1] = v[1];
 					facesw[face * 3 + 2] = v[2];
@@ -990,8 +1009,8 @@ CSGBrush *CSGSphere::_build_brush() {
 					face++;
 				}
 
-				if (i > 1) {
-					//face 2
+				// Draw the second face, but skip this at the south pole (i == rings - 1).
+				if (i < rings - 1) {
 					facesw[face * 3 + 0] = v[2];
 					facesw[face * 3 + 1] = v[3];
 					facesw[face * 3 + 2] = v[0];

@@ -105,7 +105,7 @@ PoolStringArray _ResourceLoader::get_dependencies(const String &p_path) {
 
 #ifndef DISABLE_DEPRECATED
 bool _ResourceLoader::has(const String &p_path) {
-	WARN_PRINTS("ResourceLoader.has() is deprecated, please replace it with the equivalent has_cached() or the new exists().");
+	WARN_PRINT("ResourceLoader.has() is deprecated, please replace it with the equivalent has_cached() or the new exists().");
 	return has_cached(p_path);
 }
 #endif // DISABLE_DEPRECATED
@@ -596,6 +596,14 @@ bool _OS::is_vsync_via_compositor_enabled() const {
 	return OS::get_singleton()->is_vsync_via_compositor_enabled();
 }
 
+void _OS::set_delta_smoothing(bool p_enabled) {
+	OS::get_singleton()->set_delta_smoothing(p_enabled);
+}
+
+bool _OS::is_delta_smoothing_enabled() const {
+	return OS::get_singleton()->is_delta_smoothing_enabled();
+}
+
 _OS::PowerState _OS::get_power_state() {
 	return _OS::PowerState(OS::get_singleton()->get_power_state());
 }
@@ -760,7 +768,7 @@ int64_t _OS::get_unix_time_from_datetime(Dictionary datetime) const {
 	unsigned int hour = ((datetime.has(HOUR_KEY)) ? static_cast<unsigned int>(datetime[HOUR_KEY]) : 0);
 	unsigned int day = ((datetime.has(DAY_KEY)) ? static_cast<unsigned int>(datetime[DAY_KEY]) : 1);
 	unsigned int month = ((datetime.has(MONTH_KEY)) ? static_cast<unsigned int>(datetime[MONTH_KEY]) : 1);
-	unsigned int year = ((datetime.has(YEAR_KEY)) ? static_cast<unsigned int>(datetime[YEAR_KEY]) : 0);
+	unsigned int year = ((datetime.has(YEAR_KEY)) ? static_cast<unsigned int>(datetime[YEAR_KEY]) : 1970);
 
 	/// How many days come before each month (0-12)
 	static const unsigned short int DAYS_PAST_THIS_YEAR_TABLE[2][13] = {
@@ -771,15 +779,14 @@ int64_t _OS::get_unix_time_from_datetime(Dictionary datetime) const {
 	};
 
 	ERR_FAIL_COND_V_MSG(second > 59, 0, "Invalid second value of: " + itos(second) + ".");
-
 	ERR_FAIL_COND_V_MSG(minute > 59, 0, "Invalid minute value of: " + itos(minute) + ".");
-
 	ERR_FAIL_COND_V_MSG(hour > 23, 0, "Invalid hour value of: " + itos(hour) + ".");
-
+	ERR_FAIL_COND_V_MSG(year == 0, 0, "Years before 1 AD are not supported. Value passed: " + itos(year) + ".");
 	ERR_FAIL_COND_V_MSG(month > 12 || month == 0, 0, "Invalid month value of: " + itos(month) + ".");
-
 	// Do this check after month is tested as valid
-	ERR_FAIL_COND_V_MSG(day > MONTH_DAYS_TABLE[LEAPYEAR(year)][month - 1] || day == 0, 0, "Invalid day value of '" + itos(day) + "' which is larger than '" + itos(MONTH_DAYS_TABLE[LEAPYEAR(year)][month - 1]) + "' or 0.");
+	unsigned int days_in_month = MONTH_DAYS_TABLE[LEAPYEAR(year)][month - 1];
+	ERR_FAIL_COND_V_MSG(day == 0 || day > days_in_month, 0, "Invalid day value of: " + itos(day) + ". It should be comprised between 1 and " + itos(days_in_month) + " for month " + itos(month) + ".");
+
 	// Calculate all the seconds from months past in this year
 	uint64_t SECONDS_FROM_MONTHS_PAST_THIS_YEAR = DAYS_PAST_THIS_YEAR_TABLE[LEAPYEAR(year)][month - 1] * SECONDS_PER_DAY;
 
@@ -1046,6 +1053,10 @@ String _OS::get_user_data_dir() const {
 	return OS::get_singleton()->get_user_data_dir();
 };
 
+String _OS::get_external_data_dir() const {
+	return OS::get_singleton()->get_external_data_dir();
+}
+
 Error _OS::native_video_play(String p_path, float p_volume, String p_audio_track, String p_subtitle_track) {
 	return OS::get_singleton()->native_video_play(p_path, p_volume, p_audio_track, p_subtitle_track);
 };
@@ -1080,6 +1091,21 @@ void _OS::move_window_to_foreground() {
 
 int64_t _OS::get_native_handle(HandleType p_handle_type) {
 	return (int64_t)OS::get_singleton()->get_native_handle(p_handle_type);
+}
+
+String _OS::get_config_dir() const {
+	// Exposed as `get_config_dir()` instead of `get_config_path()` for consistency with other exposed OS methods.
+	return OS::get_singleton()->get_config_path();
+}
+
+String _OS::get_data_dir() const {
+	// Exposed as `get_data_dir()` instead of `get_data_path()` for consistency with other exposed OS methods.
+	return OS::get_singleton()->get_data_path();
+}
+
+String _OS::get_cache_dir() const {
+	// Exposed as `get_cache_dir()` instead of `get_cache_path()` for consistency with other exposed OS methods.
+	return OS::get_singleton()->get_cache_path();
 }
 
 bool _OS::is_debug_build() const {
@@ -1316,7 +1342,11 @@ void _OS::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_dynamic_memory_usage"), &_OS::get_dynamic_memory_usage);
 
 	ClassDB::bind_method(D_METHOD("get_user_data_dir"), &_OS::get_user_data_dir);
+	ClassDB::bind_method(D_METHOD("get_external_data_dir"), &_OS::get_external_data_dir);
 	ClassDB::bind_method(D_METHOD("get_system_dir", "dir"), &_OS::get_system_dir);
+	ClassDB::bind_method(D_METHOD("get_config_dir"), &_OS::get_config_dir);
+	ClassDB::bind_method(D_METHOD("get_data_dir"), &_OS::get_data_dir);
+	ClassDB::bind_method(D_METHOD("get_cache_dir"), &_OS::get_cache_dir);
 	ClassDB::bind_method(D_METHOD("get_unique_id"), &_OS::get_unique_id);
 
 	ClassDB::bind_method(D_METHOD("is_ok_left_and_cancel_right"), &_OS::is_ok_left_and_cancel_right);
@@ -1347,6 +1377,9 @@ void _OS::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_vsync_via_compositor", "enable"), &_OS::set_vsync_via_compositor);
 	ClassDB::bind_method(D_METHOD("is_vsync_via_compositor_enabled"), &_OS::is_vsync_via_compositor_enabled);
 
+	ClassDB::bind_method(D_METHOD("set_delta_smoothing", "delta_smoothing_enabled"), &_OS::set_delta_smoothing);
+	ClassDB::bind_method(D_METHOD("is_delta_smoothing_enabled"), &_OS::is_delta_smoothing_enabled);
+
 	ClassDB::bind_method(D_METHOD("has_feature", "tag_name"), &_OS::has_feature);
 
 	ClassDB::bind_method(D_METHOD("get_power_state"), &_OS::get_power_state);
@@ -1369,6 +1402,7 @@ void _OS::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "exit_code"), "set_exit_code", "get_exit_code");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "vsync_enabled"), "set_use_vsync", "is_vsync_enabled");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "vsync_via_compositor"), "set_vsync_via_compositor", "is_vsync_via_compositor_enabled");
+	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "delta_smoothing"), "set_delta_smoothing", "is_delta_smoothing_enabled");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "low_processor_usage_mode"), "set_low_processor_usage_mode", "is_in_low_processor_usage_mode");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "low_processor_usage_mode_sleep_usec"), "set_low_processor_usage_mode_sleep_usec", "get_low_processor_usage_mode_sleep_usec");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "keep_screen_on"), "set_keep_screen_on", "is_keep_screen_on");
@@ -2555,10 +2589,40 @@ void _Thread::_start_func(void *ud) {
 	memdelete(tud);
 	Variant::CallError ce;
 	const Variant *arg[1] = { &t->userdata };
+	int argc = 0;
+	if (arg[0]->get_type() != Variant::NIL) {
+		// Just pass to the target function whatever came as user data
+		argc = 1;
+	} else {
+		// There are two cases of null user data:
+		// a) The target function has zero parameters and the caller is just honoring that.
+		// b) The target function has at least one parameter with no default and the caller is
+		//    leveraging the fact that user data defaults to null in Thread.start().
+		//    We care about the case of more than one parameter because, even if a thread
+		//    function can have one at most, out mindset here is to do our best with the
+		//    only/first one and let the call handle any other error conditions, like too
+		//    much arguments.
+		// We must check if we are in case b).
+		int target_param_count = 0;
+		int target_default_arg_count = 0;
+		Ref<Script> script = t->target_instance->get_script();
+		if (script.is_valid()) {
+			MethodInfo mi = script->get_method_info(t->target_method);
+			target_param_count = mi.arguments.size();
+			target_default_arg_count = mi.default_arguments.size();
+		} else {
+			MethodBind *method = ClassDB::get_method(t->target_instance->get_class_name(), t->target_method);
+			target_param_count = method->get_argument_count();
+			target_default_arg_count = method->get_default_argument_count();
+		}
+		if (target_param_count >= 1 && target_default_arg_count == target_param_count) {
+			argc = 1;
+		}
+	}
 
 	Thread::set_name(t->target_method);
 
-	t->ret = t->target_instance->call(t->target_method, arg, 1, ce);
+	t->ret = t->target_instance->call(t->target_method, arg, argc, ce);
 	if (ce.error != Variant::CallError::CALL_OK) {
 		String reason;
 		switch (ce.error) {
@@ -2937,6 +3001,14 @@ bool _Engine::is_editor_hint() const {
 	return Engine::get_singleton()->is_editor_hint();
 }
 
+void _Engine::set_print_error_messages(bool p_enabled) {
+	Engine::get_singleton()->set_print_error_messages(p_enabled);
+}
+
+bool _Engine::is_printing_error_messages() const {
+	return Engine::get_singleton()->is_printing_error_messages();
+}
+
 void _Engine::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_iterations_per_second", "iterations_per_second"), &_Engine::set_iterations_per_second);
 	ClassDB::bind_method(D_METHOD("get_iterations_per_second"), &_Engine::get_iterations_per_second);
@@ -2971,7 +3043,11 @@ void _Engine::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_editor_hint", "enabled"), &_Engine::set_editor_hint);
 	ClassDB::bind_method(D_METHOD("is_editor_hint"), &_Engine::is_editor_hint);
 
+	ClassDB::bind_method(D_METHOD("set_print_error_messages", "enabled"), &_Engine::set_print_error_messages);
+	ClassDB::bind_method(D_METHOD("is_printing_error_messages"), &_Engine::is_printing_error_messages);
+
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "editor_hint"), "set_editor_hint", "is_editor_hint");
+	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "print_error_messages"), "set_print_error_messages", "is_printing_error_messages");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "iterations_per_second"), "set_iterations_per_second", "get_iterations_per_second");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "target_fps"), "set_target_fps", "get_target_fps");
 	ADD_PROPERTY(PropertyInfo(Variant::REAL, "time_scale"), "set_time_scale", "get_time_scale");
@@ -3049,7 +3125,7 @@ Ref<JSONParseResult> _JSON::parse(const String &p_json) {
 	result->error = JSON::parse(p_json, result->result, result->error_string, result->error_line);
 
 	if (result->error != OK) {
-		ERR_PRINTS(vformat("Error parsing JSON at line %s: %s", result->error_line, result->error_string));
+		ERR_PRINT(vformat("Error parsing JSON at line %s: %s", result->error_line, result->error_string));
 	}
 	return result;
 }

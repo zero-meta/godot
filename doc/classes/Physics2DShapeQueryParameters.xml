@@ -4,16 +4,14 @@
 		Parameters to be sent to a 2D shape physics query.
 	</brief_description>
 	<description>
-		This class contains the shape and other parameters for 2D intersection/collision queries. See also [Physics2DShapeQueryResult].
+		This class contains the shape and other parameters for 2D intersection/collision queries.
 	</description>
 	<tutorials>
 	</tutorials>
 	<methods>
 		<method name="set_shape">
-			<return type="void">
-			</return>
-			<argument index="0" name="shape" type="Resource">
-			</argument>
+			<return type="void" />
+			<argument index="0" name="shape" type="Resource" />
 			<description>
 				Sets the [Shape2D] that will be used for collision/intersection queries.
 			</description>

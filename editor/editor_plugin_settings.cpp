@@ -63,28 +63,28 @@ void EditorPluginSettings::update_plugins() {
 		Error err2 = cf->load(path);
 
 		if (err2 != OK) {
-			WARN_PRINTS("Can't load plugin config: " + path);
+			WARN_PRINT("Can't load plugin config: " + path);
 		} else {
 			bool key_missing = false;
 
 			if (!cf->has_section_key("plugin", "name")) {
-				WARN_PRINTS("Plugin config misses \"plugin/name\" key: " + path);
+				WARN_PRINT("Plugin config misses \"plugin/name\" key: " + path);
 				key_missing = true;
 			}
 			if (!cf->has_section_key("plugin", "author")) {
-				WARN_PRINTS("Plugin config misses \"plugin/author\" key: " + path);
+				WARN_PRINT("Plugin config misses \"plugin/author\" key: " + path);
 				key_missing = true;
 			}
 			if (!cf->has_section_key("plugin", "version")) {
-				WARN_PRINTS("Plugin config misses \"plugin/version\" key: " + path);
+				WARN_PRINT("Plugin config misses \"plugin/version\" key: " + path);
 				key_missing = true;
 			}
 			if (!cf->has_section_key("plugin", "description")) {
-				WARN_PRINTS("Plugin config misses \"plugin/description\" key: " + path);
+				WARN_PRINT("Plugin config misses \"plugin/description\" key: " + path);
 				key_missing = true;
 			}
 			if (!cf->has_section_key("plugin", "script")) {
-				WARN_PRINTS("Plugin config misses \"plugin/script\" key: " + path);
+				WARN_PRINT("Plugin config misses \"plugin/script\" key: " + path);
 				key_missing = true;
 			}
 
@@ -210,11 +210,11 @@ EditorPluginSettings::EditorPluginSettings() {
 	plugin_list->set_v_size_flags(SIZE_EXPAND_FILL);
 	plugin_list->set_columns(5);
 	plugin_list->set_column_titles_visible(true);
-	plugin_list->set_column_title(0, TTR("Name:"));
-	plugin_list->set_column_title(1, TTR("Version:"));
-	plugin_list->set_column_title(2, TTR("Author:"));
-	plugin_list->set_column_title(3, TTR("Status:"));
-	plugin_list->set_column_title(4, TTR("Edit:"));
+	plugin_list->set_column_title(0, TTR("Name"));
+	plugin_list->set_column_title(1, TTR("Version"));
+	plugin_list->set_column_title(2, TTR("Author"));
+	plugin_list->set_column_title(3, TTR("Status"));
+	plugin_list->set_column_title(4, TTR("Edit"));
 	plugin_list->set_column_expand(0, true);
 	plugin_list->set_column_expand(1, false);
 	plugin_list->set_column_expand(2, false);

@@ -6,6 +6,9 @@
 #define mediump
 #define highp
 #else
+// Default to high precision variables for the vertex shader.
+// Note that the fragment shader however may default to mediump on mobile for performance,
+// and thus shared uniforms should use a specifier to be consistent in both shaders.
 precision highp float;
 precision highp int;
 #endif
@@ -28,10 +31,18 @@ precision highp int;
 
 attribute highp vec4 vertex_attrib; // attrib:0
 /* clang-format on */
+#ifdef ENABLE_OCTAHEDRAL_COMPRESSION
+attribute vec2 normal_attrib; // attrib:1
+#else
 attribute vec3 normal_attrib; // attrib:1
+#endif
 
 #if defined(ENABLE_TANGENT_INTERP) || defined(ENABLE_NORMALMAP)
+#ifdef ENABLE_OCTAHEDRAL_COMPRESSION
+attribute vec2 tangent_attrib; // attrib:2
+#else
 attribute vec4 tangent_attrib; // attrib:2
+#endif
 #endif
 
 #if defined(ENABLE_COLOR_INTERP)
@@ -97,7 +108,16 @@ uniform float light_bias;
 uniform float light_normal_bias;
 #endif
 
-uniform int view_index;
+uniform highp int view_index;
+
+#ifdef ENABLE_OCTAHEDRAL_COMPRESSION
+vec3 oct_to_vec3(vec2 e) {
+	vec3 v = vec3(e.xy, 1.0 - abs(e.x) - abs(e.y));
+	float t = max(-v.z, 0.0);
+	v.xy += t * -sign(v.xy);
+	return v;
+}
+#endif
 
 //
 // varyings
@@ -338,11 +358,20 @@ void main() {
 
 #endif
 
+#ifdef ENABLE_OCTAHEDRAL_COMPRESSION
+	vec3 normal = oct_to_vec3(normal_attrib);
+#else
 	vec3 normal = normal_attrib;
+#endif
 
 #if defined(ENABLE_TANGENT_INTERP) || defined(ENABLE_NORMALMAP)
+#ifdef ENABLE_OCTAHEDRAL_COMPRESSION
+	vec3 tangent = oct_to_vec3(vec2(tangent_attrib.x, abs(tangent_attrib.y) * 2.0 - 1.0));
+	float binormalf = sign(tangent_attrib.y);
+#else
 	vec3 tangent = tangent_attrib.xyz;
 	float binormalf = tangent_attrib.a;
+#endif
 	vec3 binormal = normalize(cross(normal, tangent) * binormalf);
 #endif
 
@@ -703,6 +732,7 @@ VERTEX_SHADER_CODE
 #define mediump
 #define highp
 #else
+// On mobile devices we want to default to medium precision to increase performance in the fragment shader.
 #if defined(USE_HIGHP_PRECISION)
 precision highp float;
 precision highp int;
@@ -730,7 +760,7 @@ uniform highp mat4 projection_inverse_matrix;
 uniform highp mat4 world_transform;
 
 uniform highp float time;
-uniform int view_index;
+uniform highp int view_index;
 
 uniform highp vec2 viewport_size;
 

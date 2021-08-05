@@ -47,6 +47,7 @@
 #include "scene/3d/collision_shape.h"
 #include "scene/3d/mesh_instance.h"
 #include "scene/3d/physics_body.h"
+#include "scene/3d/room_manager.h"
 #include "scene/3d/visual_instance.h"
 #include "scene/gui/viewport_container.h"
 #include "scene/resources/packed_scene.h"
@@ -336,7 +337,7 @@ void SpatialEditorViewport::_update_camera(float p_interp_delta) {
 		equal = false;
 	}
 
-	if (!equal || p_interp_delta == 0 || is_freelook_active() || is_orthogonal != orthogonal) {
+	if (!equal || p_interp_delta == 0 || is_orthogonal != orthogonal) {
 		camera->set_global_transform(to_camera_transform(camera_cursor));
 
 		if (orthogonal) {
@@ -733,6 +734,10 @@ void SpatialEditorViewport::_update_name() {
 		view_mode += " [auto]";
 	}
 
+	if (RoomManager::static_rooms_get_active_and_loaded()) {
+		view_mode += " [portals active]";
+	}
+
 	if (name != "") {
 		view_menu->set_text(name + " " + view_mode);
 	} else {
@@ -844,14 +849,18 @@ bool SpatialEditorViewport::_gizmo_select(const Vector2 &p_screenpos, bool p_hig
 				Vector3 ivec2 = gt.basis.get_axis((i + 1) % 3).normalized();
 				Vector3 ivec3 = gt.basis.get_axis((i + 2) % 3).normalized();
 
-				Vector3 grabber_pos = gt.origin + (ivec2 + ivec3) * gs * (GIZMO_PLANE_SIZE + GIZMO_PLANE_DST);
+				// Allow some tolerance to make the plane easier to click,
+				// even if the click is actually slightly outside the plane.
+				const Vector3 grabber_pos = gt.origin + (ivec2 + ivec3) * gs * (GIZMO_PLANE_SIZE + GIZMO_PLANE_DST * 0.6667);
 
 				Vector3 r;
 				Plane plane(gt.origin, gt.basis.get_axis(i).normalized());
 
 				if (plane.intersects_ray(ray_pos, ray, &r)) {
 					float dist = r.distance_to(grabber_pos);
-					if (dist < (gs * GIZMO_PLANE_SIZE)) {
+					// Allow some tolerance to make the plane easier to click,
+					// even if the click is actually slightly outside the plane.
+					if (dist < (gs * GIZMO_PLANE_SIZE * 1.5)) {
 						float d = ray_pos.distance_to(r);
 						if (d < col_d) {
 							col_d = d;
@@ -944,14 +953,18 @@ bool SpatialEditorViewport::_gizmo_select(const Vector2 &p_screenpos, bool p_hig
 				Vector3 ivec2 = gt.basis.get_axis((i + 1) % 3).normalized();
 				Vector3 ivec3 = gt.basis.get_axis((i + 2) % 3).normalized();
 
-				Vector3 grabber_pos = gt.origin + (ivec2 + ivec3) * gs * (GIZMO_PLANE_SIZE + GIZMO_PLANE_DST);
+				// Allow some tolerance to make the plane easier to click,
+				// even if the click is actually slightly outside the plane.
+				Vector3 grabber_pos = gt.origin + (ivec2 + ivec3) * gs * (GIZMO_PLANE_SIZE + GIZMO_PLANE_DST * 0.6667);
 
 				Vector3 r;
 				Plane plane(gt.origin, gt.basis.get_axis(i).normalized());
 
 				if (plane.intersects_ray(ray_pos, ray, &r)) {
 					float dist = r.distance_to(grabber_pos);
-					if (dist < (gs * GIZMO_PLANE_SIZE)) {
+					// Allow some tolerance to make the plane easier to click,
+					// even if the click is actually slightly outside the plane.
+					if (dist < (gs * GIZMO_PLANE_SIZE * 1.5)) {
 						float d = ray_pos.distance_to(r);
 						if (d < col_d) {
 							col_d = d;
@@ -1206,6 +1219,7 @@ void SpatialEditorViewport::_sinput(const Ref<InputEvent> &p_event) {
 					}
 
 					_edit.mouse_pos = b->get_position();
+					_edit.original_mouse_pos = b->get_position();
 					_edit.snap = spatial_editor->is_snap_enabled();
 					_edit.mode = TRANSFORM_NONE;
 
@@ -1330,8 +1344,14 @@ void SpatialEditorViewport::_sinput(const Ref<InputEvent> &p_event) {
 					}
 
 					if (_edit.mode != TRANSFORM_NONE) {
-						static const char *_transform_name[4] = { "None", "Rotate", "Translate", "Scale" };
-						undo_redo->create_action(_transform_name[_edit.mode]);
+						static const char *_transform_name[4] = {
+							TTRC("None"),
+							TTRC("Rotate"),
+							// TRANSLATORS: This refers to the movement that changes the position of an object.
+							TTRC("Translate"),
+							TTRC("Scale"),
+						};
+						undo_redo->create_action(TTRGET(_transform_name[_edit.mode]));
 
 						List<Node *> &selection = editor_selection->get_selected_node_list();
 
@@ -1412,7 +1432,8 @@ void SpatialEditorViewport::_sinput(const Ref<InputEvent> &p_event) {
 			} else if (nav_scheme == NAVIGATION_MODO && m->get_alt()) {
 				nav_mode = NAVIGATION_ORBIT;
 			} else {
-				if (clicked) {
+				const bool movement_threshold_passed = _edit.original_mouse_pos.distance_to(_edit.mouse_pos) > 8 * EDSCALE;
+				if (clicked && movement_threshold_passed) {
 					if (!clicked_includes_current) {
 						_select_clicked(clicked_wants_append, true);
 						// Processing was deferred.
@@ -1925,6 +1946,13 @@ void SpatialEditorViewport::_sinput(const Ref<InputEvent> &p_event) {
 	if (k.is_valid()) {
 		if (!k->is_pressed()) {
 			return;
+		}
+
+		if (EditorSettings::get_singleton()->get("editors/3d/navigation/emulate_numpad")) {
+			const uint32_t code = k->get_scancode();
+			if (code >= KEY_0 && code <= KEY_9) {
+				k->set_scancode(code - KEY_0 + KEY_KP_0);
+			}
 		}
 
 		if (ED_IS_SHORTCUT("spatial_editor/snap", p_event)) {
@@ -2456,25 +2484,25 @@ void SpatialEditorViewport::_notification(int p_what) {
 		}
 
 		if (show_info) {
+			const String viewport_size = vformat(String::utf8("%d × %d"), viewport->get_size().x, viewport->get_size().y);
 			String text;
 			text += "X: " + rtos(current_camera->get_translation().x).pad_decimals(1) + "\n";
 			text += "Y: " + rtos(current_camera->get_translation().y).pad_decimals(1) + "\n";
 			text += "Z: " + rtos(current_camera->get_translation().z).pad_decimals(1) + "\n";
-			text += TTR("Pitch") + ": " + itos(Math::round(current_camera->get_rotation_degrees().x)) + "\n";
-			text += TTR("Yaw") + ": " + itos(Math::round(current_camera->get_rotation_degrees().y)) + "\n\n";
+			text += TTR("Pitch:") + " " + itos(Math::round(current_camera->get_rotation_degrees().x)) + "\n";
+			text += TTR("Yaw:") + " " + itos(Math::round(current_camera->get_rotation_degrees().y)) + "\n\n";
 
-			text += TTR("Size") +
+			text += TTR("Size:") +
 					vformat(
-							": %dx%d (%.1fMP)\n",
-							viewport->get_size().x,
-							viewport->get_size().y,
+							" %s (%.1fMP)\n",
+							viewport_size,
 							viewport->get_size().x * viewport->get_size().y * 0.000'001);
-			text += TTR("Objects Drawn") + ": " + itos(viewport->get_render_info(Viewport::RENDER_INFO_OBJECTS_IN_FRAME)) + "\n";
-			text += TTR("Material Changes") + ": " + itos(viewport->get_render_info(Viewport::RENDER_INFO_MATERIAL_CHANGES_IN_FRAME)) + "\n";
-			text += TTR("Shader Changes") + ": " + itos(viewport->get_render_info(Viewport::RENDER_INFO_SHADER_CHANGES_IN_FRAME)) + "\n";
-			text += TTR("Surface Changes") + ": " + itos(viewport->get_render_info(Viewport::RENDER_INFO_SURFACE_CHANGES_IN_FRAME)) + "\n";
-			text += TTR("Draw Calls") + ": " + itos(viewport->get_render_info(Viewport::RENDER_INFO_DRAW_CALLS_IN_FRAME)) + "\n";
-			text += TTR("Vertices") + ": " + itos(viewport->get_render_info(Viewport::RENDER_INFO_VERTICES_IN_FRAME));
+			text += TTR("Objects Drawn:") + " " + itos(viewport->get_render_info(Viewport::RENDER_INFO_OBJECTS_IN_FRAME)) + "\n";
+			text += TTR("Material Changes:") + " " + itos(viewport->get_render_info(Viewport::RENDER_INFO_MATERIAL_CHANGES_IN_FRAME)) + "\n";
+			text += TTR("Shader Changes:") + " " + itos(viewport->get_render_info(Viewport::RENDER_INFO_SHADER_CHANGES_IN_FRAME)) + "\n";
+			text += TTR("Surface Changes:") + " " + itos(viewport->get_render_info(Viewport::RENDER_INFO_SURFACE_CHANGES_IN_FRAME)) + "\n";
+			text += TTR("Draw Calls:") + " " + itos(viewport->get_render_info(Viewport::RENDER_INFO_DRAW_CALLS_IN_FRAME)) + "\n";
+			text += TTR("Vertices:") + " " + itos(viewport->get_render_info(Viewport::RENDER_INFO_VERTICES_IN_FRAME));
 			info_label->set_text(text);
 		}
 
@@ -2485,7 +2513,7 @@ void SpatialEditorViewport::_notification(int p_what) {
 		if (show_fps) {
 			String text;
 			const float temp_fps = Engine::get_singleton()->get_frames_per_second();
-			text += TTR(vformat("FPS: %d (%s ms)", temp_fps, String::num(1000.0f / temp_fps, 2)));
+			text += vformat(TTR("FPS: %d (%s ms)"), temp_fps, String::num(1000.0f / temp_fps, 2));
 			fps_label->set_text(text);
 		}
 
@@ -2622,9 +2650,7 @@ void SpatialEditorViewport::_draw() {
 				handle_color = get_color("accent_color", "Editor");
 				break;
 		}
-		handle_color.a = 1.0;
-		const float brightness = 1.3;
-		handle_color *= Color(brightness, brightness, brightness);
+		handle_color = handle_color.from_hsv(handle_color.get_h(), 0.25, 1.0, 1);
 
 		VisualServer::get_singleton()->canvas_item_add_line(
 				ci,
@@ -3012,6 +3038,7 @@ void SpatialEditorViewport::_init_gizmo_instance(int p_idx) {
 		VS::get_singleton()->instance_set_visible(move_gizmo_instance[i], false);
 		VS::get_singleton()->instance_geometry_set_cast_shadows_setting(move_gizmo_instance[i], VS::SHADOW_CASTING_SETTING_OFF);
 		VS::get_singleton()->instance_set_layer_mask(move_gizmo_instance[i], layer);
+		VS::get_singleton()->instance_set_portal_mode(move_gizmo_instance[i], VisualServer::INSTANCE_PORTAL_MODE_GLOBAL);
 
 		move_plane_gizmo_instance[i] = VS::get_singleton()->instance_create();
 		VS::get_singleton()->instance_set_base(move_plane_gizmo_instance[i], spatial_editor->get_move_plane_gizmo(i)->get_rid());
@@ -3019,6 +3046,7 @@ void SpatialEditorViewport::_init_gizmo_instance(int p_idx) {
 		VS::get_singleton()->instance_set_visible(move_plane_gizmo_instance[i], false);
 		VS::get_singleton()->instance_geometry_set_cast_shadows_setting(move_plane_gizmo_instance[i], VS::SHADOW_CASTING_SETTING_OFF);
 		VS::get_singleton()->instance_set_layer_mask(move_plane_gizmo_instance[i], layer);
+		VS::get_singleton()->instance_set_portal_mode(move_plane_gizmo_instance[i], VisualServer::INSTANCE_PORTAL_MODE_GLOBAL);
 
 		rotate_gizmo_instance[i] = VS::get_singleton()->instance_create();
 		VS::get_singleton()->instance_set_base(rotate_gizmo_instance[i], spatial_editor->get_rotate_gizmo(i)->get_rid());
@@ -3026,6 +3054,7 @@ void SpatialEditorViewport::_init_gizmo_instance(int p_idx) {
 		VS::get_singleton()->instance_set_visible(rotate_gizmo_instance[i], false);
 		VS::get_singleton()->instance_geometry_set_cast_shadows_setting(rotate_gizmo_instance[i], VS::SHADOW_CASTING_SETTING_OFF);
 		VS::get_singleton()->instance_set_layer_mask(rotate_gizmo_instance[i], layer);
+		VS::get_singleton()->instance_set_portal_mode(rotate_gizmo_instance[i], VisualServer::INSTANCE_PORTAL_MODE_GLOBAL);
 
 		scale_gizmo_instance[i] = VS::get_singleton()->instance_create();
 		VS::get_singleton()->instance_set_base(scale_gizmo_instance[i], spatial_editor->get_scale_gizmo(i)->get_rid());
@@ -3033,6 +3062,7 @@ void SpatialEditorViewport::_init_gizmo_instance(int p_idx) {
 		VS::get_singleton()->instance_set_visible(scale_gizmo_instance[i], false);
 		VS::get_singleton()->instance_geometry_set_cast_shadows_setting(scale_gizmo_instance[i], VS::SHADOW_CASTING_SETTING_OFF);
 		VS::get_singleton()->instance_set_layer_mask(scale_gizmo_instance[i], layer);
+		VS::get_singleton()->instance_set_portal_mode(scale_gizmo_instance[i], VisualServer::INSTANCE_PORTAL_MODE_GLOBAL);
 
 		scale_plane_gizmo_instance[i] = VS::get_singleton()->instance_create();
 		VS::get_singleton()->instance_set_base(scale_plane_gizmo_instance[i], spatial_editor->get_scale_plane_gizmo(i)->get_rid());
@@ -3040,6 +3070,7 @@ void SpatialEditorViewport::_init_gizmo_instance(int p_idx) {
 		VS::get_singleton()->instance_set_visible(scale_plane_gizmo_instance[i], false);
 		VS::get_singleton()->instance_geometry_set_cast_shadows_setting(scale_plane_gizmo_instance[i], VS::SHADOW_CASTING_SETTING_OFF);
 		VS::get_singleton()->instance_set_layer_mask(scale_plane_gizmo_instance[i], layer);
+		VS::get_singleton()->instance_set_portal_mode(scale_plane_gizmo_instance[i], VisualServer::INSTANCE_PORTAL_MODE_GLOBAL);
 	}
 
 	// Rotation white outline
@@ -3076,14 +3107,12 @@ void SpatialEditorViewport::_toggle_camera_preview(bool p_activate) {
 		if (!preview) {
 			preview_camera->hide();
 		}
-		view_menu->set_disabled(false);
 		surface->update();
 
 	} else {
 		previewing = preview;
 		previewing->connect("tree_exiting", this, "_preview_exited_scene");
 		VS::get_singleton()->viewport_attach_camera(viewport->get_viewport_rid(), preview->get_camera()); //replace
-		view_menu->set_disabled(true);
 		surface->update();
 	}
 }
@@ -3316,7 +3345,6 @@ void SpatialEditorViewport::set_state(const Dictionary &p_state) {
 			previewing = Object::cast_to<Camera>(pv);
 			previewing->connect("tree_exiting", this, "_preview_exited_scene");
 			VS::get_singleton()->viewport_attach_camera(viewport->get_viewport_rid(), previewing->get_camera()); //replace
-			view_menu->set_disabled(true);
 			surface->update();
 			preview_camera->set_pressed(true);
 			preview_camera->show();
@@ -3437,58 +3465,16 @@ Vector3 SpatialEditorViewport::_get_instance_position(const Point2 &p_pos) const
 	Vector3 world_ray = _get_ray(p_pos);
 	Vector3 world_pos = _get_ray_pos(p_pos);
 
-	Vector<ObjectID> instances = VisualServer::get_singleton()->instances_cull_ray(world_pos, world_ray, get_tree()->get_root()->get_world()->get_scenario());
-	Set<Ref<EditorSpatialGizmo>> found_gizmos;
-
-	float closest_dist = MAX_DISTANCE;
-
 	Vector3 point = world_pos + world_ray * MAX_DISTANCE;
-	Vector3 normal = Vector3(0.0, 0.0, 0.0);
 
-	for (int i = 0; i < instances.size(); i++) {
-		MeshInstance *mesh_instance = Object::cast_to<MeshInstance>(ObjectDB::get_instance(instances[i]));
+	PhysicsDirectSpaceState *ss = get_tree()->get_root()->get_world()->get_direct_space_state();
+	PhysicsDirectSpaceState::RayResult result;
 
-		if (!mesh_instance) {
-			continue;
-		}
-
-		Ref<EditorSpatialGizmo> seg = mesh_instance->get_gizmo();
-
-		if ((!seg.is_valid()) || found_gizmos.has(seg)) {
-			continue;
-		}
-
-		found_gizmos.insert(seg);
-
-		Vector3 hit_point;
-		Vector3 hit_normal;
-		bool inters = seg->intersect_ray(camera, p_pos, hit_point, hit_normal, nullptr, false);
-
-		if (!inters) {
-			continue;
-		}
-
-		float dist = world_pos.distance_to(hit_point);
-
-		if (dist < 0) {
-			continue;
-		}
-
-		if (dist < closest_dist) {
-			closest_dist = dist;
-			point = hit_point;
-			normal = hit_normal;
-		}
+	if (ss->intersect_ray(world_pos, world_pos + world_ray * MAX_DISTANCE, result)) {
+		point = result.position;
 	}
-	Vector3 offset = Vector3();
-	for (int i = 0; i < 3; i++) {
-		if (normal[i] > 0.0) {
-			offset[i] = (preview_bounds->get_size()[i] - (preview_bounds->get_size()[i] + preview_bounds->get_position()[i]));
-		} else if (normal[i] < 0.0) {
-			offset[i] = -(preview_bounds->get_size()[i] + preview_bounds->get_position()[i]);
-		}
-	}
-	return point + offset;
+
+	return point;
 }
 
 AABB SpatialEditorViewport::_calculate_spatial_bounds(const Spatial *p_parent, bool p_exclude_toplevel_transform) {
@@ -3899,6 +3885,7 @@ SpatialEditorViewport::SpatialEditorViewport(SpatialEditor *p_spatial_editor, Ed
 
 	preview_camera = memnew(CheckBox);
 	preview_camera->set_text(TTR("Preview"));
+	preview_camera->set_shortcut(ED_SHORTCUT("spatial_editor/toggle_camera_preview", TTR("Toggle Camera Preview"), KEY_MASK_CMD | KEY_P));
 	vbox->add_child(preview_camera);
 	preview_camera->set_h_size_flags(0);
 	preview_camera->hide();
@@ -4321,6 +4308,45 @@ void SpatialEditor::select_gizmo_highlight_axis(int p_axis) {
 	}
 }
 
+void SpatialEditor::show_advanced_portal_tools(bool p_show) {
+	// toolbar button
+	Button *const button = tool_button[TOOL_CONVERT_ROOMS];
+	if (p_show) {
+		button->set_text(TTR("Convert Rooms"));
+	} else {
+		button->set_text("");
+	}
+}
+
+void SpatialEditor::update_portal_tools() {
+	// just some protection against calling null pointers, hopefully not needed
+	if (view_menu && view_menu->get_popup()) {
+		// the view portal culling toggle
+		int view_portal_item_index = view_menu->get_popup()->get_item_index(MENU_VIEW_PORTAL_CULLING);
+		if (RoomManager::active_room_manager) {
+			view_menu->get_popup()->set_item_disabled(view_portal_item_index, false);
+
+			bool active = RoomManager::static_rooms_get_active();
+			view_menu->get_popup()->set_item_checked(view_portal_item_index, active);
+		} else {
+			view_menu->get_popup()->set_item_disabled(view_portal_item_index, true);
+		}
+
+		// toolbar button
+		Button *const button = tool_button[TOOL_CONVERT_ROOMS];
+
+		if (RoomManager::active_room_manager) {
+			button->show();
+		} else {
+			button->hide();
+		}
+
+		for (uint32_t i = 0; i < VIEWPORTS_COUNT; i++) {
+			viewports[i]->_update_name();
+		}
+	}
+}
+
 void SpatialEditor::update_transform_gizmo() {
 	List<Node *> &selection = editor_selection->get_selected_node_list();
 	AABB center;
@@ -4403,14 +4429,18 @@ Object *SpatialEditor::_get_editor_data(Object *p_what) {
 	VS::get_singleton()->instance_geometry_set_cast_shadows_setting(
 			si->sbox_instance,
 			VS::SHADOW_CASTING_SETTING_OFF);
-	VS::get_singleton()->instance_set_layer_mask(si->sbox_instance, 1 << SpatialEditorViewport::MISC_TOOL_LAYER);
+	// Use the Edit layer to hide the selection box when View Gizmos is disabled, since it is a bit distracting.
+	// It's still possible to approximately guess what is selected by looking at the manipulation gizmo position.
+	VS::get_singleton()->instance_set_layer_mask(si->sbox_instance, 1 << SpatialEditorViewport::GIZMO_EDIT_LAYER);
 	si->sbox_instance_xray = VisualServer::get_singleton()->instance_create2(
 			selection_box_xray->get_rid(),
 			sp->get_world()->get_scenario());
 	VS::get_singleton()->instance_geometry_set_cast_shadows_setting(
 			si->sbox_instance_xray,
 			VS::SHADOW_CASTING_SETTING_OFF);
-	VS::get_singleton()->instance_set_layer_mask(si->sbox_instance_xray, 1 << SpatialEditorViewport::MISC_TOOL_LAYER);
+	// Use the Edit layer to hide the selection box when View Gizmos is disabled, since it is a bit distracting.
+	// It's still possible to approximately guess what is selected by looking at the manipulation gizmo position.
+	VS::get_singleton()->instance_set_layer_mask(si->sbox_instance_xray, 1 << SpatialEditorViewport::GIZMO_EDIT_LAYER);
 
 	return si;
 }
@@ -4766,11 +4796,11 @@ void SpatialEditor::_update_camera_override_button(bool p_game_running) {
 
 	if (p_game_running) {
 		button->set_disabled(false);
-		button->set_tooltip(TTR("Game Camera Override\nNo game instance running."));
+		button->set_tooltip(TTR("Project Camera Override\nOverrides the running project's camera with the editor viewport camera."));
 	} else {
 		button->set_disabled(true);
 		button->set_pressed(false);
-		button->set_tooltip(TTR("Game Camera Override\nOverrides game camera with editor viewport camera."));
+		button->set_tooltip(TTR("Project Camera Override\nNo project instance running. Run the project from the editor to use this feature."));
 	}
 }
 
@@ -4804,6 +4834,10 @@ void SpatialEditor::_menu_item_pressed(int p_option) {
 			tool_mode = (ToolMode)p_option;
 			update_transform_gizmo();
 
+		} break;
+		case MENU_TOOL_CONVERT_ROOMS: {
+			RoomManager::static_rooms_convert();
+			update_portal_tools();
 		} break;
 		case MENU_TRANSFORM_CONFIGURE_SNAP: {
 			snap_dialog->popup_centered(Size2(200, 180));
@@ -4910,6 +4944,11 @@ void SpatialEditor::_menu_item_pressed(int p_option) {
 
 			view_menu->get_popup()->set_item_checked(view_menu->get_popup()->get_item_index(p_option), grid_enabled);
 
+		} break;
+		case MENU_VIEW_PORTAL_CULLING: {
+			bool is_checked = view_menu->get_popup()->is_item_checked(view_menu->get_popup()->get_item_index(p_option));
+			RoomManager::static_rooms_set_active(!is_checked);
+			update_portal_tools();
 		} break;
 		case MENU_VIEW_CAMERA_SETTINGS: {
 			settings_dialog->popup_centered(settings_vbc->get_combined_minimum_size() + Size2(50, 50));
@@ -5168,8 +5207,7 @@ void SpatialEditor::_init_indicators() {
 			gizmo_color[i] = mat;
 
 			Ref<SpatialMaterial> mat_hl = mat->duplicate();
-			const float brightness = 1.3;
-			const Color albedo = Color(col.r * brightness, col.g * brightness, col.b * brightness);
+			const Color albedo = col.from_hsv(col.get_h(), 0.25, 1.0, 1);
 			mat_hl->set_albedo(albedo);
 			gizmo_color_hl[i] = mat_hl;
 
@@ -5275,7 +5313,7 @@ void SpatialEditor::_init_indicators() {
 				surftool->begin(Mesh::PRIMITIVE_TRIANGLES);
 
 				int n = 128; // number of circle segments
-				int m = 6; // number of thickness segments
+				int m = 3; // number of thickness segments
 
 				for (int j = 0; j < n; ++j) {
 					Basis basis = Basis(ivec, (Math_PI * 2.0f * j) / n);
@@ -5474,13 +5512,25 @@ void SpatialEditor::_init_indicators() {
 				surftool->commit(scale_plane_gizmo[i]);
 
 				Ref<SpatialMaterial> plane_mat_hl = plane_mat->duplicate();
-				plane_mat_hl->set_albedo(Color(col.r * 1.3, col.g * 1.3, col.b * 1.3));
+				plane_mat_hl->set_albedo(col.from_hsv(col.get_h(), 0.25, 1.0, 1));
 				plane_gizmo_color_hl[i] = plane_mat_hl; // needed, so we can draw planes from both sides
 			}
 		}
 	}
 
 	_generate_selection_boxes();
+}
+
+void SpatialEditor::_update_context_menu_stylebox() {
+	// This must be called when the theme changes to follow the new accent color.
+	Ref<StyleBoxFlat> context_menu_stylebox = memnew(StyleBoxFlat);
+	const Color accent_color = EditorNode::get_singleton()->get_gui_base()->get_color("accent_color", "Editor");
+	context_menu_stylebox->set_bg_color(accent_color * Color(1, 1, 1, 0.1));
+	// Add an underline to the StyleBox, but prevent its minimum vertical size from changing.
+	context_menu_stylebox->set_border_color(accent_color);
+	context_menu_stylebox->set_border_width(MARGIN_BOTTOM, Math::round(2 * EDSCALE));
+	context_menu_stylebox->set_default_margin(MARGIN_BOTTOM, 0);
+	context_menu_container->add_style_override("panel", context_menu_stylebox);
 }
 
 void SpatialEditor::_update_gizmos_menu() {
@@ -5869,7 +5919,7 @@ void SpatialEditor::snap_selected_nodes_to_floor() {
 		}
 
 		if (snapped_to_floor) {
-			undo_redo->create_action(TTR("Snap Nodes To Floor"));
+			undo_redo->create_action(TTR("Snap Nodes to Floor"));
 
 			// Perform snapping if at least one node can be snapped
 			for (int i = 0; i < keys.size(); i++) {
@@ -5919,6 +5969,7 @@ void SpatialEditor::_notification(int p_what) {
 		tool_button[SpatialEditor::TOOL_UNLOCK_SELECTED]->set_icon(get_icon("Unlock", "EditorIcons"));
 		tool_button[SpatialEditor::TOOL_GROUP_SELECTED]->set_icon(get_icon("Group", "EditorIcons"));
 		tool_button[SpatialEditor::TOOL_UNGROUP_SELECTED]->set_icon(get_icon("Ungroup", "EditorIcons"));
+		tool_button[SpatialEditor::TOOL_CONVERT_ROOMS]->set_icon(get_icon("RoomGroup", "EditorIcons"));
 
 		tool_option_button[SpatialEditor::TOOL_OPT_LOCAL_COORDS]->set_icon(get_icon("Object", "EditorIcons"));
 		tool_option_button[SpatialEditor::TOOL_OPT_USE_SNAP]->set_icon(get_icon("Snap", "EditorIcons"));
@@ -5947,6 +5998,7 @@ void SpatialEditor::_notification(int p_what) {
 		_init_indicators();
 	} else if (p_what == NOTIFICATION_THEME_CHANGED) {
 		_update_gizmos_menu_theme();
+		_update_context_menu_stylebox();
 	} else if (p_what == NOTIFICATION_EXIT_TREE) {
 		_finish_indicators();
 	} else if (p_what == EditorSettings::NOTIFICATION_EDITOR_SETTINGS_CHANGED) {
@@ -5984,16 +6036,25 @@ void SpatialEditor::_notification(int p_what) {
 }
 
 void SpatialEditor::add_control_to_menu_panel(Control *p_control) {
-	hbc_menu->add_child(p_control);
+	hbc_context_menu->add_child(p_control);
 }
 
 void SpatialEditor::remove_control_from_menu_panel(Control *p_control) {
-	hbc_menu->remove_child(p_control);
+	hbc_context_menu->remove_child(p_control);
 }
 
 void SpatialEditor::set_can_preview(Camera *p_preview) {
 	for (int i = 0; i < 4; i++) {
 		viewports[i]->set_can_preview(p_preview);
+	}
+}
+
+void SpatialEditor::set_message(String p_message, float p_time) {
+	for (uint32_t i = 0; i < VIEWPORTS_COUNT; i++) {
+		SpatialEditorViewport *viewport = get_editor_viewport(i);
+		if (viewport->is_visible()) {
+			viewport->set_message(p_message, p_time);
+		}
 	}
 }
 
@@ -6196,8 +6257,7 @@ SpatialEditor::SpatialEditor(EditorNode *p_editor) {
 	button_binds.write[0] = MENU_TOOL_SELECT;
 	tool_button[TOOL_MODE_SELECT]->connect("pressed", this, "_menu_item_pressed", button_binds);
 	tool_button[TOOL_MODE_SELECT]->set_shortcut(ED_SHORTCUT("spatial_editor/tool_select", TTR("Select Mode"), KEY_Q));
-	tool_button[TOOL_MODE_SELECT]->set_tooltip(keycode_get_string(KEY_MASK_CMD) + TTR("Drag: Rotate\nAlt+Drag: Move\nAlt+RMB: Depth list selection"));
-
+	tool_button[TOOL_MODE_SELECT]->set_tooltip(keycode_get_string(KEY_MASK_CMD) + TTR("Drag: Rotate selected node around pivot.") + "\n" + TTR("Alt+RMB: Show list of all nodes at position clicked, including locked."));
 	hbc_menu->add_child(memnew(VSeparator));
 
 	tool_button[TOOL_MODE_MOVE] = memnew(ToolButton);
@@ -6287,6 +6347,15 @@ SpatialEditor::SpatialEditor(EditorNode *p_editor) {
 	tool_option_button[TOOL_OPT_OVERRIDE_CAMERA]->connect("toggled", this, "_menu_item_toggled", button_binds);
 	_update_camera_override_button(false);
 
+	tool_button[TOOL_CONVERT_ROOMS] = memnew(ToolButton);
+	hbc_menu->add_child(tool_button[TOOL_CONVERT_ROOMS]);
+	tool_button[TOOL_CONVERT_ROOMS]->set_toggle_mode(false);
+	tool_button[TOOL_CONVERT_ROOMS]->set_flat(true);
+	button_binds.write[0] = MENU_TOOL_CONVERT_ROOMS;
+	tool_button[TOOL_CONVERT_ROOMS]->connect("pressed", this, "_menu_item_pressed", button_binds);
+	tool_button[TOOL_CONVERT_ROOMS]->set_shortcut(ED_SHORTCUT("spatial_editor/convert_rooms", TTR("Convert Rooms"), KEY_MASK_ALT | KEY_C));
+	tool_button[TOOL_CONVERT_ROOMS]->set_tooltip(TTR("Converts rooms for portal culling."));
+
 	hbc_menu->add_child(memnew(VSeparator));
 
 	// Drag and drop support;
@@ -6328,7 +6397,20 @@ SpatialEditor::SpatialEditor(EditorNode *p_editor) {
 	view_menu->set_switch_on_hover(true);
 	hbc_menu->add_child(view_menu);
 
+	hbc_menu->add_child(memnew(VSeparator));
+
+	context_menu_container = memnew(PanelContainer);
+	hbc_context_menu = memnew(HBoxContainer);
+	context_menu_container->add_child(hbc_context_menu);
+	// Use a custom stylebox to make contextual menu items stand out from the rest.
+	// This helps with editor usability as contextual menu items change when selecting nodes,
+	// even though it may not be immediately obvious at first.
+	hbc_menu->add_child(context_menu_container);
+	_update_context_menu_stylebox();
+
+	// Get the view menu popup and have it stay open when a checkable item is selected
 	p = view_menu->get_popup();
+	p->set_hide_on_checkable_item_selection(false);
 
 	accept = memnew(AcceptDialog);
 	editor->get_gui_base()->add_child(accept);
@@ -6345,7 +6427,8 @@ SpatialEditor::SpatialEditor(EditorNode *p_editor) {
 
 	p->add_separator();
 	p->add_check_shortcut(ED_SHORTCUT("spatial_editor/view_origin", TTR("View Origin")), MENU_VIEW_ORIGIN);
-	p->add_check_shortcut(ED_SHORTCUT("spatial_editor/view_grid", TTR("View Grid")), MENU_VIEW_GRID);
+	p->add_check_shortcut(ED_SHORTCUT("spatial_editor/view_grid", TTR("View Grid"), KEY_MASK_CMD + KEY_G), MENU_VIEW_GRID);
+	p->add_check_shortcut(ED_SHORTCUT("spatial_editor/view_portal_culling", TTR("View Portal Culling"), KEY_MASK_ALT | KEY_P), MENU_VIEW_PORTAL_CULLING);
 
 	p->add_separator();
 	p->add_shortcut(ED_SHORTCUT("spatial_editor/settings", TTR("Settings...")), MENU_VIEW_CAMERA_SETTINGS);
@@ -6515,6 +6598,10 @@ SpatialEditor::SpatialEditor(EditorNode *p_editor) {
 	EDITOR_DEF("editors/3d/navigation/show_viewport_rotation_gizmo", true);
 
 	over_gizmo_handle = -1;
+
+	// make sure the portal tools are off by default
+	// (when no RoomManager is present)
+	update_portal_tools();
 }
 
 SpatialEditor::~SpatialEditor() {

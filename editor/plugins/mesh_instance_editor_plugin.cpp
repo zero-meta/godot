@@ -153,14 +153,18 @@ void MeshInstanceEditor::_menu_option(int p_option) {
 			ur->add_undo_method(node->get_parent(), "remove_child", cshape);
 			ur->commit_action();
 		} break;
-		case MENU_OPTION_CREATE_SINGLE_CONVEX_COLLISION_SHAPE: {
+
+		case MENU_OPTION_CREATE_SINGLE_CONVEX_COLLISION_SHAPE:
+		case MENU_OPTION_CREATE_SIMPLIFIED_CONVEX_COLLISION_SHAPE: {
 			if (node == get_tree()->get_edited_scene_root()) {
 				err_dialog->set_text(TTR("Can't create a single convex collision shape for the scene root."));
 				err_dialog->popup_centered_minsize();
 				return;
 			}
 
-			Ref<Shape> shape = mesh->create_convex_shape();
+			bool simplify = (p_option == MENU_OPTION_CREATE_SIMPLIFIED_CONVEX_COLLISION_SHAPE);
+
+			Ref<Shape> shape = mesh->create_convex_shape(true, simplify);
 
 			if (shape.is_null()) {
 				err_dialog->set_text(TTR("Couldn't create a single convex collision shape."));
@@ -169,7 +173,11 @@ void MeshInstanceEditor::_menu_option(int p_option) {
 			}
 			UndoRedo *ur = EditorNode::get_singleton()->get_undo_redo();
 
-			ur->create_action(TTR("Create Single Convex Shape"));
+			if (simplify) {
+				ur->create_action(TTR("Create Simplified Convex Shape"));
+			} else {
+				ur->create_action(TTR("Create Single Convex Shape"));
+			}
 
 			CollisionShape *cshape = memnew(CollisionShape);
 			cshape->set_shape(shape);
@@ -186,6 +194,7 @@ void MeshInstanceEditor::_menu_option(int p_option) {
 			ur->commit_action();
 
 		} break;
+
 		case MENU_OPTION_CREATE_MULTIPLE_CONVEX_COLLISION_SHAPES: {
 			if (node == get_tree()->get_edited_scene_root()) {
 				err_dialog->set_text(TTR("Can't create multiple convex collision shapes for the scene root."));
@@ -323,7 +332,7 @@ void MeshInstanceEditor::_create_uv_lines(int p_layer) {
 
 		PoolVector<Vector2> uv = a[p_layer == 0 ? Mesh::ARRAY_TEX_UV : Mesh::ARRAY_TEX_UV2];
 		if (uv.size() == 0) {
-			err_dialog->set_text(TTR("Model has no UV in this layer"));
+			err_dialog->set_text(vformat(TTR("Mesh has no UV in layer %d."), p_layer + 1));
 			err_dialog->popup_centered_minsize();
 			return;
 		}
@@ -376,9 +385,10 @@ void MeshInstanceEditor::_debug_uv_draw() {
 	}
 
 	debug_uv->set_clip_contents(true);
-	debug_uv->draw_rect(Rect2(Vector2(), debug_uv->get_size()), Color(0.2, 0.2, 0.0));
+	debug_uv->draw_rect(Rect2(Vector2(), debug_uv->get_size()), get_color("dark_color_3", "Editor"));
 	debug_uv->draw_set_transform(Vector2(), 0, debug_uv->get_size());
-	debug_uv->draw_multiline(uv_lines, Color(1.0, 0.8, 0.7));
+	// Use a translucent color to allow overlapping triangles to be visible.
+	debug_uv->draw_multiline(uv_lines, get_color("mono_color", "Editor") * Color(1, 1, 1, 0.5), Math::round(EDSCALE));
 }
 
 void MeshInstanceEditor::_create_outline_mesh() {
@@ -447,8 +457,10 @@ MeshInstanceEditor::MeshInstanceEditor() {
 	options->get_popup()->set_item_tooltip(options->get_popup()->get_item_count() - 1, TTR("Creates a polygon-based collision shape.\nThis is the most accurate (but slowest) option for collision detection."));
 	options->get_popup()->add_item(TTR("Create Single Convex Collision Sibling"), MENU_OPTION_CREATE_SINGLE_CONVEX_COLLISION_SHAPE);
 	options->get_popup()->set_item_tooltip(options->get_popup()->get_item_count() - 1, TTR("Creates a single convex collision shape.\nThis is the fastest (but least accurate) option for collision detection."));
+	options->get_popup()->add_item(TTR("Create Simplified Convex Collision Sibling"), MENU_OPTION_CREATE_SIMPLIFIED_CONVEX_COLLISION_SHAPE);
+	options->get_popup()->set_item_tooltip(options->get_popup()->get_item_count() - 1, TTR("Creates a simplified convex collision shape.\nThis is similar to single collision shape, but can result in a simpler geometry in some cases, at the cost of accuracy."));
 	options->get_popup()->add_item(TTR("Create Multiple Convex Collision Siblings"), MENU_OPTION_CREATE_MULTIPLE_CONVEX_COLLISION_SHAPES);
-	options->get_popup()->set_item_tooltip(options->get_popup()->get_item_count() - 1, TTR("Creates a polygon-based collision shape.\nThis is a performance middle-ground between the two above options."));
+	options->get_popup()->set_item_tooltip(options->get_popup()->get_item_count() - 1, TTR("Creates a polygon-based collision shape.\nThis is a performance middle-ground between a single convex collision and a polygon-based collision."));
 	options->get_popup()->add_separator();
 	options->get_popup()->add_item(TTR("Create Navigation Mesh"), MENU_OPTION_CREATE_NAVMESH);
 	options->get_popup()->add_separator();

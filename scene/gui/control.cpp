@@ -88,12 +88,16 @@ void Control::_edit_set_state(const Dictionary &p_state) {
 	data.margin[MARGIN_RIGHT] = margins[2];
 	data.margin[MARGIN_BOTTOM] = margins[3];
 	_size_changed();
+	_change_notify("anchor_left");
+	_change_notify("anchor_right");
+	_change_notify("anchor_top");
+	_change_notify("anchor_bottom");
 }
 
 void Control::_edit_set_position(const Point2 &p_position) {
 #ifdef TOOLS_ENABLED
 	ERR_FAIL_COND_MSG(!Engine::get_singleton()->is_editor_hint(), "This function can only be used from editor plugins.");
-	set_position(p_position, CanvasItemEditor::get_singleton()->is_anchors_mode_enabled());
+	set_position(p_position, CanvasItemEditor::get_singleton()->is_anchors_mode_enabled() && Object::cast_to<Control>(data.parent));
 #else
 	// Unlikely to happen. TODO: enclose all _edit_ functions into TOOLS_ENABLED
 	set_position(p_position);
@@ -334,17 +338,48 @@ bool Control::_get(const StringName &p_name, Variant &r_ret) const {
 
 	return true;
 }
+
 void Control::_get_property_list(List<PropertyInfo> *p_list) const {
 	Ref<Theme> theme = Theme::get_default();
-	/* Using the default theme since the properties below are meant for editor only
-	if (data.theme.is_valid()) {
 
-		theme = data.theme;
-	} else {
-		theme = Theme::get_default();
+	p_list->push_back(PropertyInfo(Variant::NIL, "Theme Overrides", PROPERTY_HINT_NONE, "custom_", PROPERTY_USAGE_GROUP));
 
-	}*/
+	{
+		List<StringName> names;
+		theme->get_color_list(get_class_name(), &names);
+		for (List<StringName>::Element *E = names.front(); E; E = E->next()) {
+			uint32_t hint = PROPERTY_USAGE_EDITOR | PROPERTY_USAGE_CHECKABLE;
+			if (data.color_override.has(E->get())) {
+				hint |= PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_CHECKED;
+			}
 
+			p_list->push_back(PropertyInfo(Variant::COLOR, "custom_colors/" + E->get(), PROPERTY_HINT_NONE, "", hint));
+		}
+	}
+	{
+		List<StringName> names;
+		theme->get_constant_list(get_class_name(), &names);
+		for (List<StringName>::Element *E = names.front(); E; E = E->next()) {
+			uint32_t hint = PROPERTY_USAGE_EDITOR | PROPERTY_USAGE_CHECKABLE;
+			if (data.constant_override.has(E->get())) {
+				hint |= PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_CHECKED;
+			}
+
+			p_list->push_back(PropertyInfo(Variant::INT, "custom_constants/" + E->get(), PROPERTY_HINT_RANGE, "-16384,16384", hint));
+		}
+	}
+	{
+		List<StringName> names;
+		theme->get_font_list(get_class_name(), &names);
+		for (List<StringName>::Element *E = names.front(); E; E = E->next()) {
+			uint32_t hint = PROPERTY_USAGE_EDITOR | PROPERTY_USAGE_CHECKABLE;
+			if (data.font_override.has(E->get())) {
+				hint |= PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_CHECKED;
+			}
+
+			p_list->push_back(PropertyInfo(Variant::OBJECT, "custom_fonts/" + E->get(), PROPERTY_HINT_RESOURCE_TYPE, "Font", hint));
+		}
+	}
 	{
 		List<StringName> names;
 		theme->get_icon_list(get_class_name(), &names);
@@ -379,42 +414,6 @@ void Control::_get_property_list(List<PropertyInfo> *p_list) const {
 			}
 
 			p_list->push_back(PropertyInfo(Variant::OBJECT, "custom_styles/" + E->get(), PROPERTY_HINT_RESOURCE_TYPE, "StyleBox", hint));
-		}
-	}
-	{
-		List<StringName> names;
-		theme->get_font_list(get_class_name(), &names);
-		for (List<StringName>::Element *E = names.front(); E; E = E->next()) {
-			uint32_t hint = PROPERTY_USAGE_EDITOR | PROPERTY_USAGE_CHECKABLE;
-			if (data.font_override.has(E->get())) {
-				hint |= PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_CHECKED;
-			}
-
-			p_list->push_back(PropertyInfo(Variant::OBJECT, "custom_fonts/" + E->get(), PROPERTY_HINT_RESOURCE_TYPE, "Font", hint));
-		}
-	}
-	{
-		List<StringName> names;
-		theme->get_color_list(get_class_name(), &names);
-		for (List<StringName>::Element *E = names.front(); E; E = E->next()) {
-			uint32_t hint = PROPERTY_USAGE_EDITOR | PROPERTY_USAGE_CHECKABLE;
-			if (data.color_override.has(E->get())) {
-				hint |= PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_CHECKED;
-			}
-
-			p_list->push_back(PropertyInfo(Variant::COLOR, "custom_colors/" + E->get(), PROPERTY_HINT_NONE, "", hint));
-		}
-	}
-	{
-		List<StringName> names;
-		theme->get_constant_list(get_class_name(), &names);
-		for (List<StringName>::Element *E = names.front(); E; E = E->next()) {
-			uint32_t hint = PROPERTY_USAGE_EDITOR | PROPERTY_USAGE_CHECKABLE;
-			if (data.constant_override.has(E->get())) {
-				hint |= PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_CHECKED;
-			}
-
-			p_list->push_back(PropertyInfo(Variant::INT, "custom_constants/" + E->get(), PROPERTY_HINT_RANGE, "-16384,16384", hint));
 		}
 	}
 }
@@ -965,6 +964,7 @@ Color Control::get_color(const StringName &p_name, const StringName &p_node_type
 	}
 
 	StringName type = p_node_type ? p_node_type : get_class_name();
+
 	// try with custom themes
 	Control *theme_owner = data.theme_owner;
 
@@ -1005,6 +1005,7 @@ int Control::get_constant(const StringName &p_name, const StringName &p_node_typ
 	}
 
 	StringName type = p_node_type ? p_node_type : get_class_name();
+
 	// try with custom themes
 	Control *theme_owner = data.theme_owner;
 
@@ -1098,7 +1099,7 @@ bool Control::has_icon(const StringName &p_name, const StringName &p_node_type) 
 	}
 
 	if (Theme::get_project_default().is_valid()) {
-		if (Theme::get_project_default()->has_color(p_name, type)) {
+		if (Theme::get_project_default()->has_icon(p_name, type)) {
 			return true;
 		}
 	}
@@ -2586,6 +2587,7 @@ void Control::set_scale(const Vector2 &p_scale) {
 	}
 	update();
 	_notify_transform();
+	_change_notify("rect_scale");
 }
 Vector2 Control::get_scale() const {
 	return data.scale;
@@ -2905,7 +2907,6 @@ void Control::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::REAL, "size_flags_stretch_ratio", PROPERTY_HINT_RANGE, "0,20,0.01,or_greater"), "set_stretch_ratio", "get_stretch_ratio");
 	ADD_GROUP("Theme", "");
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "theme", PROPERTY_HINT_RESOURCE_TYPE, "Theme"), "set_theme", "get_theme");
-	ADD_GROUP("", "");
 
 	BIND_ENUM_CONSTANT(FOCUS_NONE);
 	BIND_ENUM_CONSTANT(FOCUS_CLICK);

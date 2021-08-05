@@ -60,7 +60,7 @@ static Error _parse_material_library(const String &p_path, Map<String, Ref<Spati
 			material_map[current_name] = current;
 		} else if (l.begins_with("Ka ")) {
 			//uv
-			WARN_PRINTS("OBJ: Ambient light for material '" + current_name + "' is ignored in PBR");
+			WARN_PRINT("OBJ: Ambient light for material '" + current_name + "' is ignored in PBR");
 
 		} else if (l.begins_with("Kd ")) {
 			//normal
@@ -116,7 +116,7 @@ static Error _parse_material_library(const String &p_path, Map<String, Ref<Spati
 
 		} else if (l.begins_with("map_Ka ")) {
 			//uv
-			WARN_PRINTS("OBJ: Ambient light texture for material '" + current_name + "' is ignored in PBR");
+			WARN_PRINT("OBJ: Ambient light texture for material '" + current_name + "' is ignored in PBR");
 
 		} else if (l.begins_with("map_Kd ")) {
 			//normal
@@ -210,7 +210,7 @@ static Error _parse_obj(const String &p_path, List<Ref<Mesh>> &r_meshes, bool p_
 	bool generate_tangents = p_generate_tangents;
 	Vector3 scale_mesh = p_scale_mesh;
 	Vector3 offset_mesh = p_offset_mesh;
-	int mesh_flags = p_optimize ? Mesh::ARRAY_COMPRESS_DEFAULT : 0;
+	int mesh_flags = p_optimize ? Mesh::ARRAY_COMPRESS_DEFAULT : Mesh::ARRAY_FLAG_USE_OCTAHEDRAL_COMPRESSION;
 
 	Vector<Vector3> vertices;
 	Vector<Vector3> normals;

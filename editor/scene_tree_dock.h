@@ -104,6 +104,7 @@ class SceneTreeDock : public VBoxContainer {
 	Vector<ObjectID> subresources;
 
 	bool restore_script_editor_on_drag;
+	bool reset_create_dialog = false;
 
 	int current_option;
 	CreateDialog *create_dialog;
@@ -126,7 +127,12 @@ class SceneTreeDock : public VBoxContainer {
 
 	HBoxContainer *tool_hbc;
 	void _tool_selected(int p_tool, bool p_confirm_override = false);
+	void _property_selected(int p_idx);
 	void _node_collapsed(Object *p_obj);
+
+	Node *property_drop_node = nullptr;
+	String resource_drop_path;
+	void _perform_property_drop(Node *p_node, String p_property, RES p_res);
 
 	EditorData *editor_data;
 	EditorSelection *editor_selection;
@@ -151,6 +157,7 @@ class SceneTreeDock : public VBoxContainer {
 
 	PopupMenu *menu;
 	PopupMenu *menu_subresources;
+	PopupMenu *menu_properties;
 	ConfirmationDialog *clear_inherit_confirm;
 
 	bool first_enter;
@@ -215,7 +222,7 @@ class SceneTreeDock : public VBoxContainer {
 	void _update_script_button();
 	Node *_get_selection_group_tail(Node *p_node, List<Node *> p_list);
 
-	void _fill_path_renames(Vector<StringName> base_path, Vector<StringName> new_base_path, Node *p_node, List<Pair<NodePath, NodePath>> *p_renames);
+	void _fill_path_renames(Vector<StringName> base_path, Vector<StringName> new_base_path, Node *p_node, Map<Node *, NodePath> *p_renames);
 
 	void _normalize_drop(Node *&to_node, int &to_pos, int p_type);
 
@@ -248,6 +255,9 @@ class SceneTreeDock : public VBoxContainer {
 	bool profile_allow_editing;
 	bool profile_allow_script_editing;
 
+	bool _update_node_path(Node *p_root_node, NodePath &r_node_path, Map<Node *, NodePath> *p_renames) const;
+	bool _check_node_path_recursive(Node *p_root_node, Variant &r_variant, Map<Node *, NodePath> *p_renames) const;
+
 protected:
 	void _notification(int p_what);
 	static void _bind_methods();
@@ -263,8 +273,8 @@ public:
 	void instance(const String &p_file);
 	void instance_scenes(const Vector<String> &p_files, Node *p_parent = nullptr);
 	void set_selected(Node *p_node, bool p_emit_selected = false);
-	void fill_path_renames(Node *p_node, Node *p_new_parent, List<Pair<NodePath, NodePath>> *p_renames);
-	void perform_node_renames(Node *p_base, List<Pair<NodePath, NodePath>> *p_renames, Map<Ref<Animation>, Set<int>> *r_rem_anims = nullptr);
+	void fill_path_renames(Node *p_node, Node *p_new_parent, Map<Node *, NodePath> *p_renames);
+	void perform_node_renames(Node *p_base, Map<Node *, NodePath> *p_renames, Map<Ref<Animation>, Set<int>> *r_rem_anims = nullptr);
 	SceneTreeEditor *get_tree_editor() { return scene_tree; }
 	EditorData *get_editor_data() { return editor_data; }
 
@@ -278,6 +288,9 @@ public:
 
 	void attach_script_to_selected(bool p_extend);
 	void open_script_dialog(Node *p_for_node, bool p_extend);
+
+	void open_add_child_dialog();
+	void open_instance_child_dialog();
 
 	ScriptCreateDialog *get_script_create_dialog() { return script_create_dialog; }
 

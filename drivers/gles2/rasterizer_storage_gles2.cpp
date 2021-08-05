@@ -516,7 +516,7 @@ void RasterizerStorageGLES2::texture_allocate(RID p_texture, int p_width, int p_
 	texture->format = p_format;
 
 	if (texture->width > config.max_texture_size || texture->height > config.max_texture_size) {
-		WARN_PRINTS("Cannot create texture larger than maximum hardware supported size of " + itos(config.max_texture_size) + ". Setting size to maximum.");
+		WARN_PRINT("Cannot create texture larger than maximum hardware supported size of " + itos(config.max_texture_size) + ". Setting size to maximum.");
 		texture->width = MIN(texture->width, config.max_texture_size);
 		texture->height = MIN(texture->height, config.max_texture_size);
 	}
@@ -641,7 +641,7 @@ void RasterizerStorageGLES2::texture_set_data(RID p_texture, const Ref<Image> &p
 
 	if (texture->resize_to_po2) {
 		if (p_image->is_compressed()) {
-			ERR_PRINTS("Texture '" + texture->path + "' is required to be a power of 2 because it uses either mipmaps or repeat, so it was decompressed. This will hurt performance and memory usage.");
+			ERR_PRINT("Texture '" + texture->path + "' is required to be a power of 2 because it uses either mipmaps or repeat, so it was decompressed. This will hurt performance and memory usage.");
 		}
 
 		if (img == p_image) {
@@ -2098,22 +2098,42 @@ static PoolVector<uint8_t> _unpack_half_floats(const PoolVector<uint8_t> &array,
 
 			} break;
 			case VS::ARRAY_NORMAL: {
-				if (p_format & VS::ARRAY_COMPRESS_NORMAL) {
-					src_size[i] = 4;
-					dst_size[i] = 4;
+				if (p_format & VS::ARRAY_FLAG_USE_OCTAHEDRAL_COMPRESSION) {
+					if (p_format & VS::ARRAY_COMPRESS_NORMAL) {
+						src_size[i] = 2;
+						dst_size[i] = 2;
+					} else {
+						src_size[i] = 4;
+						dst_size[i] = 4;
+					}
 				} else {
-					src_size[i] = 12;
-					dst_size[i] = 12;
+					if (p_format & VS::ARRAY_COMPRESS_NORMAL) {
+						src_size[i] = 4;
+						dst_size[i] = 4;
+					} else {
+						src_size[i] = 12;
+						dst_size[i] = 12;
+					}
 				}
 
 			} break;
 			case VS::ARRAY_TANGENT: {
-				if (p_format & VS::ARRAY_COMPRESS_TANGENT) {
-					src_size[i] = 4;
-					dst_size[i] = 4;
+				if (p_format & VS::ARRAY_FLAG_USE_OCTAHEDRAL_COMPRESSION) {
+					if (p_format & VS::ARRAY_COMPRESS_TANGENT) {
+						src_size[i] = 2;
+						dst_size[i] = 2;
+					} else {
+						src_size[i] = 4;
+						dst_size[i] = 4;
+					}
 				} else {
-					src_size[i] = 16;
-					dst_size[i] = 16;
+					if (p_format & VS::ARRAY_COMPRESS_TANGENT) {
+						src_size[i] = 4;
+						dst_size[i] = 4;
+					} else {
+						src_size[i] = 16;
+						dst_size[i] = 16;
+					}
 				}
 
 			} break;
@@ -2240,10 +2260,13 @@ void RasterizerStorageGLES2::mesh_add_surface(RID p_mesh, uint32_t p_format, VS:
 	}
 
 	//bool has_morph = p_blend_shapes.size();
+	bool use_split_stream = GLOBAL_GET("rendering/mesh_storage/split_stream");
 
 	Surface::Attrib attribs[VS::ARRAY_MAX];
 
-	int stride = 0;
+	int attributes_base_offset = 0;
+	int attributes_stride = 0;
+	int positions_stride = 0;
 	bool uses_half_float = false;
 
 	for (int i = 0; i < VS::ARRAY_MAX; i++) {
@@ -2256,7 +2279,7 @@ void RasterizerStorageGLES2::mesh_add_surface(RID p_mesh, uint32_t p_format, VS:
 		}
 
 		attribs[i].enabled = true;
-		attribs[i].offset = stride;
+		attribs[i].offset = attributes_base_offset + attributes_stride;
 		attribs[i].integer = false;
 
 		switch (i) {
@@ -2269,41 +2292,70 @@ void RasterizerStorageGLES2::mesh_add_surface(RID p_mesh, uint32_t p_format, VS:
 
 				if (p_format & VS::ARRAY_COMPRESS_VERTEX) {
 					attribs[i].type = _GL_HALF_FLOAT_OES;
-					stride += attribs[i].size * 2;
-					uses_half_float = true;
+					positions_stride += attribs[i].size * 2;
 				} else {
 					attribs[i].type = GL_FLOAT;
-					stride += attribs[i].size * 4;
+					positions_stride += attribs[i].size * 4;
 				}
 
 				attribs[i].normalized = GL_FALSE;
 
+				if (use_split_stream) {
+					attributes_base_offset = positions_stride * p_vertex_count;
+				} else {
+					attributes_base_offset = positions_stride;
+				}
+
 			} break;
 			case VS::ARRAY_NORMAL: {
-				attribs[i].size = 3;
-
-				if (p_format & VS::ARRAY_COMPRESS_NORMAL) {
-					attribs[i].type = GL_BYTE;
-					stride += 4; //pad extra byte
+				if (p_format & VS::ARRAY_FLAG_USE_OCTAHEDRAL_COMPRESSION) {
 					attribs[i].normalized = GL_TRUE;
+					attribs[i].size = 2;
+					if (p_format & VS::ARRAY_COMPRESS_NORMAL) {
+						attribs[i].type = GL_BYTE;
+						attributes_stride += 2;
+					} else {
+						attribs[i].type = GL_SHORT;
+						attributes_stride += 4;
+					}
 				} else {
-					attribs[i].type = GL_FLOAT;
-					stride += 12;
-					attribs[i].normalized = GL_FALSE;
+					attribs[i].size = 3;
+
+					if (p_format & VS::ARRAY_COMPRESS_NORMAL) {
+						attribs[i].type = GL_BYTE;
+						attributes_stride += 4; //pad extra byte
+						attribs[i].normalized = GL_TRUE;
+					} else {
+						attribs[i].type = GL_FLOAT;
+						attributes_stride += 12;
+						attribs[i].normalized = GL_FALSE;
+					}
 				}
 
 			} break;
 			case VS::ARRAY_TANGENT: {
-				attribs[i].size = 4;
-
-				if (p_format & VS::ARRAY_COMPRESS_TANGENT) {
-					attribs[i].type = GL_BYTE;
-					stride += 4;
+				if (p_format & VS::ARRAY_FLAG_USE_OCTAHEDRAL_COMPRESSION) {
 					attribs[i].normalized = GL_TRUE;
+					attribs[i].size = 2;
+					if (p_format & VS::ARRAY_COMPRESS_TANGENT) {
+						attribs[i].type = GL_BYTE;
+						attributes_stride += 2;
+					} else {
+						attribs[i].type = GL_SHORT;
+						attributes_stride += 4;
+					}
 				} else {
-					attribs[i].type = GL_FLOAT;
-					stride += 16;
-					attribs[i].normalized = GL_FALSE;
+					attribs[i].size = 4;
+
+					if (p_format & VS::ARRAY_COMPRESS_TANGENT) {
+						attribs[i].type = GL_BYTE;
+						attributes_stride += 4;
+						attribs[i].normalized = GL_TRUE;
+					} else {
+						attribs[i].type = GL_FLOAT;
+						attributes_stride += 16;
+						attribs[i].normalized = GL_FALSE;
+					}
 				}
 
 			} break;
@@ -2312,11 +2364,11 @@ void RasterizerStorageGLES2::mesh_add_surface(RID p_mesh, uint32_t p_format, VS:
 
 				if (p_format & VS::ARRAY_COMPRESS_COLOR) {
 					attribs[i].type = GL_UNSIGNED_BYTE;
-					stride += 4;
+					attributes_stride += 4;
 					attribs[i].normalized = GL_TRUE;
 				} else {
 					attribs[i].type = GL_FLOAT;
-					stride += 16;
+					attributes_stride += 16;
 					attribs[i].normalized = GL_FALSE;
 				}
 
@@ -2326,11 +2378,11 @@ void RasterizerStorageGLES2::mesh_add_surface(RID p_mesh, uint32_t p_format, VS:
 
 				if (p_format & VS::ARRAY_COMPRESS_TEX_UV) {
 					attribs[i].type = _GL_HALF_FLOAT_OES;
-					stride += 4;
+					attributes_stride += 4;
 					uses_half_float = true;
 				} else {
 					attribs[i].type = GL_FLOAT;
-					stride += 8;
+					attributes_stride += 8;
 				}
 
 				attribs[i].normalized = GL_FALSE;
@@ -2341,11 +2393,11 @@ void RasterizerStorageGLES2::mesh_add_surface(RID p_mesh, uint32_t p_format, VS:
 
 				if (p_format & VS::ARRAY_COMPRESS_TEX_UV2) {
 					attribs[i].type = _GL_HALF_FLOAT_OES;
-					stride += 4;
+					attributes_stride += 4;
 					uses_half_float = true;
 				} else {
 					attribs[i].type = GL_FLOAT;
-					stride += 8;
+					attributes_stride += 8;
 				}
 				attribs[i].normalized = GL_FALSE;
 
@@ -2355,10 +2407,10 @@ void RasterizerStorageGLES2::mesh_add_surface(RID p_mesh, uint32_t p_format, VS:
 
 				if (p_format & VS::ARRAY_FLAG_USE_16_BIT_BONES) {
 					attribs[i].type = GL_UNSIGNED_SHORT;
-					stride += 8;
+					attributes_stride += 8;
 				} else {
 					attribs[i].type = GL_UNSIGNED_BYTE;
-					stride += 4;
+					attributes_stride += 4;
 				}
 
 				attribs[i].normalized = GL_FALSE;
@@ -2370,11 +2422,11 @@ void RasterizerStorageGLES2::mesh_add_surface(RID p_mesh, uint32_t p_format, VS:
 
 				if (p_format & VS::ARRAY_COMPRESS_WEIGHTS) {
 					attribs[i].type = GL_UNSIGNED_SHORT;
-					stride += 8;
+					attributes_stride += 8;
 					attribs[i].normalized = GL_TRUE;
 				} else {
 					attribs[i].type = GL_FLOAT;
-					stride += 16;
+					attributes_stride += 16;
 					attribs[i].normalized = GL_FALSE;
 				}
 
@@ -2396,13 +2448,21 @@ void RasterizerStorageGLES2::mesh_add_surface(RID p_mesh, uint32_t p_format, VS:
 		}
 	}
 
-	for (int i = 0; i < VS::ARRAY_MAX - 1; i++) {
-		attribs[i].stride = stride;
+	if (use_split_stream) {
+		attribs[VS::ARRAY_VERTEX].stride = positions_stride;
+		for (int i = 1; i < VS::ARRAY_MAX - 1; i++) {
+			attribs[i].stride = attributes_stride;
+		}
+	} else {
+		for (int i = 0; i < VS::ARRAY_MAX - 1; i++) {
+			attribs[i].stride = positions_stride + attributes_stride;
+		}
 	}
 
 	//validate sizes
 	PoolVector<uint8_t> array = p_array;
 
+	int stride = positions_stride + attributes_stride;
 	int array_size = stride * p_vertex_count;
 	int index_array_size = 0;
 	if (array.size() != array_size && array.size() + p_vertex_count * 2 == array_size) {
@@ -3756,6 +3816,7 @@ RID RasterizerStorageGLES2::light_create(VS::LightType p_type) {
 
 	light->param[VS::LIGHT_PARAM_ENERGY] = 1.0;
 	light->param[VS::LIGHT_PARAM_INDIRECT_ENERGY] = 1.0;
+	light->param[VS::LIGHT_PARAM_SIZE] = 0.0;
 	light->param[VS::LIGHT_PARAM_SPECULAR] = 0.5;
 	light->param[VS::LIGHT_PARAM_RANGE] = 1.0;
 	light->param[VS::LIGHT_PARAM_SPOT_ANGLE] = 45;
@@ -4618,7 +4679,7 @@ void RasterizerStorageGLES2::_render_target_allocate(RenderTarget *rt) {
 	}
 
 	if (rt->width > config.max_viewport_dimensions[0] || rt->height > config.max_viewport_dimensions[1]) {
-		WARN_PRINTS("Cannot create render target larger than maximum hardware supported size of (" + itos(config.max_viewport_dimensions[0]) + ", " + itos(config.max_viewport_dimensions[1]) + "). Setting size to maximum.");
+		WARN_PRINT("Cannot create render target larger than maximum hardware supported size of (" + itos(config.max_viewport_dimensions[0]) + ", " + itos(config.max_viewport_dimensions[1]) + "). Setting size to maximum.");
 		rt->width = MIN(rt->width, config.max_viewport_dimensions[0]);
 		rt->height = MIN(rt->height, config.max_viewport_dimensions[1]);
 	}
@@ -4749,7 +4810,7 @@ void RasterizerStorageGLES2::_render_target_allocate(RenderTarget *rt) {
 		int max_samples = 0;
 		glGetIntegerv(GL_MAX_SAMPLES, &max_samples);
 		if (msaa > max_samples) {
-			WARN_PRINTS("MSAA must be <= GL_MAX_SAMPLES, falling-back to GL_MAX_SAMPLES = " + itos(max_samples));
+			WARN_PRINT("MSAA must be <= GL_MAX_SAMPLES, falling-back to GL_MAX_SAMPLES = " + itos(max_samples));
 			msaa = max_samples;
 		}
 

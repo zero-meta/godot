@@ -350,6 +350,10 @@ public:
 	String get_system_dir(SystemDir p_dir) const;
 
 	String get_user_data_dir() const;
+	String get_external_data_dir() const;
+	String get_config_dir() const;
+	String get_data_dir() const;
+	String get_cache_dir() const;
 
 	void alert(const String &p_alert, const String &p_title = "ALERT!");
 
@@ -369,6 +373,9 @@ public:
 
 	void set_vsync_via_compositor(bool p_enable);
 	bool is_vsync_via_compositor_enabled() const;
+
+	void set_delta_smoothing(bool p_enabled);
+	bool is_delta_smoothing_enabled() const;
 
 	PowerState get_power_state();
 	int get_power_seconds_left();
@@ -785,6 +792,9 @@ public:
 
 	void set_editor_hint(bool p_enabled);
 	bool is_editor_hint() const;
+
+	void set_print_error_messages(bool p_enabled);
+	bool is_printing_error_messages() const;
 
 	_Engine();
 };

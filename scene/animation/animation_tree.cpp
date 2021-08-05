@@ -138,7 +138,7 @@ void AnimationNode::make_invalid(const String &p_reason) {
 	if (state->invalid_reasons != String()) {
 		state->invalid_reasons += "\n";
 	}
-	state->invalid_reasons += "- " + p_reason;
+	state->invalid_reasons += String::utf8("• ") + p_reason;
 }
 
 float AnimationNode::blend_input(int p_input, float p_time, bool p_seek, float p_blend, FilterAction p_filter, bool p_optimize) {
@@ -559,7 +559,7 @@ bool AnimationTree::_update_caches(AnimationPlayer *player) {
 				Node *child = parent->get_node_and_resource(path, resource, leftover_path);
 
 				if (!child) {
-					ERR_PRINTS("AnimationTree: '" + String(E->get()) + "', couldn't resolve track:  '" + String(path) + "'");
+					ERR_PRINT("AnimationTree: '" + String(E->get()) + "', couldn't resolve track:  '" + String(path) + "'");
 					continue;
 				}
 
@@ -587,7 +587,7 @@ bool AnimationTree::_update_caches(AnimationPlayer *player) {
 						Spatial *spatial = Object::cast_to<Spatial>(child);
 
 						if (!spatial) {
-							ERR_PRINTS("AnimationTree: '" + String(E->get()) + "', transform track does not point to spatial:  '" + String(path) + "'");
+							ERR_PRINT("AnimationTree: '" + String(E->get()) + "', transform track does not point to spatial:  '" + String(path) + "'");
 							continue;
 						}
 

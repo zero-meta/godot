@@ -679,12 +679,12 @@ bool EditorAutoloadSettings::autoload_add(const String &p_name, const String &p_
 
 	const String &path = p_path;
 	if (!FileAccess::exists(path)) {
-		EditorNode::get_singleton()->show_warning(TTR("Can't add autoload:") + "\n" + TTR(vformat("%s is an invalid path. File does not exist.", path)));
+		EditorNode::get_singleton()->show_warning(TTR("Can't add autoload:") + "\n" + vformat(TTR("%s is an invalid path. File does not exist."), path));
 		return false;
 	}
 
 	if (!path.begins_with("res://")) {
-		EditorNode::get_singleton()->show_warning(TTR("Can't add autoload:") + "\n" + TTR(vformat("%s is an invalid path. Not in resource path (res://).", path)));
+		EditorNode::get_singleton()->show_warning(TTR("Can't add autoload:") + "\n" + vformat(TTR("%s is an invalid path. Not in resource path (res://)."), path));
 		return false;
 	}
 
@@ -871,15 +871,16 @@ EditorAutoloadSettings::EditorAutoloadSettings() {
 
 	tree->set_column_title(0, TTR("Name"));
 	tree->set_column_expand(0, true);
-	tree->set_column_min_width(0, 100);
+	tree->set_column_min_width(0, 100 * EDSCALE);
 
 	tree->set_column_title(1, TTR("Path"));
 	tree->set_column_expand(1, true);
-	tree->set_column_min_width(1, 100);
+	tree->set_column_min_width(1, 100 * EDSCALE);
 
-	tree->set_column_title(2, TTR("Singleton"));
+	tree->set_column_title(2, TTR("Global Variable"));
 	tree->set_column_expand(2, false);
-	tree->set_column_min_width(2, 80 * EDSCALE);
+	// Reserve enough space for translations of "Global Variable" which may be longer.
+	tree->set_column_min_width(2, 150 * EDSCALE);
 
 	tree->set_column_expand(3, false);
 	tree->set_column_min_width(3, 120 * EDSCALE);

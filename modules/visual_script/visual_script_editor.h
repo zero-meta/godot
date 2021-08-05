@@ -179,6 +179,9 @@ class VisualScriptEditor : public ScriptEditorBase {
 
 	void _port_action_menu(int p_option, const StringName &p_func);
 
+	NodePath drop_path;
+	Node *drop_node = nullptr;
+	Vector2 drop_position;
 	void connect_data(Ref<VisualScriptNode> vnode_old, Ref<VisualScriptNode> vnode, int new_id);
 
 	void _selected_connect_node(const String &p_text, const String &p_category, const bool p_connecting = true);
@@ -228,7 +231,8 @@ class VisualScriptEditor : public ScriptEditorBase {
 	void _update_node_size(int p_id);
 	void _port_name_focus_out(const Node *p_name_box, int p_id, int p_port, bool is_input);
 
-	Vector2 _get_available_pos(bool centered = true, Vector2 ofs = Vector2()) const;
+	Vector2 _get_pos_in_graph(Vector2 p_point) const;
+	Vector2 _get_available_pos(bool p_centered = true, Vector2 p_pos = Vector2()) const;
 	StringName _get_function_of_node(int p_id) const;
 
 	void _move_nodes_with_rescan(const StringName &p_func_from, const StringName &p_func_to, int p_id);

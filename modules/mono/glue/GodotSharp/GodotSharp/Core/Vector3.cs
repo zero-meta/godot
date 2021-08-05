@@ -1,16 +1,10 @@
-// file: core/math/vector3.h
-// commit: bd282ff43f23fe845f29a3e25c8efc01bd65ffb0
-// file: core/math/vector3.cpp
-// commit: 7ad14e7a3e6f87ddc450f7e34621eb5200808451
-// file: core/variant_call.cpp
-// commit: 5ad9be4c24e9d7dc5672fdc42cea896622fe5685
-using System;
-using System.Runtime.InteropServices;
 #if REAL_T_IS_DOUBLE
 using real_t = System.Double;
 #else
 using real_t = System.Single;
 #endif
+using System;
+using System.Runtime.InteropServices;
 
 namespace Godot
 {
@@ -111,10 +105,10 @@ namespace Godot
         }
 
         /// <summary>
-        /// Returns the minimum angle to the given vector, in radians.
+        /// Returns the unsigned minimum angle to the given vector, in radians.
         /// </summary>
         /// <param name="to">The other vector to compare this vector to.</param>
-        /// <returns>The angle between the two vectors, in radians.</returns>
+        /// <returns>The unsigned angle between the two vectors, in radians.</returns>
         public real_t AngleTo(Vector3 to)
         {
             return Mathf.Atan2(Cross(to).Length(), Dot(to));
@@ -419,7 +413,7 @@ namespace Godot
 #if DEBUG
             if (!normal.IsNormalized())
             {
-                throw new ArgumentException("Argument  is not normalized", nameof(normal));
+                throw new ArgumentException("Argument is not normalized", nameof(normal));
             }
 #endif
             return 2.0f * Dot(normal) * normal - this;
@@ -437,7 +431,7 @@ namespace Godot
 #if DEBUG
             if (!axis.IsNormalized())
             {
-                throw new ArgumentException("Argument  is not normalized", nameof(axis));
+                throw new ArgumentException("Argument is not normalized", nameof(axis));
             }
 #endif
             return new Basis(axis, phi).Xform(this);
@@ -481,6 +475,23 @@ namespace Godot
             v.y = Mathf.Sign(y);
             v.z = Mathf.Sign(z);
             return v;
+        }
+
+        /// <summary>
+        /// Returns the signed angle to the given vector, in radians.
+        /// The sign of the angle is positive in a counter-clockwise
+        /// direction and negative in a clockwise direction when viewed
+        /// from the side specified by the `axis`.
+        /// </summary>
+        /// <param name="to">The other vector to compare this vector to.</param>
+        /// <param name="axis">The reference axis to use for the angle sign.</param>
+        /// <returns>The signed angle between the two vectors, in radians.</returns>
+        public real_t SignedAngleTo(Vector3 to, Vector3 axis)
+        {
+            Vector3 crossTo = Cross(to);
+            real_t unsignedAngle = Mathf.Atan2(crossTo.Length(), Dot(to));
+            real_t sign = crossTo.Dot(axis);
+            return (sign < 0) ? -unsignedAngle : unsignedAngle;
         }
 
         /// <summary>

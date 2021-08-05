@@ -1,10 +1,10 @@
-using System;
-using System.Runtime.InteropServices;
 #if REAL_T_IS_DOUBLE
 using real_t = System.Double;
 #else
 using real_t = System.Single;
 #endif
+using System;
+using System.Runtime.InteropServices;
 
 namespace Godot
 {
@@ -111,6 +111,23 @@ namespace Godot
         public real_t LengthSquared
         {
             get { return Dot(this); }
+        }
+
+        /// <summary>
+        /// Returns the angle between this quaternion and `to`.
+        /// This is the magnitude of the angle you would need to rotate
+        /// by to get from one to the other.
+        ///
+        /// Note: This method has an abnormally high amount
+        /// of floating-point error, so methods such as
+        /// <see cref="Mathf.IsZeroApprox"/> will not work reliably.
+        /// </summary>
+        /// <param name="to">The other quaternion.</param>
+        /// <returns>The angle between the quaternions.</returns>
+        public real_t AngleTo(Quat to)
+        {
+            real_t dot = Dot(to);
+            return Mathf.Acos(Mathf.Clamp(dot * dot * 2 - 1, -1, 1));
         }
 
         /// <summary>

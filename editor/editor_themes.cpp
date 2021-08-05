@@ -36,7 +36,8 @@
 #include "editor_scale.h"
 #include "editor_settings.h"
 
-#ifdef SVG_ENABLED
+#include "modules/modules_enabled.gen.h"
+#ifdef MODULE_SVG_ENABLED
 #include "modules/svg/image_loader_svg.h"
 #endif
 
@@ -104,7 +105,7 @@ static Ref<Texture> flip_icon(Ref<Texture> p_texture, bool p_flip_y = false, boo
 	return texture;
 }
 
-#ifdef SVG_ENABLED
+#ifdef MODULE_SVG_ENABLED
 static Ref<ImageTexture> editor_generate_icon(int p_index, bool p_convert_color, float p_scale = EDSCALE, bool p_force_filter = false) {
 	Ref<ImageTexture> icon = memnew(ImageTexture);
 	Ref<Image> img = memnew(Image);
@@ -133,7 +134,7 @@ static Ref<ImageTexture> editor_generate_icon(int p_index, bool p_convert_color,
 #endif
 
 void editor_register_and_generate_icons(Ref<Theme> p_theme, bool p_dark_theme = true, int p_thumb_size = 32, bool p_only_thumbs = false) {
-#ifdef SVG_ENABLED
+#ifdef MODULE_SVG_ENABLED
 	// The default icon theme is designed to be used for a dark theme.
 	// This dictionary stores color codes to convert to other colors
 	// for better readability on a light theme.
@@ -155,6 +156,7 @@ void editor_register_and_generate_icons(Ref<Theme> p_theme, bool p_dark_theme = 
 		ADD_CONVERT_COLOR(dark_icon_color_dictionary, "#a5b7f3", "#3d64dd"); // 2d
 		ADD_CONVERT_COLOR(dark_icon_color_dictionary, "#708cea", "#1a3eac"); // 2d dark
 		ADD_CONVERT_COLOR(dark_icon_color_dictionary, "#a5efac", "#2fa139"); // control
+		ADD_CONVERT_COLOR(dark_icon_color_dictionary, "#ffdd65", "#ca8a04"); // node warning
 
 		// rainbow
 		ADD_CONVERT_COLOR(dark_icon_color_dictionary, "#ff7070", "#ff2929"); // red
@@ -218,6 +220,7 @@ void editor_register_and_generate_icons(Ref<Theme> p_theme, bool p_dark_theme = 
 		exceptions.insert("EditorControlAnchor");
 		exceptions.insert("DefaultProjectIcon");
 		exceptions.insert("GuiChecked");
+		exceptions.insert("GuiRadioChecked");
 		exceptions.insert("GuiCloseCustomizable");
 		exceptions.insert("GuiGraphNodePort");
 		exceptions.insert("GuiResizer");
@@ -229,7 +232,6 @@ void editor_register_and_generate_icons(Ref<Theme> p_theme, bool p_dark_theme = 
 		exceptions.insert("StatusError");
 		exceptions.insert("StatusSuccess");
 		exceptions.insert("StatusWarning");
-		exceptions.insert("NodeWarning");
 		exceptions.insert("OverbrightIndicator");
 	}
 
@@ -379,6 +381,7 @@ Ref<Theme> create_editor_theme(const Ref<Theme> p_theme) {
 	const Color font_color = mono_color.linear_interpolate(base_color, 0.25);
 	const Color font_color_hl = mono_color.linear_interpolate(base_color, 0.15);
 	const Color font_color_disabled = Color(mono_color.r, mono_color.g, mono_color.b, 0.3);
+	const Color font_color_readonly = Color(mono_color.r, mono_color.g, mono_color.b, 0.65);
 	const Color font_color_selection = accent_color * Color(1, 1, 1, 0.4);
 	const Color color_disabled = mono_color.inverted().linear_interpolate(base_color, 0.7);
 	const Color color_disabled_bg = mono_color.inverted().linear_interpolate(base_color, 0.9);
@@ -903,7 +906,16 @@ Ref<Theme> create_editor_theme(const Ref<Theme> p_theme) {
 	style_content_panel->set_default_margin(MARGIN_BOTTOM, margin_size_extra * EDSCALE);
 	style_content_panel->set_default_margin(MARGIN_LEFT, margin_size_extra * EDSCALE);
 
-	// this is the stylebox used in 3d and 2d viewports (no borders)
+	// These styleboxes can be used on tabs against the base color background (e.g. nested tabs).
+	Ref<StyleBoxFlat> style_tab_selected_odd = style_tab_selected->duplicate();
+	style_tab_selected_odd->set_bg_color(color_disabled_bg);
+	theme->set_stylebox("tab_selected_odd", "TabContainer", style_tab_selected_odd);
+
+	Ref<StyleBoxFlat> style_content_panel_odd = style_content_panel->duplicate();
+	style_content_panel_odd->set_bg_color(color_disabled_bg);
+	theme->set_stylebox("panel_odd", "TabContainer", style_content_panel_odd);
+
+	// This stylebox is used in 3d and 2d viewports (no borders).
 	Ref<StyleBoxFlat> style_content_panel_vp = style_content_panel->duplicate();
 	style_content_panel_vp->set_default_margin(MARGIN_LEFT, border_width * 2);
 	style_content_panel_vp->set_default_margin(MARGIN_TOP, default_margin_size * EDSCALE);
@@ -911,6 +923,14 @@ Ref<Theme> create_editor_theme(const Ref<Theme> p_theme) {
 	style_content_panel_vp->set_default_margin(MARGIN_BOTTOM, border_width * 2);
 	theme->set_stylebox("panel", "TabContainer", style_content_panel);
 	theme->set_stylebox("Content", "EditorStyles", style_content_panel_vp);
+
+	// This stylebox is used by preview tabs in the Theme Editor.
+	Ref<StyleBoxFlat> style_theme_preview_tab = style_tab_selected_odd->duplicate();
+	style_theme_preview_tab->set_expand_margin_size(MARGIN_BOTTOM, 3 * EDSCALE);
+	theme->set_stylebox("ThemeEditorPreviewFG", "EditorStyles", style_theme_preview_tab);
+	Ref<StyleBoxFlat> style_theme_preview_bg_tab = style_tab_unselected->duplicate();
+	style_theme_preview_bg_tab->set_expand_margin_size(MARGIN_BOTTOM, 2 * EDSCALE);
+	theme->set_stylebox("ThemeEditorPreviewBG", "EditorStyles", style_theme_preview_bg_tab);
 
 	// Separators
 	theme->set_stylebox("separator", "HSeparator", make_line_stylebox(separator_color, border_width));
@@ -938,6 +958,7 @@ Ref<Theme> create_editor_theme(const Ref<Theme> p_theme) {
 	theme->set_color("read_only", "LineEdit", font_color_disabled);
 	theme->set_color("font_color", "LineEdit", font_color);
 	theme->set_color("font_color_selected", "LineEdit", mono_color);
+	theme->set_color("font_color_uneditable", "LineEdit", font_color_readonly);
 	theme->set_color("cursor_color", "LineEdit", font_color);
 	theme->set_color("selection_color", "LineEdit", font_color_selection);
 	theme->set_color("clear_button_color", "LineEdit", font_color);
@@ -953,6 +974,7 @@ Ref<Theme> create_editor_theme(const Ref<Theme> p_theme) {
 	theme->set_icon("folded", "TextEdit", theme->get_icon("GuiTreeArrowRight", "EditorIcons"));
 	theme->set_icon("fold", "TextEdit", theme->get_icon("GuiTreeArrowDown", "EditorIcons"));
 	theme->set_color("font_color", "TextEdit", font_color);
+	theme->set_color("font_color_readonly", "TextEdit", font_color_readonly);
 	theme->set_color("caret_color", "TextEdit", font_color);
 	theme->set_color("selection_color", "TextEdit", font_color_selection);
 
@@ -1246,6 +1268,19 @@ Ref<Theme> create_editor_theme(const Ref<Theme> p_theme) {
 	style_info_3d_viewport->set_border_width_all(0);
 	theme->set_stylebox("Information3dViewport", "EditorStyles", style_info_3d_viewport);
 
+	// Theme editor.
+	theme->set_color("preview_picker_overlay_color", "ThemeEditor", Color(0.1, 0.1, 0.1, 0.25));
+	Color theme_preview_picker_bg_color = accent_color;
+	theme_preview_picker_bg_color.a = 0.2;
+	Ref<StyleBoxFlat> theme_preview_picker_sb = make_flat_stylebox(theme_preview_picker_bg_color, 0, 0, 0, 0);
+	theme_preview_picker_sb->set_border_color(accent_color);
+	theme_preview_picker_sb->set_border_width_all(1.0 * EDSCALE);
+	theme->set_stylebox("preview_picker_overlay", "ThemeEditor", theme_preview_picker_sb);
+	Color theme_preview_picker_label_bg_color = accent_color;
+	theme_preview_picker_label_bg_color.set_hsv(theme_preview_picker_label_bg_color.get_h(), theme_preview_picker_label_bg_color.get_s(), 0.5);
+	Ref<StyleBoxFlat> theme_preview_picker_label_sb = make_flat_stylebox(theme_preview_picker_label_bg_color, 4.0, 1.0, 4.0, 3.0);
+	theme->set_stylebox("preview_picker_label", "ThemeEditor", theme_preview_picker_label_sb);
+
 	// adaptive script theme constants
 	// for comments and elements with lower relevance
 	const Color dim_color = Color(font_color.r, font_color.g, font_color.b, 0.5);
@@ -1356,7 +1391,7 @@ Ref<Theme> create_custom_theme(const Ref<Theme> p_theme) {
 }
 
 Ref<ImageTexture> create_unscaled_default_project_icon() {
-#ifdef SVG_ENABLED
+#ifdef MODULE_SVG_ENABLED
 	for (int i = 0; i < editor_icons_count; i++) {
 		// ESCALE should never affect size of the icon
 		if (strcmp(editor_icons_names[i], "DefaultProjectIcon") == 0) {

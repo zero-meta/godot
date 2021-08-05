@@ -251,6 +251,8 @@ bool PhysicsDirectSpaceStateSW::cast_motion(const RID &p_shape, const Transform 
 
 	bool best_first = true;
 
+	Vector3 motion_normal = p_motion.normalized();
+
 	Vector3 closest_A, closest_B;
 
 	for (int i = 0; i < amount; i++) {
@@ -266,7 +268,7 @@ bool PhysicsDirectSpaceStateSW::cast_motion(const RID &p_shape, const Transform 
 		int shape_idx = space->intersection_query_subindex_results[i];
 
 		Vector3 point_A, point_B;
-		Vector3 sep_axis = p_motion.normalized();
+		Vector3 sep_axis = motion_normal;
 
 		Transform col_obj_xform = col_obj->get_transform() * col_obj->get_shape_transform(shape_idx);
 		//test initial overlap, does it collide if going all the way?
@@ -275,35 +277,47 @@ bool PhysicsDirectSpaceStateSW::cast_motion(const RID &p_shape, const Transform 
 		}
 
 		//test initial overlap, ignore objects it's inside of.
-		sep_axis = p_motion.normalized();
+		sep_axis = motion_normal;
 
 		if (!CollisionSolverSW::solve_distance(shape, p_xform, col_obj->get_shape(shape_idx), col_obj_xform, point_A, point_B, aabb, &sep_axis)) {
 			continue;
 		}
 
 		//just do kinematic solving
-		real_t low = 0;
-		real_t hi = 1;
-		Vector3 mnormal = p_motion.normalized();
-
+		real_t low = 0.0;
+		real_t hi = 1.0;
+		real_t fraction_coeff = 0.5;
 		for (int j = 0; j < 8; j++) { //steps should be customizable..
+			real_t fraction = low + (hi - low) * fraction_coeff;
 
-			real_t ofs = (low + hi) * 0.5;
-
-			Vector3 sep = mnormal; //important optimization for this to work fast enough
-
-			mshape.motion = xform_inv.basis.xform(p_motion * ofs);
+			mshape.motion = xform_inv.basis.xform(p_motion * fraction);
 
 			Vector3 lA, lB;
-
+			Vector3 sep = motion_normal; //important optimization for this to work fast enough
 			bool collided = !CollisionSolverSW::solve_distance(&mshape, p_xform, col_obj->get_shape(shape_idx), col_obj_xform, lA, lB, aabb, &sep);
 
 			if (collided) {
-				hi = ofs;
+				hi = fraction;
+				if ((j == 0) || (low > 0.0)) { // Did it not collide before?
+					// When alternating or first iteration, use dichotomy.
+					fraction_coeff = 0.5;
+				} else {
+					// When colliding again, converge faster towards low fraction
+					// for more accurate results with long motions that collide near the start.
+					fraction_coeff = 0.25;
+				}
 			} else {
 				point_A = lA;
 				point_B = lB;
-				low = ofs;
+				low = fraction;
+				if ((j == 0) || (hi < 1.0)) { // Did it collide before?
+					// When alternating or first iteration, use dichotomy.
+					fraction_coeff = 0.5;
+				} else {
+					// When not colliding again, converge faster towards high fraction
+					// for more accurate results with long motions that collide near the end.
+					fraction_coeff = 0.75;
+				}
 			}
 		}
 
@@ -485,7 +499,7 @@ Vector3 PhysicsDirectSpaceStateSW::get_closest_point_to_object_volume(RID p_obje
 	bool shapes_found = false;
 
 	for (int i = 0; i < obj->get_shape_count(); i++) {
-		if (obj->is_shape_set_as_disabled(i)) {
+		if (obj->is_shape_disabled(i)) {
 			continue;
 		}
 
@@ -530,8 +544,6 @@ int SpaceSW::_cull_aabb_for_body(BodySW *p_body, const AABB &p_aabb) {
 			keep = false;
 		} else if (static_cast<BodySW *>(intersection_query_results[i])->has_exception(p_body->get_self()) || p_body->has_exception(intersection_query_results[i]->get_self())) {
 			keep = false;
-		} else if (static_cast<BodySW *>(intersection_query_results[i])->is_shape_set_as_disabled(intersection_query_subindex_results[i])) {
-			keep = false;
 		}
 
 		if (!keep) {
@@ -554,7 +566,7 @@ int SpaceSW::test_body_ray_separation(BodySW *p_body, const Transform &p_transfo
 	bool shapes_found = false;
 
 	for (int i = 0; i < p_body->get_shape_count(); i++) {
-		if (p_body->is_shape_set_as_disabled(i)) {
+		if (p_body->is_shape_disabled(i)) {
 			continue;
 		}
 
@@ -601,7 +613,7 @@ int SpaceSW::test_body_ray_separation(BodySW *p_body, const Transform &p_transfo
 			int amount = _cull_aabb_for_body(p_body, body_aabb);
 
 			for (int j = 0; j < p_body->get_shape_count(); j++) {
-				if (p_body->is_shape_set_as_disabled(j)) {
+				if (p_body->is_shape_disabled(j)) {
 					continue;
 				}
 
@@ -716,7 +728,7 @@ bool SpaceSW::test_body_motion(BodySW *p_body, const Transform &p_from, const Ve
 	bool shapes_found = false;
 
 	for (int i = 0; i < p_body->get_shape_count(); i++) {
-		if (p_body->is_shape_set_as_disabled(i)) {
+		if (p_body->is_shape_disabled(i)) {
 			continue;
 		}
 
@@ -769,7 +781,7 @@ bool SpaceSW::test_body_motion(BodySW *p_body, const Transform &p_from, const Ve
 			int amount = _cull_aabb_for_body(p_body, body_aabb);
 
 			for (int j = 0; j < p_body->get_shape_count(); j++) {
-				if (p_body->is_shape_set_as_disabled(j)) {
+				if (p_body->is_shape_disabled(j)) {
 					continue;
 				}
 
@@ -782,6 +794,13 @@ bool SpaceSW::test_body_motion(BodySW *p_body, const Transform &p_from, const Ve
 				for (int i = 0; i < amount; i++) {
 					const CollisionObjectSW *col_obj = intersection_query_results[i];
 					int shape_idx = intersection_query_subindex_results[i];
+
+					if (CollisionObjectSW::TYPE_BODY == col_obj->get_type()) {
+						const BodySW *b = static_cast<const BodySW *>(col_obj);
+						if (p_infinite_inertia && PhysicsServer::BODY_MODE_STATIC != b->get_mode() && PhysicsServer::BODY_MODE_KINEMATIC != b->get_mode()) {
+							continue;
+						}
+					}
 
 					if (CollisionSolverSW::solve_static(body_shape, body_shape_xform, col_obj->get_shape(shape_idx), col_obj->get_transform() * col_obj->get_shape_transform(shape_idx), cbkres, cbkptr, nullptr, p_margin)) {
 						collided = cbk.amount > 0;
@@ -840,7 +859,7 @@ bool SpaceSW::test_body_motion(BodySW *p_body, const Transform &p_from, const Ve
 		int amount = _cull_aabb_for_body(p_body, motion_aabb);
 
 		for (int j = 0; j < p_body->get_shape_count(); j++) {
-			if (p_body->is_shape_set_as_disabled(j)) {
+			if (p_body->is_shape_disabled(j)) {
 				continue;
 			}
 
@@ -865,6 +884,13 @@ bool SpaceSW::test_body_motion(BodySW *p_body, const Transform &p_from, const Ve
 				const CollisionObjectSW *col_obj = intersection_query_results[i];
 				int shape_idx = intersection_query_subindex_results[i];
 
+				if (CollisionObjectSW::TYPE_BODY == col_obj->get_type()) {
+					const BodySW *b = static_cast<const BodySW *>(col_obj);
+					if (p_infinite_inertia && PhysicsServer::BODY_MODE_STATIC != b->get_mode() && PhysicsServer::BODY_MODE_KINEMATIC != b->get_mode()) {
+						continue;
+					}
+				}
+
 				//test initial overlap, does it collide if going all the way?
 				Vector3 point_A, point_B;
 				Vector3 sep_axis = motion_normal;
@@ -882,27 +908,40 @@ bool SpaceSW::test_body_motion(BodySW *p_body, const Transform &p_from, const Ve
 				}
 
 				//just do kinematic solving
-				real_t low = 0;
-				real_t hi = 1;
-
+				real_t low = 0.0;
+				real_t hi = 1.0;
+				real_t fraction_coeff = 0.5;
 				for (int k = 0; k < 8; k++) { //steps should be customizable..
+					real_t fraction = low + (hi - low) * fraction_coeff;
 
-					real_t ofs = (low + hi) * 0.5;
-
-					Vector3 sep = motion_normal; //important optimization for this to work fast enough
-
-					mshape.motion = body_shape_xform_inv.basis.xform(p_motion * ofs);
+					mshape.motion = body_shape_xform_inv.basis.xform(p_motion * fraction);
 
 					Vector3 lA, lB;
-
+					Vector3 sep = motion_normal; //important optimization for this to work fast enough
 					bool collided = !CollisionSolverSW::solve_distance(&mshape, body_shape_xform, col_obj->get_shape(shape_idx), col_obj_xform, lA, lB, motion_aabb, &sep);
 
 					if (collided) {
-						hi = ofs;
+						hi = fraction;
+						if ((k == 0) || (low > 0.0)) { // Did it not collide before?
+							// When alternating or first iteration, use dichotomy.
+							fraction_coeff = 0.5;
+						} else {
+							// When colliding again, converge faster towards low fraction
+							// for more accurate results with long motions that collide near the start.
+							fraction_coeff = 0.25;
+						}
 					} else {
 						point_A = lA;
 						point_B = lB;
-						low = ofs;
+						low = fraction;
+						if ((k == 0) || (hi < 1.0)) { // Did it collide before?
+							// When alternating or first iteration, use dichotomy.
+							fraction_coeff = 0.5;
+						} else {
+							// When not colliding again, converge faster towards high fraction
+							// for more accurate results with long motions that collide near the end.
+							fraction_coeff = 0.75;
+						}
 					}
 				}
 
@@ -952,7 +991,7 @@ bool SpaceSW::test_body_motion(BodySW *p_body, const Transform &p_from, const Ve
 		int to_shape = best_shape != -1 ? best_shape + 1 : p_body->get_shape_count();
 
 		for (int j = from_shape; j < to_shape; j++) {
-			if (p_body->is_shape_set_as_disabled(j)) {
+			if (p_body->is_shape_disabled(j)) {
 				continue;
 			}
 
@@ -970,6 +1009,13 @@ bool SpaceSW::test_body_motion(BodySW *p_body, const Transform &p_from, const Ve
 			for (int i = 0; i < amount; i++) {
 				const CollisionObjectSW *col_obj = intersection_query_results[i];
 				int shape_idx = intersection_query_subindex_results[i];
+
+				if (CollisionObjectSW::TYPE_BODY == col_obj->get_type()) {
+					const BodySW *b = static_cast<const BodySW *>(col_obj);
+					if (p_infinite_inertia && PhysicsServer::BODY_MODE_STATIC != b->get_mode() && PhysicsServer::BODY_MODE_KINEMATIC != b->get_mode()) {
+						continue;
+					}
+				}
 
 				rcd.object = col_obj;
 				rcd.shape = shape_idx;
@@ -989,6 +1035,9 @@ bool SpaceSW::test_body_motion(BodySW *p_body, const Transform &p_from, const Ve
 				r_result->collision_local_shape = rcd.best_local_shape;
 				r_result->collision_normal = rcd.best_normal;
 				r_result->collision_point = rcd.best_contact;
+				r_result->collision_depth = rcd.best_len;
+				r_result->collision_safe_fraction = safe;
+				r_result->collision_unsafe_fraction = unsafe;
 				//r_result->collider_metadata = rcd.best_object->get_shape_metadata(rcd.best_shape);
 
 				const BodySW *body = static_cast<const BodySW *>(rcd.best_object);

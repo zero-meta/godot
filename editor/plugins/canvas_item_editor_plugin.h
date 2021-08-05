@@ -82,6 +82,11 @@ public:
 		TOOL_MAX
 	};
 
+	enum AddNodeOption {
+		ADD_NODE,
+		ADD_INSTANCE,
+	};
+
 private:
 	EditorNode *editor;
 
@@ -206,6 +211,7 @@ private:
 		DRAG_ANCHOR_BOTTOM_RIGHT,
 		DRAG_ANCHOR_BOTTOM_LEFT,
 		DRAG_ANCHOR_ALL,
+		DRAG_QUEUED,
 		DRAG_MOVE,
 		DRAG_SCALE_X,
 		DRAG_SCALE_Y,
@@ -228,6 +234,10 @@ private:
 	HScrollBar *h_scroll;
 	VScrollBar *v_scroll;
 	HBoxContainer *hb;
+	// Used for secondary menu items which are displayed depending on the currently selected node
+	// (such as MeshInstance's "Mesh" menu).
+	PanelContainer *context_menu_container;
+	HBoxContainer *hbc_context_menu;
 
 	ToolButton *zoom_minus;
 	ToolButton *zoom_reset;
@@ -283,6 +293,7 @@ private:
 
 	bool ruler_tool_active;
 	Point2 ruler_tool_origin;
+	Point2 node_create_position;
 
 	MenuOption last_option;
 
@@ -379,10 +390,12 @@ private:
 	Button *key_auto_insert_button;
 
 	PopupMenu *selection_menu;
+	PopupMenu *add_node_menu;
 
 	Control *top_ruler;
 	Control *left_ruler;
 
+	Point2 drag_start_origin;
 	DragType drag_type;
 	Point2 drag_from;
 	Point2 drag_to;
@@ -439,6 +452,9 @@ private:
 	void _snap_changed();
 	void _selection_result_pressed(int);
 	void _selection_menu_hide();
+	void _add_node_pressed(int p_result);
+	void _node_created(Node *p_node);
+	void _reset_create_position();
 
 	UndoRedo *undo_redo;
 	bool _build_bones_list(Node *p_node);
@@ -529,12 +545,13 @@ private:
 
 	VBoxContainer *controls_vb;
 	HBoxContainer *zoom_hb;
-	float _get_next_zoom_value(int p_increment_count) const;
+	float _get_next_zoom_value(int p_increment_count, bool p_integer_only = false) const;
 	void _zoom_on_position(float p_zoom, Point2 p_position = Point2());
 	void _update_zoom_label();
 	void _button_zoom_minus();
 	void _button_zoom_reset();
 	void _button_zoom_plus();
+	void _shortcut_zoom_set(float p_zoom);
 	void _button_toggle_smart_snap(bool p_status);
 	void _button_toggle_grid_snap(bool p_status);
 	void _button_override_camera(bool p_pressed);
@@ -550,6 +567,7 @@ private:
 	void _update_bone_list();
 	void _tree_changed(Node *);
 
+	void _update_context_menu_stylebox();
 	void _popup_warning_temporarily(Control *p_control, const float p_duration);
 	void _popup_warning_depop(Control *p_control);
 

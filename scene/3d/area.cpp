@@ -207,7 +207,9 @@ void Area::_clear_monitoring() {
 			if (!node) { //node may have been deleted in previous frame or at other legiminate point
 				continue;
 			}
-			//ERR_CONTINUE(!node);
+
+			node->disconnect(SceneStringNames::get_singleton()->tree_entered, this, SceneStringNames::get_singleton()->_body_enter_tree);
+			node->disconnect(SceneStringNames::get_singleton()->tree_exiting, this, SceneStringNames::get_singleton()->_body_exit_tree);
 
 			if (!E->get().in_tree) {
 				continue;
@@ -218,9 +220,6 @@ void Area::_clear_monitoring() {
 			}
 
 			emit_signal(SceneStringNames::get_singleton()->body_exited, node);
-
-			node->disconnect(SceneStringNames::get_singleton()->tree_entered, this, SceneStringNames::get_singleton()->_body_enter_tree);
-			node->disconnect(SceneStringNames::get_singleton()->tree_exiting, this, SceneStringNames::get_singleton()->_body_exit_tree);
 		}
 	}
 
@@ -236,7 +235,9 @@ void Area::_clear_monitoring() {
 			if (!node) { //node may have been deleted in previous frame or at other legiminate point
 				continue;
 			}
-			//ERR_CONTINUE(!node);
+
+			node->disconnect(SceneStringNames::get_singleton()->tree_entered, this, SceneStringNames::get_singleton()->_area_enter_tree);
+			node->disconnect(SceneStringNames::get_singleton()->tree_exiting, this, SceneStringNames::get_singleton()->_area_exit_tree);
 
 			if (!E->get().in_tree) {
 				continue;
@@ -247,9 +248,6 @@ void Area::_clear_monitoring() {
 			}
 
 			emit_signal(SceneStringNames::get_singleton()->area_exited, obj);
-
-			node->disconnect(SceneStringNames::get_singleton()->tree_entered, this, SceneStringNames::get_singleton()->_area_enter_tree);
-			node->disconnect(SceneStringNames::get_singleton()->tree_exiting, this, SceneStringNames::get_singleton()->_area_exit_tree);
 		}
 	}
 }
@@ -595,7 +593,7 @@ void Area::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "gravity_point"), "set_gravity_is_point", "is_gravity_a_point");
 	ADD_PROPERTY(PropertyInfo(Variant::REAL, "gravity_distance_scale", PROPERTY_HINT_EXP_RANGE, "0,1024,0.001,or_greater"), "set_gravity_distance_scale", "get_gravity_distance_scale");
 	ADD_PROPERTY(PropertyInfo(Variant::VECTOR3, "gravity_vec"), "set_gravity_vector", "get_gravity_vector");
-	ADD_PROPERTY(PropertyInfo(Variant::REAL, "gravity", PROPERTY_HINT_RANGE, "-1024,1024,0.01"), "set_gravity", "get_gravity");
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "gravity", PROPERTY_HINT_RANGE, "-32,32,0.001,or_lesser,or_greater"), "set_gravity", "get_gravity");
 	ADD_PROPERTY(PropertyInfo(Variant::REAL, "linear_damp", PROPERTY_HINT_RANGE, "0,100,0.001,or_greater"), "set_linear_damp", "get_linear_damp");
 	ADD_PROPERTY(PropertyInfo(Variant::REAL, "angular_damp", PROPERTY_HINT_RANGE, "0,100,0.001,or_greater"), "set_angular_damp", "get_angular_damp");
 

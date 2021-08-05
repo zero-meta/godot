@@ -123,6 +123,11 @@ bool EditorFileSystemDirectory::get_file_import_is_valid(int p_idx) const {
 	return files[p_idx]->import_valid;
 }
 
+uint64_t EditorFileSystemDirectory::get_file_modified_time(int p_idx) const {
+	ERR_FAIL_INDEX_V(p_idx, files.size(), 0);
+	return files[p_idx]->modified_time;
+}
+
 String EditorFileSystemDirectory::get_file_script_class_name(int p_idx) const {
 	return files[p_idx]->script_class_name;
 }
@@ -371,7 +376,7 @@ bool EditorFileSystem::_test_for_reimport(const String &p_path, bool p_only_impo
 		if (err == ERR_FILE_EOF) {
 			break;
 		} else if (err != OK) {
-			ERR_PRINTS("ResourceFormatImporter::load - '" + p_path + ".import:" + itos(lines) + "' error '" + error_text + "'.");
+			ERR_PRINT("ResourceFormatImporter::load - '" + p_path + ".import:" + itos(lines) + "' error '" + error_text + "'.");
 			memdelete(f);
 			return false; //parse error, try reimport manually (Avoid reimport loop on broken file)
 		}
@@ -425,7 +430,7 @@ bool EditorFileSystem::_test_for_reimport(const String &p_path, bool p_only_impo
 		if (err == ERR_FILE_EOF) {
 			break;
 		} else if (err != OK) {
-			ERR_PRINTS("ResourceFormatImporter::load - '" + p_path + ".import.md5:" + itos(lines) + "' error '" + error_text + "'.");
+			ERR_PRINT("ResourceFormatImporter::load - '" + p_path + ".import.md5:" + itos(lines) + "' error '" + error_text + "'.");
 			memdelete(md5s);
 			return false; // parse error
 		}
@@ -712,7 +717,7 @@ void EditorFileSystem::_scan_new_dir(EditorFileSystemDirectory *p_dir, DirAccess
 				da->change_dir("..");
 			}
 		} else {
-			ERR_PRINTS("Cannot go into subdir '" + E->get() + "'.");
+			ERR_PRINT("Cannot go into subdir '" + E->get() + "'.");
 		}
 
 		p_progress.update(idx, total);
@@ -1747,7 +1752,7 @@ void EditorFileSystem::_reimport_file(const String &p_file) {
 	Error err = importer->import(p_file, base_path, params, &import_variants, &gen_files, &metadata);
 
 	if (err != OK) {
-		ERR_PRINTS("Error importing '" + p_file + "'.");
+		ERR_PRINT("Error importing '" + p_file + "'.");
 	}
 
 	//as import is complete, save the .import file

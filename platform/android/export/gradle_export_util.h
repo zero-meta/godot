@@ -96,14 +96,6 @@ Error create_directory(const String &p_dir) {
 	return OK;
 }
 
-// Implementation of EditorExportSaveSharedObject.
-// This method will only be called as an input to export_project_files.
-// This method lets the .so files for all ABIs to be copied
-// into the gradle project from the .AAR file
-Error ignore_so_file(void *p_userdata, const SharedObject &p_so) {
-	return OK;
-}
-
 // Writes p_data into a file at p_path, creating directories if necessary.
 // Note: this will overwrite the file at p_path if it already exists.
 Error store_file_at_path(const String &p_path, const Vector<uint8_t> &p_data) {
@@ -271,12 +263,15 @@ String _get_application_tag(const Ref<EditorExportPreset> &p_preset, bool p_has_
 	bool uses_xr = (int)(p_preset->get("xr_features/xr_mode")) == 1;
 	String manifest_application_text = vformat(
 			"    <application android:label=\"@string/godot_project_name_string\"\n"
-			"        android:allowBackup=\"%s\" tools:ignore=\"GoogleAppIndexingWarning\"\n"
-			"        tools:replace=\"android:requestLegacyExternalStorage\" "
+			"        android:allowBackup=\"%s\"\n"
+			"        android:isGame=\"%s\"\n"
 			"        android:requestLegacyExternalStorage=\"%s\"\n"
-			"        android:icon=\"@mipmap/icon\">\n\n"
+			"        tools:replace=\"android:allowBackup,android:isGame,android:requestLegacyExternalStorage\"\n"
+			"        tools:ignore=\"GoogleAppIndexingWarning\"\n"
+			"        android:icon=\"@mipmap/icon\" >\n\n"
 			"        <meta-data tools:node=\"remove\" android:name=\"xr_mode_metadata_name\" />\n",
 			bool_to_string(p_preset->get("user_data_backup/allow")),
+			bool_to_string(p_preset->get("package/classify_as_game")),
 			bool_to_string(p_has_storage_permission));
 
 	if (uses_xr) {

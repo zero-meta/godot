@@ -54,7 +54,9 @@ class InputDefault : public Input {
 		uint64_t physics_frame;
 		uint64_t idle_frame;
 		bool pressed;
+		bool exact;
 		float strength;
+		float raw_strength;
 	};
 
 	Map<StringName, Action> action_state;
@@ -81,7 +83,7 @@ class InputDefault : public Input {
 		StringName name;
 		StringName uid;
 		bool connected;
-		bool last_buttons[JOY_BUTTON_MAX + 13]; //apparently SDL specifies 35 possible buttons on android
+		bool last_buttons[JOY_BUTTON_MAX + 12]; //apparently SDL specifies 35 possible buttons on android
 		float last_axis[JOY_AXIS_MAX];
 		int last_hat;
 		int mapping;
@@ -91,7 +93,7 @@ class InputDefault : public Input {
 			for (int i = 0; i < JOY_AXIS_MAX; i++) {
 				last_axis[i] = 0.0f;
 			}
-			for (int i = 0; i < JOY_BUTTON_MAX + 13; i++) {
+			for (int i = 0; i < JOY_BUTTON_MAX + 12; i++) {
 				last_buttons[i] = false;
 			}
 			connected = false;
@@ -220,10 +222,11 @@ public:
 	virtual bool is_key_pressed(int p_scancode) const;
 	virtual bool is_mouse_button_pressed(int p_button) const;
 	virtual bool is_joy_button_pressed(int p_device, int p_button) const;
-	virtual bool is_action_pressed(const StringName &p_action) const;
-	virtual bool is_action_just_pressed(const StringName &p_action) const;
-	virtual bool is_action_just_released(const StringName &p_action) const;
-	virtual float get_action_strength(const StringName &p_action) const;
+	virtual bool is_action_pressed(const StringName &p_action, bool p_exact = false) const;
+	virtual bool is_action_just_pressed(const StringName &p_action, bool p_exact = false) const;
+	virtual bool is_action_just_released(const StringName &p_action, bool p_exact = false) const;
+	virtual float get_action_strength(const StringName &p_action, bool p_exact = false) const;
+	virtual float get_action_raw_strength(const StringName &p_action, bool p_exact = false) const;
 
 	virtual float get_joy_axis(int p_device, int p_axis) const;
 	String get_joy_name(int p_idx);

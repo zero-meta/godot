@@ -488,6 +488,7 @@ public:
 	BIND2(viewport_set_msaa, RID, ViewportMSAA)
 	BIND2(viewport_set_use_fxaa, RID, bool)
 	BIND2(viewport_set_use_debanding, RID, bool)
+	BIND2(viewport_set_sharpen_intensity, RID, float)
 	BIND2(viewport_set_hdr, RID, bool)
 	BIND2(viewport_set_usage, RID, ViewportUsage)
 
@@ -577,6 +578,14 @@ public:
 	BIND2(roomgroup_set_scenario, RID, RID)
 	BIND2(roomgroup_add_room, RID, RID)
 
+	// Occluders
+	BIND0R(RID, occluder_create)
+	BIND3(occluder_set_scenario, RID, RID, OccluderType)
+	BIND2(occluder_spheres_update, RID, const Vector<Plane> &)
+	BIND2(occluder_set_transform, RID, const Transform &)
+	BIND2(occluder_set_active, RID, bool)
+	BIND1(set_use_occlusion_culling, bool)
+
 	// Rooms
 	BIND0R(RID, room_create)
 	BIND2(room_set_scenario, RID, RID)
@@ -586,7 +595,7 @@ public:
 	BIND2(room_prepare, RID, int32_t)
 	BIND1(rooms_and_portals_clear, RID)
 	BIND1(rooms_unload, RID)
-	BIND6(rooms_finalize, RID, bool, bool, bool, bool, String)
+	BIND8(rooms_finalize, RID, bool, bool, bool, bool, String, bool, bool)
 	BIND4(rooms_override_camera, RID, bool, const Vector3 &, const Vector<Plane> *)
 	BIND2(rooms_set_active, RID, bool)
 	BIND2(rooms_set_params, RID, int)

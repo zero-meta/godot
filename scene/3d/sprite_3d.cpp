@@ -386,11 +386,11 @@ SpriteBase3D::SpriteBase3D() {
 
 	// create basic mesh and store format information
 	for (int i = 0; i < 4; i++) {
-		mesh_normals.write()[i] = Vector3(0.0, 0.0, 0.0);
+		mesh_normals.write()[i] = Vector3(0.0, 0.0, 1.0);
 		mesh_tangents.write()[i * 4 + 0] = 0.0;
 		mesh_tangents.write()[i * 4 + 1] = 0.0;
-		mesh_tangents.write()[i * 4 + 2] = 0.0;
-		mesh_tangents.write()[i * 4 + 3] = 0.0;
+		mesh_tangents.write()[i * 4 + 2] = 1.0;
+		mesh_tangents.write()[i * 4 + 3] = 1.0;
 		mesh_colors.write()[i] = Color(1.0, 1.0, 1.0, 1.0);
 		mesh_uvs.write()[i] = Vector2(0.0, 0.0);
 		mesh_vertices.write()[i] = Vector3(0.0, 0.0, 0.0);
@@ -404,13 +404,15 @@ SpriteBase3D::SpriteBase3D() {
 	mesh_array[VS::ARRAY_COLOR] = mesh_colors;
 	mesh_array[VS::ARRAY_TEX_UV] = mesh_uvs;
 
-	VS::get_singleton()->mesh_add_surface_from_arrays(mesh, VS::PRIMITIVE_TRIANGLE_FAN, mesh_array, Array(), VS::ARRAY_COMPRESS_DEFAULT & ~VS::ARRAY_COMPRESS_TEX_UV);
+	uint32_t compress_format = (VS::ARRAY_COMPRESS_DEFAULT & ~VS::ARRAY_COMPRESS_TEX_UV) & ~VS::ARRAY_COMPRESS_COLOR;
+	compress_format |= VS::ARRAY_FLAG_USE_DYNAMIC_UPDATE;
+	VS::get_singleton()->mesh_add_surface_from_arrays(mesh, VS::PRIMITIVE_TRIANGLE_FAN, mesh_array, Array(), compress_format);
 	const int surface_vertex_len = VS::get_singleton()->mesh_surface_get_array_len(mesh, 0);
 	const int surface_index_len = VS::get_singleton()->mesh_surface_get_array_index_len(mesh, 0);
 
 	mesh_surface_format = VS::get_singleton()->mesh_surface_get_format(mesh, 0);
 	mesh_buffer = VS::get_singleton()->mesh_surface_get_array(mesh, 0);
-	mesh_stride = VS::get_singleton()->mesh_surface_make_offsets_from_format(mesh_surface_format, surface_vertex_len, surface_index_len, mesh_surface_offsets);
+	VS::get_singleton()->mesh_surface_make_offsets_from_format(mesh_surface_format, surface_vertex_len, surface_index_len, mesh_surface_offsets, mesh_stride);
 	set_base(mesh);
 }
 
@@ -531,7 +533,7 @@ void Sprite3D::_draw() {
 
 	AABB aabb;
 
-	// Everything except position and UV is compressed
+	// Everything except position, color, and UV is compressed
 	PoolVector<uint8_t>::Write write_buffer = mesh_buffer.write();
 
 	Vector2 normal_oct = VisualServer::get_singleton()->norm_to_oct(normal);
@@ -546,13 +548,6 @@ void Sprite3D::_draw() {
 		(int8_t)CLAMP(tangent_oct.y * 127, -128, 127),
 	};
 
-	uint8_t v_color[4] = {
-		(uint8_t)CLAMP(int(color.r * 255.0), 0, 255),
-		(uint8_t)CLAMP(int(color.g * 255.0), 0, 255),
-		(uint8_t)CLAMP(int(color.b * 255.0), 0, 255),
-		(uint8_t)CLAMP(int(color.a * 255.0), 0, 255)
-	};
-
 	for (int i = 0; i < 4; i++) {
 		Vector3 vtx;
 		vtx[x_axis] = vertices[i][0];
@@ -565,13 +560,13 @@ void Sprite3D::_draw() {
 		}
 
 		float v_uv[2] = { uvs[i].x, uvs[i].y };
-		memcpy(&write_buffer[i * mesh_stride + mesh_surface_offsets[VS::ARRAY_TEX_UV]], v_uv, 8);
+		memcpy(&write_buffer[i * mesh_stride[VS::ARRAY_TEX_UV] + mesh_surface_offsets[VS::ARRAY_TEX_UV]], v_uv, 8);
 
 		float v_vertex[3] = { vtx.x, vtx.y, vtx.z };
-		memcpy(&write_buffer[i * mesh_stride + mesh_surface_offsets[VS::ARRAY_VERTEX]], &v_vertex, sizeof(float) * 3);
-		memcpy(&write_buffer[i * mesh_stride + mesh_surface_offsets[VS::ARRAY_NORMAL]], v_normal, 2);
-		memcpy(&write_buffer[i * mesh_stride + mesh_surface_offsets[VS::ARRAY_TANGENT]], v_tangent, 2);
-		memcpy(&write_buffer[i * mesh_stride + mesh_surface_offsets[VS::ARRAY_COLOR]], v_color, 4);
+		memcpy(&write_buffer[i * mesh_stride[VS::ARRAY_VERTEX] + mesh_surface_offsets[VS::ARRAY_VERTEX]], &v_vertex, sizeof(float) * 3);
+		memcpy(&write_buffer[i * mesh_stride[VS::ARRAY_NORMAL] + mesh_surface_offsets[VS::ARRAY_NORMAL]], v_normal, 2);
+		memcpy(&write_buffer[i * mesh_stride[VS::ARRAY_TANGENT] + mesh_surface_offsets[VS::ARRAY_TANGENT]], v_tangent, 2);
+		memcpy(&write_buffer[i * mesh_stride[VS::ARRAY_COLOR] + mesh_surface_offsets[VS::ARRAY_COLOR]], color.components, 4 * 4);
 	}
 
 	write_buffer.release();
@@ -883,7 +878,7 @@ void AnimatedSprite3D::_draw() {
 
 	AABB aabb;
 
-	// Everything except position and UV is compressed
+	// Everything except position, color, and UV is compressed
 	PoolVector<uint8_t>::Write write_buffer = mesh_buffer.write();
 
 	Vector2 normal_oct = VisualServer::get_singleton()->norm_to_oct(normal);
@@ -898,13 +893,6 @@ void AnimatedSprite3D::_draw() {
 		(int8_t)CLAMP(tangent_oct.y * 127, -128, 127),
 	};
 
-	uint8_t v_color[4] = {
-		(uint8_t)CLAMP(int(color.r * 255.0), 0, 255),
-		(uint8_t)CLAMP(int(color.g * 255.0), 0, 255),
-		(uint8_t)CLAMP(int(color.b * 255.0), 0, 255),
-		(uint8_t)CLAMP(int(color.a * 255.0), 0, 255)
-	};
-
 	for (int i = 0; i < 4; i++) {
 		Vector3 vtx;
 		vtx[x_axis] = vertices[i][0];
@@ -917,13 +905,13 @@ void AnimatedSprite3D::_draw() {
 		}
 
 		float v_uv[2] = { uvs[i].x, uvs[i].y };
-		memcpy(&write_buffer[i * mesh_stride + mesh_surface_offsets[VS::ARRAY_TEX_UV]], v_uv, 8);
+		memcpy(&write_buffer[i * mesh_stride[VS::ARRAY_TEX_UV] + mesh_surface_offsets[VS::ARRAY_TEX_UV]], v_uv, 8);
 
 		float v_vertex[3] = { vtx.x, vtx.y, vtx.z };
-		memcpy(&write_buffer[i * mesh_stride + mesh_surface_offsets[VS::ARRAY_VERTEX]], &v_vertex, sizeof(float) * 3);
-		memcpy(&write_buffer[i * mesh_stride + mesh_surface_offsets[VS::ARRAY_NORMAL]], v_normal, 2);
-		memcpy(&write_buffer[i * mesh_stride + mesh_surface_offsets[VS::ARRAY_TANGENT]], v_tangent, 2);
-		memcpy(&write_buffer[i * mesh_stride + mesh_surface_offsets[VS::ARRAY_COLOR]], v_color, 4);
+		memcpy(&write_buffer[i * mesh_stride[VS::ARRAY_VERTEX] + mesh_surface_offsets[VS::ARRAY_VERTEX]], &v_vertex, sizeof(float) * 3);
+		memcpy(&write_buffer[i * mesh_stride[VS::ARRAY_NORMAL] + mesh_surface_offsets[VS::ARRAY_NORMAL]], v_normal, 2);
+		memcpy(&write_buffer[i * mesh_stride[VS::ARRAY_TANGENT] + mesh_surface_offsets[VS::ARRAY_TANGENT]], v_tangent, 2);
+		memcpy(&write_buffer[i * mesh_stride[VS::ARRAY_COLOR] + mesh_surface_offsets[VS::ARRAY_COLOR]], color.components, 4 * 4);
 	}
 
 	write_buffer.release();

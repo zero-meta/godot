@@ -533,6 +533,10 @@ public:
 	// Portals
 	virtual void instance_set_portal_mode(RID p_instance, VisualServer::InstancePortalMode p_mode);
 	bool _instance_get_transformed_aabb(RID p_instance, AABB &r_aabb);
+	bool _instance_get_transformed_aabb_for_occlusion(VSInstance *p_instance, AABB &r_aabb) const {
+		r_aabb = ((Instance *)p_instance)->transformed_aabb;
+		return ((Instance *)p_instance)->portal_mode != VisualServer::INSTANCE_PORTAL_MODE_GLOBAL;
+	}
 	void *_instance_get_from_rid(RID p_instance);
 	bool _instance_cull_check(VSInstance *p_instance, uint32_t p_cull_mask) const {
 		uint32_t pairable_type = 1 << ((Instance *)p_instance)->base_type;
@@ -617,6 +621,27 @@ public:
 	virtual void roomgroup_set_scenario(RID p_roomgroup, RID p_scenario);
 	virtual void roomgroup_add_room(RID p_roomgroup, RID p_room);
 
+	// Occluders
+	struct Occluder : RID_Data {
+		uint32_t scenario_occluder_id = 0;
+		Scenario *scenario = nullptr;
+		virtual ~Occluder() {
+			if (scenario) {
+				scenario->_portal_renderer.occluder_destroy(scenario_occluder_id);
+				scenario = nullptr;
+				scenario_occluder_id = 0;
+			}
+		}
+	};
+	RID_Owner<Occluder> occluder_owner;
+
+	virtual RID occluder_create();
+	virtual void occluder_set_scenario(RID p_occluder, RID p_scenario, VisualServer::OccluderType p_type);
+	virtual void occluder_spheres_update(RID p_occluder, const Vector<Plane> &p_spheres);
+	virtual void occluder_set_transform(RID p_occluder, const Transform &p_xform);
+	virtual void occluder_set_active(RID p_occluder, bool p_active);
+	virtual void set_use_occlusion_culling(bool p_enable);
+
 	// Rooms
 	struct Room : RID_Data {
 		// all interations with actual rooms are indirect, as the room is part of the scenario
@@ -640,7 +665,7 @@ public:
 	virtual void room_prepare(RID p_room, int32_t p_priority);
 	virtual void rooms_and_portals_clear(RID p_scenario);
 	virtual void rooms_unload(RID p_scenario);
-	virtual void rooms_finalize(RID p_scenario, bool p_generate_pvs, bool p_cull_using_pvs, bool p_use_secondary_pvs, bool p_use_signals, String p_pvs_filename);
+	virtual void rooms_finalize(RID p_scenario, bool p_generate_pvs, bool p_cull_using_pvs, bool p_use_secondary_pvs, bool p_use_signals, String p_pvs_filename, bool p_use_simple_pvs, bool p_log_pvs_generation);
 	virtual void rooms_override_camera(RID p_scenario, bool p_override, const Vector3 &p_point, const Vector<Plane> *p_convex);
 	virtual void rooms_set_active(RID p_scenario, bool p_active);
 	virtual void rooms_set_params(RID p_scenario, int p_portal_depth_limit);

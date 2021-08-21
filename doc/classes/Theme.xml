@@ -8,7 +8,7 @@
 		Theme resources can alternatively be loaded by writing them in a [code].theme[/code] file, see the documentation for more information.
 	</description>
 	<tutorials>
-		<link>https://docs.godotengine.org/en/3.3/tutorials/gui/gui_skinning.html</link>
+		<link>https://docs.godotengine.org/en/3.4/tutorials/gui/gui_skinning.html</link>
 	</tutorials>
 	<methods>
 		<method name="clear">
@@ -273,6 +273,14 @@
 			<description>
 				Returns [code]true[/code] if a theme item of [code]data_type[/code] with [code]name[/code] is in [code]node_type[/code].
 				Returns [code]false[/code] if the theme does not have [code]node_type[/code].
+			</description>
+		</method>
+		<method name="merge_with">
+			<return type="void" />
+			<argument index="0" name="other" type="Theme" />
+			<description>
+				Adds missing and overrides existing definitions with values from the [code]other[/code] [Theme].
+				[b]Note:[/b] This modifies the current theme. If you want to merge two themes together without modifying either one, create a new empty theme and merge the other two into it one after another.
 			</description>
 		</method>
 		<method name="rename_color">

@@ -49,6 +49,7 @@
 
 #include "core/bind/core_bind.h"
 #include "core/crypto/crypto_core.h"
+#include "core/error_macros.h"
 #include "core/io/json.h"
 #include "core/math/disjoint_set.h"
 #include "core/os/file_access.h"
@@ -1689,6 +1690,7 @@ GLTFAccessorIndex GLTFDocument::_encode_accessor_as_vec2(Ref<GLTFState> state, c
 	for (int32_t min_i = 0; min_i < min.size(); min_i++) {
 		write_min[min_i] = type_min[min_i];
 	}
+	accessor->min = min;
 	accessor->normalized = false;
 	accessor->count = p_attribs.size();
 	accessor->type = type;
@@ -1748,6 +1750,7 @@ GLTFAccessorIndex GLTFDocument::_encode_accessor_as_color(Ref<GLTFState> state, 
 	for (int32_t min_i = 0; min_i < min.size(); min_i++) {
 		write_min[min_i] = type_min[min_i];
 	}
+	accessor->min = min;
 	accessor->normalized = false;
 	accessor->count = p_attribs.size();
 	accessor->type = type;
@@ -1824,6 +1827,7 @@ GLTFAccessorIndex GLTFDocument::_encode_accessor_as_weights(Ref<GLTFState> state
 	for (int32_t min_i = 0; min_i < min.size(); min_i++) {
 		write_min[min_i] = type_min[min_i];
 	}
+	accessor->min = min;
 	accessor->normalized = false;
 	accessor->count = p_attribs.size();
 	accessor->type = type;
@@ -1882,6 +1886,7 @@ GLTFAccessorIndex GLTFDocument::_encode_accessor_as_joints(Ref<GLTFState> state,
 	for (int32_t min_i = 0; min_i < min.size(); min_i++) {
 		write_min[min_i] = type_min[min_i];
 	}
+	accessor->min = min;
 	accessor->normalized = false;
 	accessor->count = p_attribs.size();
 	accessor->type = type;
@@ -1942,6 +1947,7 @@ GLTFAccessorIndex GLTFDocument::_encode_accessor_as_quats(Ref<GLTFState> state, 
 	for (int32_t min_i = 0; min_i < min.size(); min_i++) {
 		write_min[min_i] = type_min[min_i];
 	}
+	accessor->min = min;
 	accessor->normalized = false;
 	accessor->count = p_attribs.size();
 	accessor->type = type;
@@ -2018,6 +2024,7 @@ GLTFAccessorIndex GLTFDocument::_encode_accessor_as_floats(Ref<GLTFState> state,
 	for (int32_t min_i = 0; min_i < min.size(); min_i++) {
 		write_min[min_i] = type_min[min_i];
 	}
+	accessor->min = min;
 	accessor->normalized = false;
 	accessor->count = ret_size;
 	accessor->type = type;
@@ -2075,6 +2082,7 @@ GLTFAccessorIndex GLTFDocument::_encode_accessor_as_vec3(Ref<GLTFState> state, c
 	for (int32_t min_i = 0; min_i < min.size(); min_i++) {
 		write_min[min_i] = type_min[min_i];
 	}
+	accessor->min = min;
 	accessor->normalized = false;
 	accessor->count = p_attribs.size();
 	accessor->type = type;
@@ -2154,6 +2162,7 @@ GLTFAccessorIndex GLTFDocument::_encode_accessor_as_xform(Ref<GLTFState> state, 
 	for (int32_t min_i = 0; min_i < min.size(); min_i++) {
 		write_min[min_i] = type_min[min_i];
 	}
+	accessor->min = min;
 	accessor->normalized = false;
 	accessor->count = p_attribs.size();
 	accessor->type = type;
@@ -4573,9 +4582,9 @@ Error GLTFDocument::_parse_lights(Ref<GLTFState> state) {
 			const Dictionary &spot = d["spot"];
 			light->inner_cone_angle = spot["innerConeAngle"];
 			light->outer_cone_angle = spot["outerConeAngle"];
-			ERR_FAIL_COND_V_MSG(light->inner_cone_angle >= light->outer_cone_angle, ERR_PARSE_ERROR, "The inner angle must be smaller than the outer angle.");
+			ERR_CONTINUE_MSG(light->inner_cone_angle >= light->outer_cone_angle, "The inner angle must be smaller than the outer angle.");
 		} else if (type != "point" && type != "directional") {
-			ERR_FAIL_V_MSG(ERR_PARSE_ERROR, "Light type is unknown.");
+			ERR_CONTINUE_MSG(ERR_PARSE_ERROR, "Light type is unknown.");
 		}
 
 		state->lights.push_back(light);
@@ -5490,15 +5499,16 @@ void GLTFDocument::_generate_scene_node(Ref<GLTFState> state, Node *scene_parent
 		// and attach it to the bone_attachment
 		scene_parent = bone_attachment;
 	}
-
-	// We still have not managed to make a node
 	if (gltf_node->mesh >= 0) {
 		current_node = _generate_mesh_instance(state, scene_parent, node_index);
 	} else if (gltf_node->camera >= 0) {
 		current_node = _generate_camera(state, scene_parent, node_index);
 	} else if (gltf_node->light >= 0) {
 		current_node = _generate_light(state, scene_parent, node_index);
-	} else {
+	}
+
+	// We still have not managed to make a node.
+	if (!current_node) {
 		current_node = _generate_spatial(state, scene_parent, node_index);
 	}
 

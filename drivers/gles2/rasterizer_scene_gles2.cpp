@@ -1385,239 +1385,6 @@ bool RasterizerSceneGLES2::_setup_material(RasterizerStorageGLES2::Material *p_m
 	return shader_rebind;
 }
 
-void static _calculate_blend_shape_buffer(RasterizerSceneGLES2::RenderList::Element *p_element, PoolVector<float> &transform_buffer) {
-	RasterizerStorageGLES2::Surface *s = static_cast<RasterizerStorageGLES2::Surface *>(p_element->geometry);
-	if (!s->blend_shape_data.empty()) {
-		if (transform_buffer.size() < s->array_byte_size) {
-			transform_buffer.resize(s->array_byte_size);
-		}
-		for (int i = 0; i < VS::ARRAY_MAX - 1; i++) {
-			if (s->attribs[i].enabled) {
-				const float *p_weights = p_element->instance->blend_values.ptr();
-
-				PoolVector<float>::Write write = transform_buffer.write();
-				PoolVector<uint8_t>::Read read = s->data.read();
-				float attrib_array[4] = { 0.0 };
-
-				// Read all attributes
-				for (int j = 0; j < s->array_len; j++) {
-					size_t offset = s->attribs[i].offset + (j * s->attribs[i].stride);
-					float base_weight = 1.0;
-
-					if (s->mesh->blend_shape_mode == VS::BLEND_SHAPE_MODE_NORMALIZED) {
-						for (int ti = 0; ti < s->blend_shape_data.size(); ti++) {
-							base_weight -= p_weights[ti];
-						}
-					}
-
-					// Set the base
-					switch (i) {
-						case VS::ARRAY_VERTEX: {
-							if (s->format & VS::ARRAY_COMPRESS_VERTEX) {
-								const uint16_t *v = (const uint16_t *)(read.ptr() + offset);
-								attrib_array[0] = Math::halfptr_to_float(&v[0]) * base_weight;
-								attrib_array[1] = Math::halfptr_to_float(&v[1]) * base_weight;
-								attrib_array[2] = Math::halfptr_to_float(&v[2]) * base_weight;
-							} else {
-								const float *v = (const float *)(read.ptr() + offset);
-								attrib_array[0] = v[0] * base_weight;
-								attrib_array[1] = v[1] * base_weight;
-								attrib_array[2] = v[2] * base_weight;
-							}
-						} break;
-						case VS::ARRAY_NORMAL: {
-							if (s->format & VS::ARRAY_COMPRESS_NORMAL) {
-								const int8_t *v = (const int8_t *)(read.ptr() + offset);
-								attrib_array[0] = (v[0] / 127.0) * base_weight;
-								attrib_array[1] = (v[1] / 127.0) * base_weight;
-								attrib_array[2] = (v[2] / 127.0) * base_weight;
-							} else {
-								const float *v = (const float *)(read.ptr() + offset);
-								attrib_array[0] = v[0] * base_weight;
-								attrib_array[1] = v[1] * base_weight;
-								attrib_array[2] = v[2] * base_weight;
-							}
-						} break;
-						case VS::ARRAY_TANGENT: {
-							if (s->format & VS::ARRAY_COMPRESS_TANGENT) {
-								const int8_t *v = (const int8_t *)(read.ptr() + offset);
-								attrib_array[0] = (v[0] / 127.0) * base_weight;
-								attrib_array[1] = (v[1] / 127.0) * base_weight;
-								attrib_array[2] = (v[2] / 127.0) * base_weight;
-								attrib_array[3] = (v[3] / 127.0) * base_weight;
-							} else {
-								const float *v = (const float *)(read.ptr() + offset);
-								attrib_array[0] = v[0] * base_weight;
-								attrib_array[1] = v[1] * base_weight;
-								attrib_array[2] = v[2] * base_weight;
-								attrib_array[3] = v[3] * base_weight;
-							}
-						} break;
-						case VS::ARRAY_COLOR: {
-							if (s->format & VS::ARRAY_COMPRESS_COLOR) {
-								const uint8_t *v = (const uint8_t *)(read.ptr() + offset);
-								attrib_array[0] = (v[0] / 255.0) * base_weight;
-								attrib_array[1] = (v[1] / 255.0) * base_weight;
-								attrib_array[2] = (v[2] / 255.0) * base_weight;
-								attrib_array[3] = (v[3] / 255.0) * base_weight;
-							} else {
-								const float *v = (const float *)(read.ptr() + offset);
-								attrib_array[0] = v[0] * base_weight;
-								attrib_array[1] = v[1] * base_weight;
-								attrib_array[2] = v[2] * base_weight;
-								attrib_array[3] = v[3] * base_weight;
-							}
-						} break;
-						case VS::ARRAY_TEX_UV: {
-							if (s->format & VS::ARRAY_COMPRESS_TEX_UV) {
-								const uint16_t *v = (const uint16_t *)(read.ptr() + offset);
-								attrib_array[0] = Math::halfptr_to_float(&v[0]) * base_weight;
-								attrib_array[1] = Math::halfptr_to_float(&v[1]) * base_weight;
-							} else {
-								const float *v = (const float *)(read.ptr() + offset);
-								attrib_array[0] = v[0] * base_weight;
-								attrib_array[1] = v[1] * base_weight;
-							}
-						} break;
-						case VS::ARRAY_TEX_UV2: {
-							if (s->format & VS::ARRAY_COMPRESS_TEX_UV2) {
-								const uint16_t *v = (const uint16_t *)(read.ptr() + offset);
-								attrib_array[0] = Math::halfptr_to_float(&v[0]) * base_weight;
-								attrib_array[1] = Math::halfptr_to_float(&v[1]) * base_weight;
-							} else {
-								const float *v = (const float *)(read.ptr() + offset);
-								attrib_array[0] = v[0] * base_weight;
-								attrib_array[1] = v[1] * base_weight;
-							}
-						} break;
-						case VS::ARRAY_WEIGHTS: {
-							if (s->format & VS::ARRAY_COMPRESS_WEIGHTS) {
-								const uint16_t *v = (const uint16_t *)(read.ptr() + offset);
-								attrib_array[0] = (v[0] / 65535.0) * base_weight;
-								attrib_array[1] = (v[1] / 65535.0) * base_weight;
-								attrib_array[2] = (v[2] / 65535.0) * base_weight;
-								attrib_array[3] = (v[3] / 65535.0) * base_weight;
-							} else {
-								const float *v = (const float *)(read.ptr() + offset);
-								attrib_array[0] = v[0] * base_weight;
-								attrib_array[1] = v[1] * base_weight;
-								attrib_array[2] = v[2] * base_weight;
-								attrib_array[3] = v[3] * base_weight;
-							}
-						} break;
-					}
-
-					// Add all blend shapes
-					for (int ti = 0; ti < s->blend_shape_data.size(); ti++) {
-						PoolVector<uint8_t>::Read blend = s->blend_shape_data[ti].read();
-						float weight = p_weights[ti];
-						if (Math::is_zero_approx(weight)) {
-							continue;
-						}
-
-						switch (i) {
-							case VS::ARRAY_VERTEX: {
-								if (s->format & VS::ARRAY_COMPRESS_VERTEX) {
-									const uint16_t *v = (const uint16_t *)(blend.ptr() + offset);
-									attrib_array[0] += Math::halfptr_to_float(&v[0]) * weight;
-									attrib_array[1] += Math::halfptr_to_float(&v[1]) * weight;
-									attrib_array[2] += Math::halfptr_to_float(&v[2]) * weight;
-								} else {
-									const float *v = (const float *)(blend.ptr() + offset);
-									attrib_array[0] += v[0] * weight;
-									attrib_array[1] += v[1] * weight;
-									attrib_array[2] += v[2] * weight;
-								}
-							} break;
-							case VS::ARRAY_NORMAL: {
-								if (s->format & VS::ARRAY_COMPRESS_NORMAL) {
-									const int8_t *v = (const int8_t *)(blend.ptr() + offset);
-									attrib_array[0] += (float(v[0]) / 127.0) * weight;
-									attrib_array[1] += (float(v[1]) / 127.0) * weight;
-									attrib_array[2] += (float(v[2]) / 127.0) * weight;
-								} else {
-									const float *v = (const float *)(blend.ptr() + offset);
-									attrib_array[0] += v[0] * weight;
-									attrib_array[1] += v[1] * weight;
-									attrib_array[2] += v[2] * weight;
-								}
-							} break;
-							case VS::ARRAY_TANGENT: {
-								if (s->format & VS::ARRAY_COMPRESS_TANGENT) {
-									const int8_t *v = (const int8_t *)(read.ptr() + offset);
-									attrib_array[0] += (float(v[0]) / 127.0) * weight;
-									attrib_array[1] += (float(v[1]) / 127.0) * weight;
-									attrib_array[2] += (float(v[2]) / 127.0) * weight;
-									attrib_array[3] = (float(v[3]) / 127.0);
-								} else {
-									const float *v = (const float *)(read.ptr() + offset);
-									attrib_array[0] += v[0] * weight;
-									attrib_array[1] += v[1] * weight;
-									attrib_array[2] += v[2] * weight;
-									attrib_array[3] = v[3];
-								}
-							} break;
-							case VS::ARRAY_COLOR: {
-								if (s->format & VS::ARRAY_COMPRESS_COLOR) {
-									const uint8_t *v = (const uint8_t *)(blend.ptr() + offset);
-									attrib_array[0] += (v[0] / 255.0) * weight;
-									attrib_array[1] += (v[1] / 255.0) * weight;
-									attrib_array[2] += (v[2] / 255.0) * weight;
-									attrib_array[3] += (v[3] / 255.0) * weight;
-								} else {
-									const float *v = (const float *)(blend.ptr() + offset);
-									attrib_array[0] += v[0] * weight;
-									attrib_array[1] += v[1] * weight;
-									attrib_array[2] += v[2] * weight;
-									attrib_array[3] += v[3] * weight;
-								}
-							} break;
-							case VS::ARRAY_TEX_UV: {
-								if (s->format & VS::ARRAY_COMPRESS_TEX_UV) {
-									const uint16_t *v = (const uint16_t *)(blend.ptr() + offset);
-									attrib_array[0] += Math::halfptr_to_float(&v[0]) * weight;
-									attrib_array[1] += Math::halfptr_to_float(&v[1]) * weight;
-								} else {
-									const float *v = (const float *)(blend.ptr() + offset);
-									attrib_array[0] += v[0] * weight;
-									attrib_array[1] += v[1] * weight;
-								}
-							} break;
-							case VS::ARRAY_TEX_UV2: {
-								if (s->format & VS::ARRAY_COMPRESS_TEX_UV2) {
-									const uint16_t *v = (const uint16_t *)(blend.ptr() + offset);
-									attrib_array[0] += Math::halfptr_to_float(&v[0]) * weight;
-									attrib_array[1] += Math::halfptr_to_float(&v[1]) * weight;
-								} else {
-									const float *v = (const float *)(blend.ptr() + offset);
-									attrib_array[0] += v[0] * weight;
-									attrib_array[1] += v[1] * weight;
-								}
-							} break;
-							case VS::ARRAY_WEIGHTS: {
-								if (s->format & VS::ARRAY_COMPRESS_WEIGHTS) {
-									const uint16_t *v = (const uint16_t *)(blend.ptr() + offset);
-									attrib_array[0] += (v[0] / 65535.0) * weight;
-									attrib_array[1] += (v[1] / 65535.0) * weight;
-									attrib_array[2] += (v[2] / 65535.0) * weight;
-									attrib_array[3] += (v[3] / 65535.0) * weight;
-								} else {
-									const float *v = (const float *)(blend.ptr() + offset);
-									attrib_array[0] += v[0] * weight;
-									attrib_array[1] += v[1] * weight;
-									attrib_array[2] += v[2] * weight;
-									attrib_array[3] += v[3] * weight;
-								}
-							} break;
-						}
-					}
-					memcpy(&write[offset], attrib_array, sizeof(float) * s->attribs[i].size);
-				}
-			}
-		}
-	}
-}
-
 void RasterizerSceneGLES2::_setup_geometry(RenderList::Element *p_element, RasterizerStorageGLES2::Skeleton *p_skeleton) {
 	switch (p_element->instance->base_type) {
 		case VS::INSTANCE_MESH: {
@@ -1627,25 +1394,16 @@ void RasterizerSceneGLES2::_setup_geometry(RenderList::Element *p_element, Raste
 				glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, s->index_id);
 			}
 
-			if (!s->blend_shape_data.empty()) {
-				_calculate_blend_shape_buffer(p_element, storage->resources.blend_shapes_transform_cpu_buffer);
-				storage->_update_blend_shape_transform_buffer(storage->resources.blend_shapes_transform_cpu_buffer, s->array_byte_size);
-			}
-
 			for (int i = 0; i < VS::ARRAY_MAX - 1; i++) {
 				if (s->attribs[i].enabled) {
-					if (!s->blend_shape_data.empty() && (i != VS::ARRAY_BONES)) {
-						glBindBuffer(GL_ARRAY_BUFFER, storage->resources.blend_shape_transform_buffer);
+					glEnableVertexAttribArray(i);
 
-						glEnableVertexAttribArray(i);
-
-						glVertexAttribPointer(s->attribs[i].index, s->attribs[i].size, GL_FLOAT, GL_FALSE, s->attribs[i].stride * sizeof(float), CAST_INT_TO_UCHAR_PTR(s->attribs[i].offset * sizeof(float)));
+					if (!s->blend_shape_data.empty() && i != VS::ARRAY_BONES && s->blend_shape_buffer_size > 0) {
+						glBindBuffer(GL_ARRAY_BUFFER, s->blend_shape_buffer_id);
+						glVertexAttribPointer(s->attribs[i].index, s->attribs[i].size, GL_FLOAT, GL_FALSE, 8 * 4 * sizeof(float), CAST_INT_TO_UCHAR_PTR(i * 4 * sizeof(float)));
 
 					} else {
 						glBindBuffer(GL_ARRAY_BUFFER, s->vertex_id);
-
-						glEnableVertexAttribArray(i);
-
 						glVertexAttribPointer(s->attribs[i].index, s->attribs[i].size, s->attribs[i].type, s->attribs[i].normalized, s->attribs[i].stride, CAST_INT_TO_UCHAR_PTR(s->attribs[i].offset));
 					}
 				} else {
@@ -2942,21 +2700,19 @@ void RasterizerSceneGLES2::_post_process(Environment *env, const CameraMatrix &p
 	}
 	use_post_process = use_post_process || storage->frame.current_rt->use_fxaa;
 
-	GLuint next_buffer;
-
-	if (use_post_process) {
-		next_buffer = storage->frame.current_rt->mip_maps[0].sizes[0].fbo;
-	} else if (storage->frame.current_rt->external.fbo != 0) {
-		next_buffer = storage->frame.current_rt->external.fbo;
-	} else {
-		// set next_buffer to front buffer so multisample blit can happen if needed
-		next_buffer = storage->frame.current_rt->fbo;
-	}
-
 	// If using multisample buffer, resolve to post_process_effect buffer or to front buffer
 	if (storage->frame.current_rt && storage->frame.current_rt->multisample_active) {
-#ifdef GLES_OVER_GL
+		GLuint next_buffer;
+		if (use_post_process) {
+			next_buffer = storage->frame.current_rt->mip_maps[0].sizes[0].fbo;
+		} else if (storage->frame.current_rt->external.fbo != 0) {
+			next_buffer = storage->frame.current_rt->external.fbo;
+		} else {
+			// set next_buffer to front buffer so multisample blit can happen if needed
+			next_buffer = storage->frame.current_rt->fbo;
+		}
 
+#ifdef GLES_OVER_GL
 		glBindFramebuffer(GL_READ_FRAMEBUFFER, storage->frame.current_rt->multisample_fbo);
 		glReadBuffer(GL_COLOR_ATTACHMENT0);
 		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, next_buffer);
@@ -2978,6 +2734,7 @@ void RasterizerSceneGLES2::_post_process(Environment *env, const CameraMatrix &p
 		_copy_texture_to_buffer(storage->frame.current_rt->multisample_color, next_buffer);
 #else
 		// TODO: any other platform not supported? this will fail.. maybe we should just call _copy_texture_to_buffer here as well?
+		(void)next_buffer; // Silence warning as it's unused.
 #endif
 	} else if (use_post_process) {
 		if (storage->frame.current_rt->external.fbo != 0) {
@@ -2999,36 +2756,23 @@ void RasterizerSceneGLES2::_post_process(Environment *env, const CameraMatrix &p
 
 	// DOF Blur
 
-	if (env && (env->dof_blur_near_enabled || env->dof_blur_far_enabled)) {
+	if (env && env->dof_blur_far_enabled) {
 		int vp_h = storage->frame.current_rt->height;
 		int vp_w = storage->frame.current_rt->width;
 
-		// If both near and far are used, we use the far quality and amount settings.
-		// We should just have one setting like in Godot 4 but that would be a serious breaking change.
-		// This is defendable.
-		float dof_blur_amount = env->dof_blur_far_enabled ? env->dof_blur_far_amount : env->dof_blur_near_amount;
-		VS::EnvironmentDOFBlurQuality quality = env->dof_blur_far_enabled ? env->dof_blur_far_quality : env->dof_blur_near_quality;
-
 		state.effect_blur_shader.set_conditional(EffectBlurShaderGLES2::USE_ORTHOGONAL_PROJECTION, p_cam_projection.is_orthogonal());
-		state.effect_blur_shader.set_conditional(EffectBlurShaderGLES2::DOF_FAR_BLUR, env->dof_blur_far_enabled);
-		state.effect_blur_shader.set_conditional(EffectBlurShaderGLES2::DOF_NEAR_BLUR, env->dof_blur_near_enabled);
-		state.effect_blur_shader.set_conditional(EffectBlurShaderGLES2::DOF_QUALITY_LOW, quality == VS::ENV_DOF_BLUR_QUALITY_LOW);
-		state.effect_blur_shader.set_conditional(EffectBlurShaderGLES2::DOF_QUALITY_MEDIUM, quality == VS::ENV_DOF_BLUR_QUALITY_MEDIUM);
-		state.effect_blur_shader.set_conditional(EffectBlurShaderGLES2::DOF_QUALITY_HIGH, quality == VS::ENV_DOF_BLUR_QUALITY_HIGH);
+		state.effect_blur_shader.set_conditional(EffectBlurShaderGLES2::DOF_FAR_BLUR, true);
+		state.effect_blur_shader.set_conditional(EffectBlurShaderGLES2::DOF_QUALITY_LOW, env->dof_blur_far_quality == VS::ENV_DOF_BLUR_QUALITY_LOW);
+		state.effect_blur_shader.set_conditional(EffectBlurShaderGLES2::DOF_QUALITY_MEDIUM, env->dof_blur_far_quality == VS::ENV_DOF_BLUR_QUALITY_MEDIUM);
+		state.effect_blur_shader.set_conditional(EffectBlurShaderGLES2::DOF_QUALITY_HIGH, env->dof_blur_far_quality == VS::ENV_DOF_BLUR_QUALITY_HIGH);
 
 		state.effect_blur_shader.bind();
 		int qsteps[3] = { 4, 10, 20 };
 
-		float radius = (dof_blur_amount * dof_blur_amount) / qsteps[quality];
+		float radius = (env->dof_blur_far_amount * env->dof_blur_far_amount) / qsteps[env->dof_blur_far_quality];
 
-		if (env->dof_blur_far_enabled) {
-			state.effect_blur_shader.set_uniform(EffectBlurShaderGLES2::DOF_FAR_BEGIN, env->dof_blur_far_distance);
-			state.effect_blur_shader.set_uniform(EffectBlurShaderGLES2::DOF_FAR_END, env->dof_blur_far_distance + env->dof_blur_far_transition);
-		}
-		if (env->dof_blur_near_enabled) {
-			state.effect_blur_shader.set_uniform(EffectBlurShaderGLES2::DOF_NEAR_BEGIN, env->dof_blur_near_distance);
-			state.effect_blur_shader.set_uniform(EffectBlurShaderGLES2::DOF_NEAR_END, env->dof_blur_near_distance - env->dof_blur_near_transition);
-		}
+		state.effect_blur_shader.set_uniform(EffectBlurShaderGLES2::DOF_BEGIN, env->dof_blur_far_distance);
+		state.effect_blur_shader.set_uniform(EffectBlurShaderGLES2::DOF_END, env->dof_blur_far_distance + env->dof_blur_far_transition);
 		state.effect_blur_shader.set_uniform(EffectBlurShaderGLES2::DOF_DIR, Vector2(1, 0));
 		state.effect_blur_shader.set_uniform(EffectBlurShaderGLES2::DOF_RADIUS, radius);
 		state.effect_blur_shader.set_uniform(EffectBlurShaderGLES2::PIXEL_SIZE, Vector2(1.0 / vp_w, 1.0 / vp_h));
@@ -3062,12 +2806,97 @@ void RasterizerSceneGLES2::_post_process(Environment *env, const CameraMatrix &p
 		storage->_copy_screen();
 
 		state.effect_blur_shader.set_conditional(EffectBlurShaderGLES2::DOF_FAR_BLUR, false);
-		state.effect_blur_shader.set_conditional(EffectBlurShaderGLES2::DOF_NEAR_BLUR, false);
 		state.effect_blur_shader.set_conditional(EffectBlurShaderGLES2::DOF_QUALITY_LOW, false);
 		state.effect_blur_shader.set_conditional(EffectBlurShaderGLES2::DOF_QUALITY_MEDIUM, false);
 		state.effect_blur_shader.set_conditional(EffectBlurShaderGLES2::DOF_QUALITY_HIGH, false);
 		state.effect_blur_shader.set_conditional(EffectBlurShaderGLES2::USE_ORTHOGONAL_PROJECTION, false);
+	}
 
+	if (env && env->dof_blur_near_enabled) {
+		//convert texture to RGBA format if not already
+		if (!storage->frame.current_rt->used_dof_blur_near) {
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, storage->frame.current_rt->color);
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, storage->frame.current_rt->width, storage->frame.current_rt->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+		}
+
+		int vp_h = storage->frame.current_rt->height;
+		int vp_w = storage->frame.current_rt->width;
+
+		state.effect_blur_shader.set_conditional(EffectBlurShaderGLES2::USE_ORTHOGONAL_PROJECTION, p_cam_projection.is_orthogonal());
+		state.effect_blur_shader.set_conditional(EffectBlurShaderGLES2::DOF_NEAR_BLUR, true);
+		state.effect_blur_shader.set_conditional(EffectBlurShaderGLES2::DOF_NEAR_FIRST_TAP, true);
+
+		state.effect_blur_shader.set_conditional(EffectBlurShaderGLES2::DOF_QUALITY_LOW, env->dof_blur_near_quality == VS::ENV_DOF_BLUR_QUALITY_LOW);
+		state.effect_blur_shader.set_conditional(EffectBlurShaderGLES2::DOF_QUALITY_MEDIUM, env->dof_blur_near_quality == VS::ENV_DOF_BLUR_QUALITY_MEDIUM);
+		state.effect_blur_shader.set_conditional(EffectBlurShaderGLES2::DOF_QUALITY_HIGH, env->dof_blur_near_quality == VS::ENV_DOF_BLUR_QUALITY_HIGH);
+
+		state.effect_blur_shader.bind();
+		int qsteps[3] = { 4, 10, 20 };
+
+		float radius = (env->dof_blur_near_amount * env->dof_blur_near_amount) / qsteps[env->dof_blur_near_quality];
+
+		state.effect_blur_shader.set_uniform(EffectBlurShaderGLES2::DOF_BEGIN, env->dof_blur_near_distance);
+		state.effect_blur_shader.set_uniform(EffectBlurShaderGLES2::DOF_END, env->dof_blur_near_distance - env->dof_blur_near_transition);
+		state.effect_blur_shader.set_uniform(EffectBlurShaderGLES2::DOF_DIR, Vector2(1, 0));
+		state.effect_blur_shader.set_uniform(EffectBlurShaderGLES2::DOF_RADIUS, radius);
+		state.effect_blur_shader.set_uniform(EffectBlurShaderGLES2::PIXEL_SIZE, Vector2(1.0 / vp_w, 1.0 / vp_h));
+		state.effect_blur_shader.set_uniform(EffectBlurShaderGLES2::CAMERA_Z_NEAR, p_cam_projection.get_z_near());
+		state.effect_blur_shader.set_uniform(EffectBlurShaderGLES2::CAMERA_Z_FAR, p_cam_projection.get_z_far());
+
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, storage->frame.current_rt->depth);
+
+		glActiveTexture(GL_TEXTURE0);
+		if (storage->frame.current_rt->mip_maps[0].color) {
+			glBindTexture(GL_TEXTURE_2D, storage->frame.current_rt->mip_maps[0].color);
+		} else {
+			glBindTexture(GL_TEXTURE_2D, storage->frame.current_rt->mip_maps[0].sizes[0].color);
+		}
+
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+		glBindFramebuffer(GL_FRAMEBUFFER, storage->frame.current_rt->fbo); //copy to front first
+
+		storage->_copy_screen();
+
+		state.effect_blur_shader.set_conditional(EffectBlurShaderGLES2::DOF_NEAR_FIRST_TAP, false);
+		state.effect_blur_shader.bind();
+
+		state.effect_blur_shader.set_uniform(EffectBlurShaderGLES2::DOF_BEGIN, env->dof_blur_near_distance);
+		state.effect_blur_shader.set_uniform(EffectBlurShaderGLES2::DOF_END, env->dof_blur_near_distance - env->dof_blur_near_transition);
+		state.effect_blur_shader.set_uniform(EffectBlurShaderGLES2::DOF_DIR, Vector2(0, 1));
+		state.effect_blur_shader.set_uniform(EffectBlurShaderGLES2::DOF_RADIUS, radius);
+		state.effect_blur_shader.set_uniform(EffectBlurShaderGLES2::PIXEL_SIZE, Vector2(1.0 / vp_w, 1.0 / vp_h));
+		state.effect_blur_shader.set_uniform(EffectBlurShaderGLES2::CAMERA_Z_NEAR, p_cam_projection.get_z_near());
+		state.effect_blur_shader.set_uniform(EffectBlurShaderGLES2::CAMERA_Z_FAR, p_cam_projection.get_z_far());
+
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, storage->frame.current_rt->color);
+
+		glBindFramebuffer(GL_FRAMEBUFFER, storage->frame.current_rt->mip_maps[0].sizes[0].fbo); // copy to base level
+
+		glEnable(GL_BLEND);
+		glBlendEquation(GL_FUNC_ADD);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+		storage->_copy_screen();
+
+		glDisable(GL_BLEND);
+
+		state.effect_blur_shader.set_conditional(EffectBlurShaderGLES2::DOF_NEAR_BLUR, false);
+		state.effect_blur_shader.set_conditional(EffectBlurShaderGLES2::DOF_NEAR_FIRST_TAP, false);
+		state.effect_blur_shader.set_conditional(EffectBlurShaderGLES2::DOF_QUALITY_LOW, false);
+		state.effect_blur_shader.set_conditional(EffectBlurShaderGLES2::DOF_QUALITY_MEDIUM, false);
+		state.effect_blur_shader.set_conditional(EffectBlurShaderGLES2::DOF_QUALITY_HIGH, false);
+		state.effect_blur_shader.set_conditional(EffectBlurShaderGLES2::USE_ORTHOGONAL_PROJECTION, false);
+		storage->frame.current_rt->used_dof_blur_near = true;
+	}
+
+	if (env && (env->dof_blur_near_enabled || env->dof_blur_far_enabled)) {
 		//these needed to disable filtering, reenamble
 		glActiveTexture(GL_TEXTURE0);
 		if (storage->frame.current_rt->mip_maps[0].color) {

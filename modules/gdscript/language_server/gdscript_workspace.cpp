@@ -261,23 +261,29 @@ Error GDScriptWorkspace::initialize() {
 			class_symbol.children.push_back(symbol);
 		}
 
-		Vector<DocData::PropertyDoc> properties;
-		properties.append_array(class_data.properties);
-		const int theme_prop_start_idx = properties.size();
-		properties.append_array(class_data.theme_properties);
-
 		for (int i = 0; i < class_data.properties.size(); i++) {
 			const DocData::PropertyDoc &data = class_data.properties[i];
 			lsp::DocumentSymbol symbol;
 			symbol.name = data.name;
 			symbol.native_class = class_name;
 			symbol.kind = lsp::SymbolKind::Property;
-			symbol.detail = String(i >= theme_prop_start_idx ? "<Theme> var" : "var") + " " + class_name + "." + data.name;
+			symbol.detail = "var " + class_name + "." + data.name;
 			if (data.enumeration.length()) {
 				symbol.detail += ": " + data.enumeration;
 			} else {
 				symbol.detail += ": " + data.type;
 			}
+			symbol.documentation = data.description;
+			class_symbol.children.push_back(symbol);
+		}
+
+		for (int i = 0; i < class_data.theme_properties.size(); i++) {
+			const DocData::ThemeItemDoc &data = class_data.theme_properties[i];
+			lsp::DocumentSymbol symbol;
+			symbol.name = data.name;
+			symbol.native_class = class_name;
+			symbol.kind = lsp::SymbolKind::Property;
+			symbol.detail = "<Theme> var " + class_name + "." + data.name + ": " + data.type;
 			symbol.documentation = data.description;
 			class_symbol.children.push_back(symbol);
 		}
@@ -514,8 +520,31 @@ void GDScriptWorkspace::completion(const lsp::CompletionParams &p_params, List<S
 
 	if (const ExtendGDScriptParser *parser = get_parse_result(path)) {
 		Node *owner_scene_node = _get_owner_scene_node(path);
+
+		Array stack;
+		Node *current = nullptr;
+
+		if (owner_scene_node) {
+			stack.push_back(owner_scene_node);
+			while (!stack.empty()) {
+				current = stack.pop_back();
+				Ref<GDScript> script = current->get_script();
+				if (script.is_valid() && script->get_path() == path) {
+					break;
+				}
+				for (int i = 0; i < current->get_child_count(); ++i) {
+					stack.push_back(current->get_child(i));
+				}
+			}
+
+			Ref<GDScript> script = current->get_script();
+			if (!script.is_valid() || script->get_path() != path) {
+				current = owner_scene_node;
+			}
+		}
+
 		String code = parser->get_text_for_completion(p_params.position);
-		GDScriptLanguage::get_singleton()->complete_code(code, path, owner_scene_node, r_options, forced, call_hint);
+		GDScriptLanguage::get_singleton()->complete_code(code, path, current, r_options, forced, call_hint);
 		if (owner_scene_node) {
 			memdelete(owner_scene_node);
 		}

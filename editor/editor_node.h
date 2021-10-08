@@ -311,6 +311,7 @@ private:
 	ConfirmationDialog *pick_main_scene;
 	Button *select_current_scene_button;
 	AcceptDialog *accept;
+	AcceptDialog *save_accept;
 	EditorAbout *about;
 	AcceptDialog *warning;
 
@@ -335,6 +336,7 @@ private:
 	EditorFileDialog *file_script;
 	EditorFileDialog *file_android_build_source;
 	CheckBox *file_export_lib_merge;
+	CheckBox *file_export_lib_apply_xforms;
 	String current_path;
 	MenuButton *update_spinner;
 
@@ -801,6 +803,7 @@ public:
 	Ref<Texture> get_class_icon(const String &p_class, const String &p_fallback = "Object") const;
 
 	void show_accept(const String &p_text, const String &p_title);
+	void show_save_accept(const String &p_text, const String &p_title);
 	void show_warning(const String &p_text, const String &p_title = TTR("Warning!"));
 
 	void _copy_warning(const String &p_str);

@@ -49,16 +49,21 @@ ProjectSettings *ProjectSettings::get_singleton() {
 	return singleton;
 }
 
+String ProjectSettings::get_project_data_dir_name() const {
+	return ".import";
+}
+
+String ProjectSettings::get_project_data_path() const {
+	String project_data_dir_name = get_project_data_dir_name();
+	return "res://" + project_data_dir_name;
+}
+
 String ProjectSettings::get_resource_path() const {
 	return resource_path;
 };
 
 String ProjectSettings::localize_path(const String &p_path) const {
-	if (resource_path == "") {
-		return p_path; //not initialized yet
-	}
-
-	if (p_path.begins_with("res://") || p_path.begins_with("user://") ||
+	if (resource_path.empty() || p_path.begins_with("res://") || p_path.begins_with("user://") ||
 			(p_path.is_abs_path() && !p_path.begins_with(resource_path))) {
 		return p_path.simplify_path();
 	}

@@ -359,14 +359,16 @@ void EditorNode::_version_control_menu_option(int p_idx) {
 }
 
 void EditorNode::_update_title() {
-	String appname = ProjectSettings::get_singleton()->get("application/config/name");
-	String title = appname.empty() ? String(VERSION_FULL_NAME) : String(VERSION_NAME + String(" - ") + appname);
-	String edited = editor_data.get_edited_scene_root() ? editor_data.get_edited_scene_root()->get_filename() : String();
+	const String appname = ProjectSettings::get_singleton()->get("application/config/name");
+	String title = (appname.empty() ? "Unnamed Project" : appname) + String(" - ") + VERSION_NAME;
+	const String edited = editor_data.get_edited_scene_root() ? editor_data.get_edited_scene_root()->get_filename() : String();
 	if (!edited.empty()) {
-		title += " - " + String(edited.get_file());
+		// Display the edited scene name before the program name so that it can be seen in the OS task bar.
+		title = vformat("%s - %s", edited.get_file(), title);
 	}
 	if (unsaved_cache) {
-		title += " (*)";
+		// Display the "modified" mark before anything else so that it can always be seen in the OS task bar.
+		title = vformat("(*) %s", title);
 	}
 
 	OS::get_singleton()->set_window_title(title);
@@ -1611,13 +1613,15 @@ void EditorNode::restart_editor() {
 void EditorNode::_save_all_scenes() {
 	for (int i = 0; i < editor_data.get_edited_scene_count(); i++) {
 		Node *scene = editor_data.get_edited_scene_root(i);
-		if (scene && scene->get_filename() != "") {
+		if (scene && scene->get_filename() != "" && DirAccess::exists(scene->get_filename().get_base_dir())) {
 			if (i != editor_data.get_edited_scene()) {
 				_save_scene(scene->get_filename(), i);
 			} else {
 				_save_scene_with_preview(scene->get_filename());
 			}
-		} // else: ignore new scenes
+		} else {
+			show_warning(TTR("Could not save one or more scenes!"), TTR("Save All Scenes"));
+		}
 	}
 
 	_save_default_environment();
@@ -1725,7 +1729,7 @@ void EditorNode::_dialog_action(String p_file) {
 				ml = Ref<MeshLibrary>(memnew(MeshLibrary));
 			}
 
-			MeshLibraryEditor::update_library_file(editor_data.get_edited_scene_root(), ml, true);
+			MeshLibraryEditor::update_library_file(editor_data.get_edited_scene_root(), ml, true, file_export_lib_apply_xforms->is_pressed());
 
 			Error err = ResourceSaver::save(p_file, ml);
 			if (err) {
@@ -1983,7 +1987,6 @@ void EditorNode::_edit_current() {
 
 	Object *prev_inspected_object = get_inspector()->get_edited_object();
 
-	bool capitalize = bool(EDITOR_GET("interface/inspector/capitalize_properties"));
 	bool disable_folding = bool(EDITOR_GET("interface/inspector/disable_folding"));
 	bool is_resource = current_obj->is_class("Resource");
 	bool is_node = current_obj->is_class("Node");
@@ -2041,7 +2044,6 @@ void EditorNode::_edit_current() {
 
 		if (current_obj->is_class("ScriptEditorDebuggerInspectedObject")) {
 			editable_warning = TTR("This is a remote object, so changes to it won't be kept.\nPlease read the documentation relevant to debugging to better understand this workflow.");
-			capitalize = false;
 			disable_folding = true;
 		} else if (current_obj->is_class("MultiNodeEdit")) {
 			Node *scene = get_edited_scene();
@@ -2077,10 +2079,6 @@ void EditorNode::_edit_current() {
 	}
 
 	inspector_dock->set_warning(editable_warning);
-
-	if (get_inspector()->is_capitalize_paths_enabled() != capitalize) {
-		get_inspector()->set_enable_capitalize_paths(capitalize);
-	}
 
 	if (get_inspector()->is_using_folding() == disable_folding) {
 		get_inspector()->set_use_folding(!disable_folding);
@@ -2349,20 +2347,22 @@ void EditorNode::_menu_option_confirm(int p_option, bool p_confirmed) {
 		case SCENE_TAB_CLOSE:
 		case FILE_SAVE_SCENE: {
 			int scene_idx = (p_option == FILE_SAVE_SCENE) ? -1 : tab_closing;
-
 			Node *scene = editor_data.get_edited_scene_root(scene_idx);
 			if (scene && scene->get_filename() != "") {
-				if (scene_idx != editor_data.get_edited_scene()) {
-					_save_scene_with_preview(scene->get_filename(), scene_idx);
+				if (DirAccess::exists(scene->get_filename().get_base_dir())) {
+					if (scene_idx != editor_data.get_edited_scene()) {
+						_save_scene_with_preview(scene->get_filename(), scene_idx);
+					} else {
+						_save_scene_with_preview(scene->get_filename());
+					}
+
+					if (scene_idx != -1) {
+						_discard_changes();
+					}
+					save_layout();
 				} else {
-					_save_scene_with_preview(scene->get_filename());
+					show_save_accept(vformat(TTR("%s no longer exists! Please specify a new save location."), scene->get_filename().get_base_dir()), TTR("OK"));
 				}
-
-				if (scene_idx != -1) {
-					_discard_changes();
-				}
-				save_layout();
-
 				break;
 			}
 			FALLTHROUGH;
@@ -3279,10 +3279,6 @@ void EditorNode::_remove_edited_scene(bool p_change_tab) {
 		new_index = 1;
 	}
 
-	if (editor_data.get_scene_path(old_index) != String()) {
-		ScriptEditor::get_singleton()->close_builtin_scripts_from_scene(editor_data.get_scene_path(old_index));
-	}
-
 	if (p_change_tab) {
 		_scene_tab_changed(new_index);
 	}
@@ -4137,6 +4133,13 @@ void EditorNode::show_accept(const String &p_text, const String &p_title) {
 	accept->get_ok()->set_text(p_title);
 	accept->set_text(p_text);
 	accept->popup_centered_minsize();
+}
+
+void EditorNode::show_save_accept(const String &p_text, const String &p_title) {
+	current_option = -1;
+	save_accept->get_ok()->set_text(p_title);
+	save_accept->set_text(p_text);
+	save_accept->popup_centered();
 }
 
 void EditorNode::show_warning(const String &p_text, const String &p_title) {
@@ -6186,6 +6189,10 @@ EditorNode::EditorNode() {
 	gui_base->add_child(accept);
 	accept->connect("confirmed", this, "_menu_confirm_current");
 
+	save_accept = memnew(AcceptDialog);
+	gui_base->add_child(save_accept);
+	save_accept->connect("confirmed", this, "_menu_option", make_binds((int)MenuOptions::FILE_SAVE_AS_SCENE));
+
 	project_export = memnew(ProjectExportDialog);
 	gui_base->add_child(project_export);
 
@@ -6749,6 +6756,10 @@ EditorNode::EditorNode() {
 	file_export_lib_merge->set_text(TTR("Merge With Existing"));
 	file_export_lib_merge->set_pressed(true);
 	file_export_lib->get_vbox()->add_child(file_export_lib_merge);
+	file_export_lib_apply_xforms = memnew(CheckBox);
+	file_export_lib_apply_xforms->set_text(TTR("Apply MeshInstance Transforms"));
+	file_export_lib_apply_xforms->set_pressed(false);
+	file_export_lib->get_vbox()->add_child(file_export_lib_apply_xforms);
 	gui_base->add_child(file_export_lib);
 
 	file_script = memnew(EditorFileDialog);

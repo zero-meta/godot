@@ -365,6 +365,11 @@ void SoftBody::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_drag_coefficient", "drag_coefficient"), &SoftBody::set_drag_coefficient);
 	ClassDB::bind_method(D_METHOD("get_drag_coefficient"), &SoftBody::get_drag_coefficient);
 
+	ClassDB::bind_method(D_METHOD("get_point_transform", "point_index"), &SoftBody::get_point_transform);
+
+	ClassDB::bind_method(D_METHOD("set_point_pinned", "point_index", "pinned", "attachment_path"), &SoftBody::pin_point, DEFVAL(NodePath()));
+	ClassDB::bind_method(D_METHOD("is_point_pinned", "point_index"), &SoftBody::is_point_pinned);
+
 	ClassDB::bind_method(D_METHOD("set_ray_pickable", "ray_pickable"), &SoftBody::set_ray_pickable);
 	ClassDB::bind_method(D_METHOD("is_ray_pickable"), &SoftBody::is_ray_pickable);
 
@@ -432,8 +437,9 @@ void SoftBody::_draw_soft_mesh() {
 		return;
 	}
 
-	if (!visual_server_handler.is_ready()) {
-		visual_server_handler.prepare(get_mesh()->get_rid(), 0);
+	const RID mesh_rid = get_mesh()->get_rid();
+	if (!visual_server_handler.is_ready(mesh_rid)) {
+		visual_server_handler.prepare(mesh_rid, 0);
 
 		/// Necessary in order to render the mesh correctly (Soft body nodes are in global space)
 		simulation_started = true;

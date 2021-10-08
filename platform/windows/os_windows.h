@@ -52,7 +52,9 @@
 #include <dwmapi.h>
 #include <fcntl.h>
 #include <io.h>
+#include <shellapi.h>
 #include <stdio.h>
+#define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <windowsx.h>
 // WinTab API
@@ -334,6 +336,7 @@ class OS_Windows : public OS {
 	Vector2 im_position;
 
 	MouseMode mouse_mode;
+	int restore_mouse_trails;
 	bool alt_mem;
 	bool gr_mem;
 	bool shift_mem;

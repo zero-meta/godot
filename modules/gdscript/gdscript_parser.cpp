@@ -435,7 +435,9 @@ GDScriptParser::Node *GDScriptParser::_parse_expression(Node *p_parent, bool p_s
 			bool valid = false;
 			ConstantNode *cn;
 
+			parenthesis++;
 			Node *subexpr = _parse_and_reduce_expression(p_parent, p_static);
+			parenthesis--;
 			if (subexpr) {
 				if (subexpr->type == Node::TYPE_CONSTANT) {
 					cn = static_cast<ConstantNode *>(subexpr);
@@ -3618,6 +3620,7 @@ void GDScriptParser::_parse_extends(ClassNode *p_class) {
 				p_class->extends_class.push_back(identifier);
 			} break;
 
+			case GDScriptTokenizer::TK_CURSOR:
 			case GDScriptTokenizer::TK_PERIOD:
 				break;
 

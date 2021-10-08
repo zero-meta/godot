@@ -4218,8 +4218,10 @@ void CanvasItemEditor::_notification(int p_what) {
 		anchor_mode_button->set_icon(get_icon("Anchor", "EditorIcons"));
 
 		Ref<DynamicFont> font = zoom_reset->get_font("font")->duplicate(false);
-		font->set_outline_size(1);
-		font->set_outline_color(Color(0, 0, 0));
+		if (font.is_valid()) {
+			font->set_outline_size(1);
+			font->set_outline_color(Color(0, 0, 0));
+		}
 		zoom_reset->add_font_override("font", font);
 		zoom_reset->add_color_override("font_color", Color(1, 1, 1));
 
@@ -5716,7 +5718,9 @@ CanvasItemEditor::CanvasItemEditor(EditorNode *p_editor) {
 	snap_rotation = false;
 	snap_scale = false;
 	snap_relative = false;
-	snap_pixel = false;
+	// Enable pixel snapping even if pixel snap rendering is disabled in the Project Settings.
+	// This results in crisper visuals by preventing 2D nodes from being placed at subpixel coordinates.
+	snap_pixel = true;
 	snap_target[0] = SNAP_TARGET_NONE;
 	snap_target[1] = SNAP_TARGET_NONE;
 

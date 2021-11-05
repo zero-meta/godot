@@ -528,9 +528,9 @@ void EditorSpinSlider::_focus_entered() {
 	value_input->set_text(get_text_value());
 	value_input->set_position(gr.position);
 	value_input->set_size(gr.size);
-	value_input->call_deferred("show_modal");
-	value_input->call_deferred("grab_focus");
-	value_input->call_deferred("select_all");
+	value_input->show_modal();
+	value_input->select_all();
+	value_input->call_deferred("grab_focus"); // deferred to avoid losing focus
 	value_input->set_focus_next(find_next_valid_focus()->get_path());
 	value_input->set_focus_previous(find_prev_valid_focus()->get_path());
 }
@@ -546,7 +546,7 @@ void EditorSpinSlider::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("is_flat"), &EditorSpinSlider::is_flat);
 
 	ClassDB::bind_method(D_METHOD("_gui_input"), &EditorSpinSlider::_gui_input);
-	ClassDB::bind_method(D_METHOD("_value_input_gui_input"), &EditorSpinSlider::_value_input_gui_input);
+	ClassDB::bind_method(D_METHOD("_value_input_gui_input", "event"), &EditorSpinSlider::_value_input_gui_input);
 	ClassDB::bind_method(D_METHOD("_grabber_mouse_entered"), &EditorSpinSlider::_grabber_mouse_entered);
 	ClassDB::bind_method(D_METHOD("_grabber_mouse_exited"), &EditorSpinSlider::_grabber_mouse_exited);
 	ClassDB::bind_method(D_METHOD("_grabber_gui_input"), &EditorSpinSlider::_grabber_gui_input);

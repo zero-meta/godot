@@ -436,9 +436,9 @@ void EditorNode::_notification(int p_what) {
 				last_checked_version = editor_data.get_undo_redo().get_version();
 			}
 
-			// update the animation frame of the update spinner
+			// Update the animation frame of the update spinner.
 			uint64_t frame = Engine::get_singleton()->get_frames_drawn();
-			uint32_t tick = OS::get_singleton()->get_ticks_msec();
+			uint64_t tick = OS::get_singleton()->get_ticks_msec();
 
 			if (frame != update_spinner_step_frame && (tick - update_spinner_step_msec) > (1000 / 8)) {
 				update_spinner_step++;
@@ -449,7 +449,7 @@ void EditorNode::_notification(int p_what) {
 				update_spinner_step_msec = tick;
 				update_spinner_step_frame = frame + 1;
 
-				// update the icon itself only when the spinner is visible
+				// Update the icon itself only when the spinner is visible.
 				if (EditorSettings::get_singleton()->get("interface/editor/show_update_spinner")) {
 					update_spinner->set_icon(gui_base->get_icon("Progress" + itos(update_spinner_step + 1), "EditorIcons"));
 				}
@@ -1611,19 +1611,25 @@ void EditorNode::restart_editor() {
 }
 
 void EditorNode::_save_all_scenes() {
+	bool all_saved = true;
 	for (int i = 0; i < editor_data.get_edited_scene_count(); i++) {
 		Node *scene = editor_data.get_edited_scene_root(i);
-		if (scene && scene->get_filename() != "" && DirAccess::exists(scene->get_filename().get_base_dir())) {
-			if (i != editor_data.get_edited_scene()) {
-				_save_scene(scene->get_filename(), i);
+		if (scene) {
+			if (scene->get_filename() != "" && DirAccess::exists(scene->get_filename().get_base_dir())) {
+				if (i != editor_data.get_edited_scene()) {
+					_save_scene(scene->get_filename(), i);
+				} else {
+					_save_scene_with_preview(scene->get_filename());
+				}
 			} else {
-				_save_scene_with_preview(scene->get_filename());
+				all_saved = false;
 			}
-		} else {
-			show_warning(TTR("Could not save one or more scenes!"), TTR("Save All Scenes"));
 		}
 	}
 
+	if (!all_saved) {
+		show_warning(TTR("Could not save one or more scenes!"), TTR("Save All Scenes"));
+	}
 	_save_default_environment();
 }
 
@@ -4811,9 +4817,9 @@ void EditorNode::_scene_tab_closed(int p_tab, int option) {
 		return;
 	}
 
-	bool unsaved = (p_tab == editor_data.get_edited_scene()) ?
-							 saved_version != editor_data.get_undo_redo().get_version() :
-							 editor_data.get_scene_version(p_tab) != 0;
+	bool unsaved = (p_tab == editor_data.get_edited_scene())
+			? saved_version != editor_data.get_undo_redo().get_version()
+			: editor_data.get_scene_version(p_tab) != 0;
 	if (unsaved) {
 		save_confirmation->get_ok()->set_text(TTR("Save & Close"));
 		save_confirmation->set_text(vformat(TTR("Save changes to '%s' before closing?"), scene->get_filename() != "" ? scene->get_filename() : "unsaved scene"));

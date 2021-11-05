@@ -117,26 +117,26 @@ Error GLTFDocument::serialize(Ref<GLTFState> state, Node *p_root, const String &
 		return Error::FAILED;
 	}
 
-	/* STEP 7 SERIALIZE IMAGES */
-	err = _serialize_images(state, p_path);
-	if (err != OK) {
-		return Error::FAILED;
-	}
-
-	/* STEP 8 SERIALIZE TEXTURES */
-	err = _serialize_textures(state);
-	if (err != OK) {
-		return Error::FAILED;
-	}
-
-	// /* STEP 9 SERIALIZE ANIMATIONS */
+	/* STEP 7 SERIALIZE ANIMATIONS */
 	err = _serialize_animations(state);
 	if (err != OK) {
 		return Error::FAILED;
 	}
 
-	/* STEP 10 SERIALIZE ACCESSORS */
+	/* STEP 8 SERIALIZE ACCESSORS */
 	err = _encode_accessors(state);
+	if (err != OK) {
+		return Error::FAILED;
+	}
+
+	/* STEP 9 SERIALIZE IMAGES */
+	err = _serialize_images(state, p_path);
+	if (err != OK) {
+		return Error::FAILED;
+	}
+
+	/* STEP 10 SERIALIZE TEXTURES */
+	err = _serialize_textures(state);
 	if (err != OK) {
 		return Error::FAILED;
 	}
@@ -739,6 +739,9 @@ Error GLTFDocument::_encode_buffer_glb(Ref<GLTFState> state, const String &p_pat
 		gltf_buffer["byteLength"] = buffer_data.size();
 		buffers.push_back(gltf_buffer);
 	}
+	if (!buffers.size()) {
+		return OK;
+	}
 	state->json["buffers"] = buffers;
 
 	return OK;
@@ -843,6 +846,9 @@ Error GLTFDocument::_encode_buffer_views(Ref<GLTFState> state) {
 		buffers.push_back(d);
 	}
 	print_verbose("glTF: Total buffer views: " + itos(state->buffer_views.size()));
+	if (!buffers.size()) {
+		return OK;
+	}
 	state->json["bufferViews"] = buffers;
 	return OK;
 }
@@ -942,6 +948,9 @@ Error GLTFDocument::_encode_accessors(Ref<GLTFState> state) {
 		accessors.push_back(d);
 	}
 
+	if (!accessors.size()) {
+		return OK;
+	}
 	state->json["accessors"] = accessors;
 	ERR_FAIL_COND_V(!state->json.has("accessors"), ERR_FILE_CORRUPT);
 	print_verbose("glTF: Total accessors: " + itos(state->accessors.size()));
@@ -2287,6 +2296,7 @@ Error GLTFDocument::_serialize_meshes(Ref<GLTFState> state) {
 		if (import_mesh.is_null()) {
 			continue;
 		}
+		Array instance_materials = state->meshes.write[gltf_mesh_i]->get_instance_materials();
 		Array primitives;
 		Dictionary gltf_mesh;
 		Array target_names;
@@ -2531,8 +2541,14 @@ Error GLTFDocument::_serialize_meshes(Ref<GLTFState> state) {
 					targets.push_back(t);
 				}
 			}
-
-			Ref<SpatialMaterial> mat = import_mesh->surface_get_material(surface_i);
+			Variant v;
+			if (surface_i < instance_materials.size()) {
+				v = instance_materials.get(surface_i);
+			}
+			Ref<SpatialMaterial> mat = v;
+			if (!mat.is_valid()) {
+				mat = import_mesh->surface_get_material(surface_i);
+			}
 			if (mat.is_valid()) {
 				Map<Ref<Material>, GLTFMaterialIndex>::Element *material_cache_i = state->material_cache.find(mat);
 				if (material_cache_i && material_cache_i->get() != -1) {
@@ -2576,6 +2592,9 @@ Error GLTFDocument::_serialize_meshes(Ref<GLTFState> state) {
 		meshes.push_back(gltf_mesh);
 	}
 
+	if (!meshes.size()) {
+		return OK;
+	}
 	state->json["meshes"] = meshes;
 	print_verbose("glTF: Total meshes: " + itos(meshes.size()));
 
@@ -2870,7 +2889,7 @@ Error GLTFDocument::_parse_meshes(Ref<GLTFState> state) {
 				mat = mat3d;
 			}
 			int32_t mat_idx = import_mesh->get_surface_count();
-			import_mesh->add_surface_from_arrays(primitive, array, morphs);
+			import_mesh->add_surface_from_arrays(primitive, array, morphs, state->compress_flags);
 			import_mesh->surface_set_material(mat_idx, mat);
 		}
 
@@ -3441,6 +3460,9 @@ Error GLTFDocument::_serialize_materials(Ref<GLTFState> state) {
 			}
 		}
 		materials.push_back(d);
+	}
+	if (!materials.size()) {
+		return OK;
 	}
 	state->json["materials"] = materials;
 	print_verbose("Total materials: " + itos(state->materials.size()));
@@ -4366,6 +4388,10 @@ Error GLTFDocument::_serialize_skins(Ref<GLTFState> state) {
 		json_skin["name"] = gltf_skin->get_name();
 		json_skins.push_back(json_skin);
 	}
+	if (!state->skins.size()) {
+		return OK;
+	}
+
 	state->json["skins"] = json_skins;
 	return OK;
 }
@@ -4831,6 +4857,9 @@ Error GLTFDocument::_serialize_animations(Ref<GLTFState> state) {
 		}
 	}
 
+	if (!animations.size()) {
+		return OK;
+	}
 	state->json["animations"] = animations;
 
 	print_verbose("glTF: Total animations '" + itos(state->animations.size()) + "'.");
@@ -5062,6 +5091,18 @@ GLTFMeshIndex GLTFDocument::_convert_mesh_to_gltf(Ref<GLTFState> state, MeshInst
 	}
 	Ref<GLTFMesh> gltf_mesh;
 	gltf_mesh.instance();
+	Array instance_materials;
+	for (int32_t surface_i = 0; surface_i < import_mesh->get_surface_count(); surface_i++) {
+		Ref<Material> mat = import_mesh->surface_get_material(surface_i);
+		if (p_mesh_instance->get_surface_material(surface_i).is_valid()) {
+			mat = p_mesh_instance->get_surface_material(surface_i);
+		}
+		if (p_mesh_instance->get_material_override().is_valid()) {
+			mat = p_mesh_instance->get_material_override();
+		}
+		instance_materials.append(mat);
+	}
+	gltf_mesh->set_instance_materials(instance_materials);
 	gltf_mesh->set_mesh(import_mesh);
 	gltf_mesh->set_blend_weights(blend_weights);
 	GLTFMeshIndex mesh_i = state->meshes.size();
@@ -5426,7 +5467,7 @@ void GLTFDocument::_convert_mult_mesh_instance_to_gltf(MultiMeshInstance *p_mult
 						p_multi_mesh_instance->get_transform() * transform;
 			} else if (multi_mesh->get_transform_format() == MultiMesh::TRANSFORM_3D) {
 				transform = p_multi_mesh_instance->get_transform() *
-							multi_mesh->get_instance_transform(instance_i);
+						multi_mesh->get_instance_transform(instance_i);
 			}
 			Ref<ArrayMesh> mm = multi_mesh->get_mesh();
 			if (mm.is_valid()) {
@@ -6717,32 +6758,35 @@ Error GLTFDocument::_serialize_file(Ref<GLTFState> state, const String p_path) {
 		const uint32_t magic = 0x46546C67; // GLTF
 		const int32_t header_size = 12;
 		const int32_t chunk_header_size = 8;
-
-		for (int32_t pad_i = 0; pad_i < (chunk_header_size + json.utf8().length()) % 4; pad_i++) {
-			json += " ";
-		}
 		CharString cs = json.utf8();
-		const uint32_t text_chunk_length = cs.length();
-
+		const uint32_t text_data_length = cs.length();
+		const uint32_t text_chunk_length = ((text_data_length + 3) & (~3));
 		const uint32_t text_chunk_type = 0x4E4F534A; //JSON
-		int32_t binary_data_length = 0;
+
+		uint32_t binary_data_length = 0;
 		if (state->buffers.size()) {
 			binary_data_length = state->buffers[0].size();
 		}
-		const int32_t binary_chunk_length = binary_data_length;
-		const int32_t binary_chunk_type = 0x004E4942; //BIN
+		const uint32_t binary_chunk_length = ((binary_data_length + 3) & (~3));
+		const uint32_t binary_chunk_type = 0x004E4942; //BIN
 
 		f->create(FileAccess::ACCESS_RESOURCES);
 		f->store_32(magic);
 		f->store_32(state->major_version); // version
-		f->store_32(header_size + chunk_header_size + text_chunk_length + chunk_header_size + binary_data_length); // length
+		f->store_32(header_size + chunk_header_size + text_chunk_length + chunk_header_size + binary_chunk_length); // length
 		f->store_32(text_chunk_length);
 		f->store_32(text_chunk_type);
 		f->store_buffer((uint8_t *)&cs[0], cs.length());
+		for (uint32_t pad_i = text_data_length; pad_i < text_chunk_length; pad_i++) {
+			f->store_8(' ');
+		}
 		if (binary_chunk_length) {
 			f->store_32(binary_chunk_length);
 			f->store_32(binary_chunk_type);
 			f->store_buffer(state->buffers[0].ptr(), binary_data_length);
+		}
+		for (uint32_t pad_i = binary_data_length; pad_i < binary_chunk_length; pad_i++) {
+			f->store_8(0);
 		}
 
 		f->close();

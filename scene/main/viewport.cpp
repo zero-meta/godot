@@ -35,7 +35,7 @@
 #include "core/os/os.h"
 #include "core/project_settings.h"
 #include "scene/2d/collision_object_2d.h"
-#include "scene/2d/listener_2d.cpp"
+#include "scene/2d/listener_2d.h"
 #include "scene/3d/camera.h"
 #include "scene/3d/collision_object.h"
 #include "scene/3d/listener.h"
@@ -1625,10 +1625,10 @@ void Viewport::_gui_call_input(Control *p_control, const Ref<InputEvent> &p_inpu
 	Ref<InputEventMouseButton> mb = p_input;
 
 	bool cant_stop_me_now = (mb.is_valid() &&
-							 (mb->get_button_index() == BUTTON_WHEEL_DOWN ||
-									 mb->get_button_index() == BUTTON_WHEEL_UP ||
-									 mb->get_button_index() == BUTTON_WHEEL_LEFT ||
-									 mb->get_button_index() == BUTTON_WHEEL_RIGHT));
+			(mb->get_button_index() == BUTTON_WHEEL_DOWN ||
+					mb->get_button_index() == BUTTON_WHEEL_UP ||
+					mb->get_button_index() == BUTTON_WHEEL_LEFT ||
+					mb->get_button_index() == BUTTON_WHEEL_RIGHT));
 	Ref<InputEventPanGesture> pn = p_input;
 	cant_stop_me_now = pn.is_valid() || cant_stop_me_now;
 

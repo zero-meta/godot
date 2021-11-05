@@ -66,15 +66,12 @@ def configure(env):
             env.Prepend(CCFLAGS=["-O2"])
         elif env["optimize"] == "size":  # optimize for size
             env.Prepend(CCFLAGS=["-Os"])
-        env.Prepend(CPPDEFINES=["DEBUG_ENABLED"])
 
         if env["debug_symbols"]:
             env.Prepend(CCFLAGS=["-g2"])
 
     elif env["target"] == "debug":
         env.Prepend(CCFLAGS=["-g3"])
-        env.Prepend(CPPDEFINES=["DEBUG_ENABLED"])
-        env.Prepend(CPPDEFINES=["DEV_ENABLED"])
         env.Append(LINKFLAGS=["-rdynamic"])
 
     ## Architecture
@@ -82,6 +79,13 @@ def configure(env):
     is64 = sys.maxsize > 2 ** 32
     if env["bits"] == "default":
         env["bits"] = "64" if is64 else "32"
+
+    if env["arch"] == "" and platform.machine() == "riscv64":
+        env["arch"] = "rv64"
+
+    if env["arch"] == "rv64":
+        # G = General-purpose extensions, C = Compression extension (very common).
+        env.Append(CCFLAGS=["-march=rv64gc"])
 
     ## Compiler configuration
 

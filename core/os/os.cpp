@@ -66,18 +66,12 @@ String OS::get_iso_date_time(bool local) const {
 		timezone = "Z";
 	}
 
-	return itos(date.year).pad_zeros(2) +
-		   "-" +
-		   itos(date.month).pad_zeros(2) +
-		   "-" +
-		   itos(date.day).pad_zeros(2) +
-		   "T" +
-		   itos(time.hour).pad_zeros(2) +
-		   ":" +
-		   itos(time.min).pad_zeros(2) +
-		   ":" +
-		   itos(time.sec).pad_zeros(2) +
-		   timezone;
+	return itos(date.year).pad_zeros(2) + "-" +
+			itos(date.month).pad_zeros(2) + "-" +
+			itos(date.day).pad_zeros(2) + "T" +
+			itos(time.hour).pad_zeros(2) + ":" +
+			itos(time.min).pad_zeros(2) + ":" +
+			itos(time.sec).pad_zeros(2) + timezone;
 }
 
 uint64_t OS::get_splash_tick_msec() const {
@@ -668,6 +662,15 @@ bool OS::has_feature(const String &p_feature) {
 	}
 #endif
 	if (p_feature == "arm") {
+		return true;
+	}
+#elif defined(__riscv)
+#if __riscv_xlen == 8
+	if (p_feature == "rv64") {
+		return true;
+	}
+#endif
+	if (p_feature == "riscv") {
 		return true;
 	}
 #endif

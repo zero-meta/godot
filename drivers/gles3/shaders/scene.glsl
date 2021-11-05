@@ -234,11 +234,27 @@ void light_compute(vec3 N, vec3 L, vec3 V, vec3 light_color, float roughness, in
 	}
 }
 
+#ifdef USE_PHYSICAL_LIGHT_ATTENUATION
+float get_omni_attenuation(float distance, float inv_range, float decay) {
+	float nd = distance * inv_range;
+	nd *= nd;
+	nd *= nd; // nd^4
+	nd = max(1.0 - nd, 0.0);
+	nd *= nd; // nd^2
+	return nd * pow(max(distance, 0.0001), -decay);
+}
+#endif
+
 void light_process_omni(int idx, vec3 vertex, vec3 eye_vec, vec3 normal, float roughness, inout vec3 diffuse, inout vec3 specular) {
 	vec3 light_rel_vec = omni_lights[idx].light_pos_inv_radius.xyz - vertex;
 	float light_length = length(light_rel_vec);
+
+#ifdef USE_PHYSICAL_LIGHT_ATTENUATION
+	vec3 light_attenuation = vec3(get_omni_attenuation(light_length, omni_lights[idx].light_pos_inv_radius.w, omni_lights[idx].light_direction_attenuation.w));
+#else
 	float normalized_distance = light_length * omni_lights[idx].light_pos_inv_radius.w;
 	vec3 light_attenuation = vec3(pow(max(1.0 - normalized_distance, 0.0), omni_lights[idx].light_direction_attenuation.w));
+#endif
 
 	light_compute(normal, normalize(light_rel_vec), eye_vec, omni_lights[idx].light_color_energy.rgb * light_attenuation, roughness, diffuse, specular);
 }
@@ -246,8 +262,14 @@ void light_process_omni(int idx, vec3 vertex, vec3 eye_vec, vec3 normal, float r
 void light_process_spot(int idx, vec3 vertex, vec3 eye_vec, vec3 normal, float roughness, inout vec3 diffuse, inout vec3 specular) {
 	vec3 light_rel_vec = spot_lights[idx].light_pos_inv_radius.xyz - vertex;
 	float light_length = length(light_rel_vec);
+
+#ifdef USE_PHYSICAL_LIGHT_ATTENUATION
+	vec3 light_attenuation = vec3(get_omni_attenuation(light_length, spot_lights[idx].light_pos_inv_radius.w, spot_lights[idx].light_direction_attenuation.w));
+#else
 	float normalized_distance = light_length * spot_lights[idx].light_pos_inv_radius.w;
 	vec3 light_attenuation = vec3(pow(max(1.0 - normalized_distance, 0.001), spot_lights[idx].light_direction_attenuation.w));
+#endif
+
 	vec3 spot_dir = spot_lights[idx].light_direction_attenuation.xyz;
 	float spot_cutoff = spot_lights[idx].light_params.y;
 	float scos = max(dot(-normalize(light_rel_vec), spot_dir), spot_cutoff);
@@ -426,7 +448,7 @@ void main() {
 					texelFetch(skeleton_texture, tex_ofs + ivec2(0, 1), 0),
 					texelFetch(skeleton_texture, tex_ofs + ivec2(0, 2), 0),
 					vec4(0.0, 0.0, 0.0, 1.0)) *
-			bone_weights.x;
+				bone_weights.x;
 
 		tex_ofs = ivec2(bone_indicesi.y % 256, (bone_indicesi.y / 256) * 3);
 
@@ -435,7 +457,7 @@ void main() {
 					 texelFetch(skeleton_texture, tex_ofs + ivec2(0, 1), 0),
 					 texelFetch(skeleton_texture, tex_ofs + ivec2(0, 2), 0),
 					 vec4(0.0, 0.0, 0.0, 1.0)) *
-			 bone_weights.y;
+				bone_weights.y;
 
 		tex_ofs = ivec2(bone_indicesi.z % 256, (bone_indicesi.z / 256) * 3);
 
@@ -444,7 +466,7 @@ void main() {
 					 texelFetch(skeleton_texture, tex_ofs + ivec2(0, 1), 0),
 					 texelFetch(skeleton_texture, tex_ofs + ivec2(0, 2), 0),
 					 vec4(0.0, 0.0, 0.0, 1.0)) *
-			 bone_weights.z;
+				bone_weights.z;
 
 		tex_ofs = ivec2(bone_indicesi.w % 256, (bone_indicesi.w / 256) * 3);
 
@@ -453,7 +475,7 @@ void main() {
 					 texelFetch(skeleton_texture, tex_ofs + ivec2(0, 1), 0),
 					 texelFetch(skeleton_texture, tex_ofs + ivec2(0, 2), 0),
 					 vec4(0.0, 0.0, 0.0, 1.0)) *
-			 bone_weights.w;
+				bone_weights.w;
 
 		world_matrix = world_matrix * transpose(m);
 	}
@@ -1250,13 +1272,28 @@ in highp float dp_clip;
 
 #endif
 
+#ifdef USE_PHYSICAL_LIGHT_ATTENUATION
+float get_omni_attenuation(float distance, float inv_range, float decay) {
+	float nd = distance * inv_range;
+	nd *= nd;
+	nd *= nd; // nd^4
+	nd = max(1.0 - nd, 0.0);
+	nd *= nd; // nd^2
+	return nd * pow(max(distance, 0.0001), -decay);
+}
+#endif
+
 void light_process_omni(int idx, vec3 vertex, vec3 eye_vec, vec3 normal, vec3 binormal, vec3 tangent, vec3 albedo, vec3 transmission, float roughness, float metallic, float specular, float rim, float rim_tint, float clearcoat, float clearcoat_gloss, float anisotropy, float p_blob_intensity, inout vec3 diffuse_light, inout vec3 specular_light, inout float alpha) {
 	vec3 light_rel_vec = omni_lights[idx].light_pos_inv_radius.xyz - vertex;
 	float light_length = length(light_rel_vec);
 	float normalized_distance = light_length * omni_lights[idx].light_pos_inv_radius.w;
 	float omni_attenuation;
 	if (normalized_distance < 1.0) {
+#ifdef USE_PHYSICAL_LIGHT_ATTENUATION
+		omni_attenuation = get_omni_attenuation(light_length, omni_lights[idx].light_pos_inv_radius.w, omni_lights[idx].light_direction_attenuation.w);
+#else
 		omni_attenuation = pow(1.0 - normalized_distance, omni_lights[idx].light_direction_attenuation.w);
+#endif
 	} else {
 		omni_attenuation = 0.0;
 	}
@@ -1316,7 +1353,11 @@ void light_process_spot(int idx, vec3 vertex, vec3 eye_vec, vec3 normal, vec3 bi
 	float normalized_distance = light_length * spot_lights[idx].light_pos_inv_radius.w;
 	float spot_attenuation;
 	if (normalized_distance < 1.0) {
+#ifdef USE_PHYSICAL_LIGHT_ATTENUATION
+		spot_attenuation = get_omni_attenuation(light_length, spot_lights[idx].light_pos_inv_radius.w, spot_lights[idx].light_direction_attenuation.w);
+#else
 		spot_attenuation = pow(1.0 - normalized_distance, spot_lights[idx].light_direction_attenuation.w);
+#endif
 	} else {
 		spot_attenuation = 0.0;
 	}
@@ -1521,7 +1562,7 @@ vec4 texture_bicubic(sampler2D tex, vec2 uv) {
 	vec2 p3 = (vec2(iuv.x + h1x, iuv.y + h1y) - vec2(0.5)) * texel_size;
 
 	return (g0(fuv.y) * (g0x * texture(tex, p0) + g1x * texture(tex, p1))) +
-		   (g1(fuv.y) * (g0x * texture(tex, p2) + g1x * texture(tex, p3)));
+			(g1(fuv.y) * (g0x * texture(tex, p2) + g1x * texture(tex, p3)));
 }
 
 vec4 textureArray_bicubic(sampler2DArray tex, vec3 uv) {
@@ -1545,7 +1586,7 @@ vec4 textureArray_bicubic(sampler2DArray tex, vec3 uv) {
 	vec2 p3 = (vec2(iuv.x + h1x, iuv.y + h1y) - vec2(0.5)) * texel_size;
 
 	return (g0(fuv.y) * (g0x * texture(tex, vec3(p0, uv.z)) + g1x * texture(tex, vec3(p1, uv.z)))) +
-		   (g1(fuv.y) * (g0x * texture(tex, vec3(p2, uv.z)) + g1x * texture(tex, vec3(p3, uv.z))));
+			(g1(fuv.y) * (g0x * texture(tex, vec3(p2, uv.z)) + g1x * texture(tex, vec3(p3, uv.z))));
 }
 
 #define LIGHTMAP_TEXTURE_SAMPLE(m_tex, m_uv) texture_bicubic(m_tex, m_uv)
@@ -1897,7 +1938,7 @@ FRAGMENT_SHADER_CODE
 		norm = normalize((radiance_inverse_xform * vec4(norm, 0.0)).xyz);
 		norm.xy /= 1.0 + abs(norm.z);
 		norm.xy = norm.xy * vec2(0.5, 0.25) + vec2(0.5, 0.25);
-		if (norm.z > 0.0) {
+		if (norm.z > 0.0001) {
 			norm.y = 0.5 - norm.y + 0.5;
 		}
 
@@ -2263,15 +2304,21 @@ FRAGMENT_SHADER_CODE
 	float max_emission = max(emission.r, max(emission.g, emission.b));
 	float max_ambient = max(ambient_light.r, max(ambient_light.g, ambient_light.b));
 	float max_diffuse = max(diffuse_light.r, max(diffuse_light.g, diffuse_light.b));
-	float total_ambient = max_ambient + max_diffuse + max_emission;
+	float total_ambient = max_ambient + max_diffuse;
+#ifdef USE_FORWARD_LIGHTING
+	total_ambient += max_emission;
+#endif
 	float ambient_scale = (total_ambient > 0.0) ? (max_ambient + ambient_occlusion_affect_light * max_diffuse) / total_ambient : 0.0;
 
 #if defined(ENABLE_AO)
 	ambient_scale = mix(0.0, ambient_scale, ambient_occlusion_affect_ao_channel);
 #endif
-	diffuse_buffer = vec4(emission + diffuse_light + ambient_light, ambient_scale);
+	diffuse_buffer = vec4(diffuse_light + ambient_light, ambient_scale);
 	specular_buffer = vec4(specular_light, metallic);
 
+#ifdef USE_FORWARD_LIGHTING
+	diffuse_buffer.rgb += emission;
+#endif
 #endif //SHADELESS
 
 	normal_mr_buffer = vec4(normalize(normal) * 0.5 + 0.5, roughness);
@@ -2285,7 +2332,10 @@ FRAGMENT_SHADER_CODE
 #ifdef SHADELESS
 	frag_color = vec4(albedo, alpha);
 #else
-	frag_color = vec4(emission + ambient_light + diffuse_light + specular_light, alpha);
+	frag_color = vec4(ambient_light + diffuse_light + specular_light, alpha);
+#ifdef USE_FORWARD_LIGHTING
+	frag_color.rgb += emission;
+#endif
 #endif //SHADELESS
 
 #endif //USE_MULTIPLE_RENDER_TARGETS

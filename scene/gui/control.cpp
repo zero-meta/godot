@@ -70,8 +70,8 @@ Dictionary Control::_edit_get_state() const {
 
 void Control::_edit_set_state(const Dictionary &p_state) {
 	ERR_FAIL_COND((p_state.size() <= 0) ||
-				  !p_state.has("rotation") || !p_state.has("scale") ||
-				  !p_state.has("pivot") || !p_state.has("anchors") || !p_state.has("margins"));
+			!p_state.has("rotation") || !p_state.has("scale") ||
+			!p_state.has("pivot") || !p_state.has("anchors") || !p_state.has("margins"));
 	Dictionary state = p_state;
 
 	set_rotation(state["rotation"]);
@@ -102,11 +102,11 @@ void Control::_edit_set_position(const Point2 &p_position) {
 	// Unlikely to happen. TODO: enclose all _edit_ functions into TOOLS_ENABLED
 	set_position(p_position);
 #endif
-};
+}
 
 Point2 Control::_edit_get_position() const {
 	return get_position();
-};
+}
 
 void Control::_edit_set_scale(const Size2 &p_scale) {
 	set_scale(p_scale);
@@ -525,7 +525,9 @@ void Control::_notification(int p_notification) {
 					data.SI = get_viewport()->_gui_add_subwindow_control(this);
 				} else {
 					//is a regular root control
-					data.RI = get_viewport()->_gui_add_root_control(this);
+					Viewport *viewport = get_viewport();
+					ERR_FAIL_COND(!viewport);
+					data.RI = viewport->_gui_add_root_control(this);
 				}
 
 				data.parent_canvas_item = get_parent_item();
@@ -534,17 +536,11 @@ void Control::_notification(int p_notification) {
 					data.parent_canvas_item->connect("item_rect_changed", this, "_size_changed");
 				} else {
 					//connect viewport
-					get_viewport()->connect("size_changed", this, "_size_changed");
+					Viewport *viewport = get_viewport();
+					ERR_FAIL_COND(!viewport);
+					viewport->connect("size_changed", this, "_size_changed");
 				}
 			}
-
-			/*
-			if (data.theme.is_null() && data.parent && data.parent->data.theme_owner) {
-				data.theme_owner=data.parent->data.theme_owner;
-				notification(NOTIFICATION_THEME_CHANGED);
-			}
-			*/
-
 		} break;
 		case NOTIFICATION_EXIT_CANVAS: {
 			if (data.parent_canvas_item) {
@@ -552,7 +548,9 @@ void Control::_notification(int p_notification) {
 				data.parent_canvas_item = nullptr;
 			} else if (!is_set_as_toplevel()) {
 				//disconnect viewport
-				get_viewport()->disconnect("size_changed", this, "_size_changed");
+				Viewport *viewport = get_viewport();
+				ERR_FAIL_COND(!viewport);
+				viewport->disconnect("size_changed", this, "_size_changed");
 			}
 
 			if (data.MI) {
@@ -669,10 +667,6 @@ bool Control::has_point(const Point2 &p_point) const {
 			return ret;
 		}
 	}
-	/*if (has_stylebox("mask")) {
-		Ref<StyleBox> mask = get_stylebox("mask");
-		return mask->test_mask(p_point,Rect2(Point2(),get_size()));
-	}*/
 	return Rect2(Point2(), get_size()).has_point(p_point);
 }
 
@@ -2559,16 +2553,6 @@ void Control::warp_mouse(const Point2 &p_to_pos) {
 }
 
 bool Control::is_text_field() const {
-	/*
-    if (get_script_instance()) {
-        Variant v=p_point;
-        const Variant *p[2]={&v,&p_data};
-        Variant::CallError ce;
-        Variant ret = get_script_instance()->call("is_text_field",p,2,ce);
-        if (ce.error==Variant::CallError::CALL_OK)
-            return ret;
-    }
-  */
 	return false;
 }
 

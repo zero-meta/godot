@@ -2236,8 +2236,8 @@ EditorPropertyRID::EditorPropertyRID() {
 
 ////////////// RESOURCE //////////////////////
 
-void EditorPropertyResource::_resource_selected(const RES &p_resource) {
-	if (_can_use_sub_inspector(p_resource)) {
+void EditorPropertyResource::_resource_selected(const RES &p_resource, bool p_edit) {
+	if (!p_edit && _can_use_sub_inspector(p_resource)) {
 		bool unfold = !get_edited_object()->editor_is_section_unfolded(get_edited_property());
 		get_edited_object()->editor_set_section_unfold(get_edited_property(), unfold);
 		update_property();
@@ -2719,13 +2719,13 @@ bool EditorInspectorDefaultPlugin::parse_property(Object *p_object, Variant::Typ
 				}
 				add_property_editor(p_path, editor);
 			} else if (p_hint == PROPERTY_HINT_METHOD_OF_VARIANT_TYPE ||
-					   p_hint == PROPERTY_HINT_METHOD_OF_BASE_TYPE ||
-					   p_hint == PROPERTY_HINT_METHOD_OF_INSTANCE ||
-					   p_hint == PROPERTY_HINT_METHOD_OF_SCRIPT ||
-					   p_hint == PROPERTY_HINT_PROPERTY_OF_VARIANT_TYPE ||
-					   p_hint == PROPERTY_HINT_PROPERTY_OF_BASE_TYPE ||
-					   p_hint == PROPERTY_HINT_PROPERTY_OF_INSTANCE ||
-					   p_hint == PROPERTY_HINT_PROPERTY_OF_SCRIPT) {
+					p_hint == PROPERTY_HINT_METHOD_OF_BASE_TYPE ||
+					p_hint == PROPERTY_HINT_METHOD_OF_INSTANCE ||
+					p_hint == PROPERTY_HINT_METHOD_OF_SCRIPT ||
+					p_hint == PROPERTY_HINT_PROPERTY_OF_VARIANT_TYPE ||
+					p_hint == PROPERTY_HINT_PROPERTY_OF_BASE_TYPE ||
+					p_hint == PROPERTY_HINT_PROPERTY_OF_INSTANCE ||
+					p_hint == PROPERTY_HINT_PROPERTY_OF_SCRIPT) {
 				EditorPropertyMember *editor = memnew(EditorPropertyMember);
 
 				EditorPropertyMember::Type type = EditorPropertyMember::MEMBER_METHOD_OF_BASE_TYPE;

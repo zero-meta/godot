@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2021 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2021 Godot Engine contributors (cf. AUTHORS.md).   */
+/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -127,7 +127,6 @@ public class Godot extends Fragment implements SensorEventListener, IDownloaderC
 	private Button mWiFiSettingsButton;
 
 	private XRMode xrMode = XRMode.REGULAR;
-	private boolean use_32_bits = false;
 	private boolean use_immersive = false;
 	private boolean use_debug_opengl = false;
 	private boolean translucent = false;
@@ -358,7 +357,7 @@ public class Godot extends Fragment implements SensorEventListener, IDownloaderC
 		// ...add to FrameLayout
 		containerLayout.addView(edittext);
 
-		mView = new GodotView(activity, this, xrMode, use_gl3, use_32_bits, use_debug_opengl, translucent);
+		mView = new GodotView(activity, this, xrMode, use_gl3, use_debug_opengl, translucent);
 		containerLayout.addView(mView, new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT));
 		edittext.setView(mView);
 		io.setEdit(edittext);
@@ -405,6 +404,18 @@ public class Godot extends Fragment implements SensorEventListener, IDownloaderC
 				}
 			}
 		}
+	}
+
+	public boolean createOffscreenGL() {
+		return mView.createOffscreenGL();
+	}
+
+	public void destroyOffscreenGL() {
+		mView.destroyOffscreenGL();
+	}
+
+	public void setOffscreenGLCurrent(boolean p_current) {
+		mView.setOffscreenGLCurrent(p_current);
 	}
 
 	public void setKeepScreenOn(final boolean p_enabled) {
@@ -609,8 +620,8 @@ public class Godot extends Fragment implements SensorEventListener, IDownloaderC
 				xrMode = XRMode.REGULAR;
 			} else if (command_line[i].equals(XRMode.OVR.cmdLineArg)) {
 				xrMode = XRMode.OVR;
-			} else if (command_line[i].equals("--use_depth_32")) {
-				use_32_bits = true;
+			} else if (command_line[i].equals(XRMode.OPENXR.cmdLineArg)) {
+				xrMode = XRMode.OPENXR;
 			} else if (command_line[i].equals("--debug_opengl")) {
 				use_debug_opengl = true;
 			} else if (command_line[i].equals("--translucent")) {
@@ -775,10 +786,14 @@ public class Godot extends Fragment implements SensorEventListener, IDownloaderC
 		}
 	}
 
+	public boolean hasClipboard() {
+		return mClipboard.hasPrimaryClip();
+	}
+
 	public String getClipboard() {
 		String copiedText = "";
 
-		if (mClipboard.getPrimaryClip() != null) {
+		if (mClipboard.hasPrimaryClip()) {
 			ClipData.Item item = mClipboard.getPrimaryClip().getItemAt(0);
 			copiedText = item.getText().toString();
 		}
@@ -845,45 +860,78 @@ public class Godot extends Fragment implements SensorEventListener, IDownloaderC
 		});
 	}
 
-	@Override
-	public void onSensorChanged(SensorEvent event) {
+	public float[] getRotatedValues(float values[]) {
+		if (values == null || values.length != 3) {
+			return values;
+		}
+
 		Display display =
 				((WindowManager)getActivity().getSystemService(WINDOW_SERVICE)).getDefaultDisplay();
 		int displayRotation = display.getRotation();
 
-		float[] adjustedValues = new float[3];
-		final int[][] axisSwap = {
-			{ 1, -1, 0, 1 }, // ROTATION_0
-			{ -1, -1, 1, 0 }, // ROTATION_90
-			{ -1, 1, 0, 1 }, // ROTATION_180
-			{ 1, 1, 1, 0 }
-		}; // ROTATION_270
+		float[] rotatedValues = new float[3];
+		switch (displayRotation) {
+			case Surface.ROTATION_0:
+				rotatedValues[0] = values[0];
+				rotatedValues[1] = values[1];
+				rotatedValues[2] = values[2];
+				break;
+			case Surface.ROTATION_90:
+				rotatedValues[0] = -values[1];
+				rotatedValues[1] = values[0];
+				rotatedValues[2] = values[2];
+				break;
+			case Surface.ROTATION_180:
+				rotatedValues[0] = -values[0];
+				rotatedValues[1] = -values[1];
+				rotatedValues[2] = values[2];
+				break;
+			case Surface.ROTATION_270:
+				rotatedValues[0] = values[1];
+				rotatedValues[1] = -values[0];
+				rotatedValues[2] = values[2];
+				break;
+		}
 
-		final int[] as = axisSwap[displayRotation];
-		adjustedValues[0] = (float)as[0] * event.values[as[2]];
-		adjustedValues[1] = (float)as[1] * event.values[as[3]];
-		adjustedValues[2] = event.values[2];
+		return rotatedValues;
+	}
 
-		final float x = adjustedValues[0];
-		final float y = adjustedValues[1];
-		final float z = adjustedValues[2];
+	@Override
+	public void onSensorChanged(SensorEvent event) {
+		if (mView == null) {
+			return;
+		}
 
 		final int typeOfSensor = event.sensor.getType();
-		if (mView != null) {
-			mView.queueEvent(() -> {
-				if (typeOfSensor == Sensor.TYPE_ACCELEROMETER) {
-					GodotLib.accelerometer(-x, y, -z);
-				}
-				if (typeOfSensor == Sensor.TYPE_GRAVITY) {
-					GodotLib.gravity(-x, y, -z);
-				}
-				if (typeOfSensor == Sensor.TYPE_MAGNETIC_FIELD) {
-					GodotLib.magnetometer(-x, y, -z);
-				}
-				if (typeOfSensor == Sensor.TYPE_GYROSCOPE) {
-					GodotLib.gyroscope(x, -y, z);
-				}
-			});
+		switch (typeOfSensor) {
+			case Sensor.TYPE_ACCELEROMETER: {
+				float[] rotatedValues = getRotatedValues(event.values);
+				mView.queueEvent(() -> {
+					GodotLib.accelerometer(-rotatedValues[0], -rotatedValues[1], -rotatedValues[2]);
+				});
+				break;
+			}
+			case Sensor.TYPE_GRAVITY: {
+				float[] rotatedValues = getRotatedValues(event.values);
+				mView.queueEvent(() -> {
+					GodotLib.gravity(-rotatedValues[0], -rotatedValues[1], -rotatedValues[2]);
+				});
+				break;
+			}
+			case Sensor.TYPE_MAGNETIC_FIELD: {
+				float[] rotatedValues = getRotatedValues(event.values);
+				mView.queueEvent(() -> {
+					GodotLib.magnetometer(-rotatedValues[0], -rotatedValues[1], -rotatedValues[2]);
+				});
+				break;
+			}
+			case Sensor.TYPE_GYROSCOPE: {
+				float[] rotatedValues = getRotatedValues(event.values);
+				mView.queueEvent(() -> {
+					GodotLib.gyroscope(rotatedValues[0], rotatedValues[1], rotatedValues[2]);
+				});
+				break;
+			}
 		}
 	}
 

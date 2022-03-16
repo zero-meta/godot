@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2021 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2021 Godot Engine contributors (cf. AUTHORS.md).   */
+/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -309,8 +309,8 @@ void World::_bind_methods() {
 }
 
 World::World() {
-	space = PhysicsServer::get_singleton()->space_create();
-	scenario = VisualServer::get_singleton()->scenario_create();
+	space = RID_PRIME(PhysicsServer::get_singleton()->space_create());
+	scenario = RID_PRIME(VisualServer::get_singleton()->scenario_create());
 
 	PhysicsServer::get_singleton()->space_set_active(space, true);
 	PhysicsServer::get_singleton()->area_set_param(space, PhysicsServer::AREA_PARAM_GRAVITY, GLOBAL_DEF("physics/3d/default_gravity", 9.8));

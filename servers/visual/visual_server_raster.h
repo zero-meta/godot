@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2021 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2021 Godot Engine contributors (cf. AUTHORS.md).   */
+/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -53,7 +53,8 @@ class VisualServerRaster : public VisualServer {
 
 	};
 
-	static int changes;
+	// low and high priority
+	static int changes[2];
 	RID test_cube;
 
 	int black_margin[4];
@@ -68,27 +69,36 @@ class VisualServerRaster : public VisualServer {
 	List<FrameDrawnCallbacks> frame_drawn_callbacks;
 
 	void _draw_margins();
-	static void _changes_changed() {}
 
-public:
-	//if editor is redrawing when it shouldn't, enable this and put a breakpoint in _changes_changed()
-	//#define DEBUG_CHANGES
-
-#ifdef DEBUG_CHANGES
-	_FORCE_INLINE_ static void redraw_request() {
-		changes++;
-		_changes_changed();
+	// This function is NOT dead code.
+	// It is specifically for debugging redraws to help identify problems with
+	// undesired constant editor updating.
+	// The function will be called in DEV builds (and thus does not require a recompile),
+	// allowing you to place a breakpoint either at the first line or the semicolon.
+	// You can then look at the callstack to find the cause of the redraw.
+	static void _changes_changed(int p_priority) {
+		if (p_priority) {
+			;
+		}
 	}
 
-#define DISPLAY_CHANGED \
-	changes++;          \
-	_changes_changed();
+public:
+	// if editor is redrawing when it shouldn't, use a DEV build and put a breakpoint in _changes_changed()
+	_FORCE_INLINE_ static void redraw_request(bool p_high_priority = true) {
+		int priority = p_high_priority ? 1 : 0;
+		changes[priority] += 1;
+#ifdef DEV_ENABLED
+		_changes_changed(priority);
+#endif
+	}
 
+#ifdef DEV_ENABLED
+#define DISPLAY_CHANGED \
+	changes[1] += 1;    \
+	_changes_changed(1);
 #else
-	_FORCE_INLINE_ static void redraw_request() { changes++; }
-
 #define DISPLAY_CHANGED \
-	changes++;
+	changes[1] += 1;
 #endif
 
 #define BIND0R(m_r, m_name) \
@@ -192,6 +202,8 @@ public:
 	BIND2C(shader_get_custom_defines, RID, Vector<String> *)
 	BIND2(shader_remove_custom_define, RID, const String &)
 
+	BIND1(set_shader_async_hidden_forbidden, bool)
+
 	/* COMMON MATERIAL API */
 
 	BIND0R(RID, material_create)
@@ -267,6 +279,11 @@ public:
 	BIND2RC(Color, multimesh_instance_get_custom_data, RID, int)
 
 	BIND2(multimesh_set_as_bulk_array, RID, const PoolVector<float> &)
+
+	BIND3(multimesh_set_as_bulk_array_interpolated, RID, const PoolVector<float> &, const PoolVector<float> &)
+	BIND2(multimesh_set_physics_interpolated, RID, bool)
+	BIND2(multimesh_set_physics_interpolation_quality, RID, int)
+	BIND2(multimesh_instance_reset_physics_interpolation, RID, int)
 
 	BIND2(multimesh_set_visible_instances, RID, int)
 	BIND1RC(int, multimesh_get_visible_instances, RID)
@@ -434,10 +451,13 @@ public:
 	/* CAMERA API */
 
 	BIND0R(RID, camera_create)
+	BIND2(camera_set_scenario, RID, RID)
 	BIND4(camera_set_perspective, RID, float, float, float)
 	BIND4(camera_set_orthogonal, RID, float, float, float)
 	BIND5(camera_set_frustum, RID, float, Vector2, float, float)
 	BIND2(camera_set_transform, RID, const Transform &)
+	BIND2(camera_set_interpolated, RID, bool)
+	BIND1(camera_reset_physics_interpolation, RID)
 	BIND2(camera_set_cull_mask, RID, uint32_t)
 	BIND2(camera_set_environment, RID, RID)
 	BIND2(camera_set_use_vertical_aspect, RID, bool)
@@ -490,6 +510,7 @@ public:
 	BIND2(viewport_set_use_debanding, RID, bool)
 	BIND2(viewport_set_sharpen_intensity, RID, float)
 	BIND2(viewport_set_hdr, RID, bool)
+	BIND2(viewport_set_use_32_bpc_depth, RID, bool)
 	BIND2(viewport_set_usage, RID, ViewportUsage)
 
 	BIND2R(int, viewport_get_render_info, RID, ViewportRenderInfo)
@@ -538,6 +559,7 @@ public:
 	BIND2(scenario_set_environment, RID, RID)
 	BIND3(scenario_set_reflection_atlas_size, RID, int, int)
 	BIND2(scenario_set_fallback_environment, RID, RID)
+	BIND2(scenario_set_physics_interpolation_enabled, RID, bool)
 
 	/* INSTANCING API */
 	BIND0R(RID, instance_create)
@@ -546,6 +568,8 @@ public:
 	BIND2(instance_set_scenario, RID, RID)
 	BIND2(instance_set_layer_mask, RID, uint32_t)
 	BIND2(instance_set_transform, RID, const Transform &)
+	BIND2(instance_set_interpolated, RID, bool)
+	BIND1(instance_reset_physics_interpolation, RID)
 	BIND2(instance_attach_object_instance_id, RID, ObjectID)
 	BIND3(instance_set_blend_shape_weight, RID, int, float)
 	BIND3(instance_set_surface_material, RID, int, RID)
@@ -579,12 +603,18 @@ public:
 	BIND2(roomgroup_add_room, RID, RID)
 
 	// Occluders
-	BIND0R(RID, occluder_create)
-	BIND3(occluder_set_scenario, RID, RID, OccluderType)
-	BIND2(occluder_spheres_update, RID, const Vector<Plane> &)
-	BIND2(occluder_set_transform, RID, const Transform &)
-	BIND2(occluder_set_active, RID, bool)
+	BIND0R(RID, occluder_instance_create)
+	BIND2(occluder_instance_set_scenario, RID, RID)
+	BIND2(occluder_instance_link_resource, RID, RID)
+	BIND2(occluder_instance_set_transform, RID, const Transform &)
+	BIND2(occluder_instance_set_active, RID, bool)
+
+	BIND0R(RID, occluder_resource_create)
+	BIND2(occluder_resource_prepare, RID, OccluderType)
+	BIND2(occluder_resource_spheres_update, RID, const Vector<Plane> &)
+	BIND2(occluder_resource_mesh_update, RID, const Geometry::OccluderMeshData &)
 	BIND1(set_use_occlusion_culling, bool)
+	BIND1RC(Geometry::MeshData, occlusion_debug_get_current_polys, RID)
 
 	// Rooms
 	BIND0R(RID, room_create)
@@ -598,7 +628,7 @@ public:
 	BIND8(rooms_finalize, RID, bool, bool, bool, bool, String, bool, bool)
 	BIND4(rooms_override_camera, RID, bool, const Vector3 &, const Vector<Plane> *)
 	BIND2(rooms_set_active, RID, bool)
-	BIND2(rooms_set_params, RID, int)
+	BIND3(rooms_set_params, RID, int, real_t)
 	BIND3(rooms_set_debug_feature, RID, RoomsDebugFeature, bool)
 	BIND2(rooms_update_gameplay_monitor, RID, const Vector<Vector3> &)
 
@@ -616,6 +646,7 @@ public:
 	BIND3(instance_geometry_set_flag, RID, InstanceFlags, bool)
 	BIND2(instance_geometry_set_cast_shadows_setting, RID, ShadowCastingSetting)
 	BIND2(instance_geometry_set_material_override, RID, RID)
+	BIND2(instance_geometry_set_material_overlay, RID, RID)
 
 	BIND5(instance_geometry_set_draw_range, RID, float, float, float, float)
 	BIND2(instance_geometry_set_as_instance_lod, RID, RID)
@@ -730,9 +761,11 @@ public:
 
 	virtual void draw(bool p_swap_buffers, double frame_step);
 	virtual void sync();
-	virtual bool has_changed() const;
+	virtual bool has_changed(ChangedPriority p_priority = CHANGED_PRIORITY_ANY) const;
 	virtual void init();
 	virtual void finish();
+	virtual void scenario_tick(RID p_scenario);
+	virtual void scenario_pre_draw(RID p_scenario, bool p_will_draw);
 
 	/* STATUS INFORMATION */
 

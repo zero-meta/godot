@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2021 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2021 Godot Engine contributors (cf. AUTHORS.md).   */
+/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -34,7 +34,7 @@
 #include "core/math/quat.h"
 #include "core/math/vector3.h"
 
-class Basis {
+class _NO_DISCARD_CLASS_ Basis {
 public:
 	Vector3 elements[3] = {
 		Vector3(1, 0, 0),
@@ -171,6 +171,7 @@ public:
 	bool is_rotation() const;
 
 	Basis slerp(const Basis &p_to, const real_t &p_weight) const;
+	_FORCE_INLINE_ Basis lerp(const Basis &p_to, const real_t &p_weight) const;
 
 	operator String() const;
 
@@ -237,9 +238,23 @@ public:
 	bool is_symmetric() const;
 	Basis diagonalize();
 
+	// The following normal xform functions are correct for non-uniform scales.
+	// Use these two functions in combination to xform a series of normals.
+	// First use get_normal_xform_basis() to precalculate the inverse transpose.
+	// Then apply xform_normal_fast() multiple times using the inverse transpose basis.
+	Basis get_normal_xform_basis() const { return inverse().transposed(); }
+
+	// N.B. This only does a normal transform if the basis used is the inverse transpose!
+	// Otherwise use xform_normal().
+	Vector3 xform_normal_fast(const Vector3 &p_vector) const { return xform(p_vector).normalized(); }
+
+	// This function does the above but for a single normal vector. It is considerably slower, so should usually
+	// only be used in cases of single normals, or when the basis changes each time.
+	Vector3 xform_normal(const Vector3 &p_vector) const { return get_normal_xform_basis().xform_normal_fast(p_vector); }
+
 	operator Quat() const { return get_quat(); }
 
-	Basis(const Quat &p_quat) { set_quat(p_quat); };
+	Basis(const Quat &p_quat) { set_quat(p_quat); }
 	Basis(const Quat &p_quat, const Vector3 &p_scale) { set_quat_scale(p_quat, p_scale); }
 
 	Basis(const Vector3 &p_euler) { set_euler(p_euler); }
@@ -325,5 +340,14 @@ real_t Basis::determinant() const {
 	return elements[0][0] * (elements[1][1] * elements[2][2] - elements[2][1] * elements[1][2]) -
 			elements[1][0] * (elements[0][1] * elements[2][2] - elements[2][1] * elements[0][2]) +
 			elements[2][0] * (elements[0][1] * elements[1][2] - elements[1][1] * elements[0][2]);
+}
+
+Basis Basis::lerp(const Basis &p_to, const real_t &p_weight) const {
+	Basis b;
+	b.elements[0] = elements[0].linear_interpolate(p_to.elements[0], p_weight);
+	b.elements[1] = elements[1].linear_interpolate(p_to.elements[1], p_weight);
+	b.elements[2] = elements[2].linear_interpolate(p_to.elements[2], p_weight);
+
+	return b;
 }
 #endif // BASIS_H

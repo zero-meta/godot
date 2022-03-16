@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2021 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2021 Godot Engine contributors (cf. AUTHORS.md).   */
+/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -267,6 +267,10 @@ void EditorExportPlatform::gen_debug_flags(Vector<String> &r_flags, int p_flags)
 
 	if (p_flags & DEBUG_FLAG_VIEW_NAVIGATION) {
 		r_flags.push_back("--debug-navigation");
+	}
+
+	if (p_flags & DEBUG_FLAG_SHADER_FALLBACKS) {
+		r_flags.push_back("--debug-shader-fallbacks");
 	}
 }
 
@@ -546,6 +550,14 @@ String EditorExportPlugin::get_ios_cpp_code() const {
 	return ios_cpp_code;
 }
 
+void EditorExportPlugin::add_osx_plugin_file(const String &p_path) {
+	osx_plugin_files.push_back(p_path);
+}
+
+const Vector<String> &EditorExportPlugin::get_osx_plugin_files() const {
+	return osx_plugin_files;
+}
+
 void EditorExportPlugin::add_ios_project_static_lib(const String &p_path) {
 	ios_project_static_libs.push_back(p_path);
 }
@@ -592,6 +604,7 @@ void EditorExportPlugin::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("add_ios_linker_flags", "flags"), &EditorExportPlugin::add_ios_linker_flags);
 	ClassDB::bind_method(D_METHOD("add_ios_bundle_file", "path"), &EditorExportPlugin::add_ios_bundle_file);
 	ClassDB::bind_method(D_METHOD("add_ios_cpp_code", "code"), &EditorExportPlugin::add_ios_cpp_code);
+	ClassDB::bind_method(D_METHOD("add_osx_plugin_file", "path"), &EditorExportPlugin::add_osx_plugin_file);
 	ClassDB::bind_method(D_METHOD("skip"), &EditorExportPlugin::skip);
 
 	BIND_VMETHOD(MethodInfo("_export_file", PropertyInfo(Variant::STRING, "path"), PropertyInfo(Variant::STRING, "type"), PropertyInfo(Variant::POOL_STRING_ARRAY, "features")));
@@ -1611,10 +1624,6 @@ List<String> EditorExportPlatformPC::get_binary_extensions(const Ref<EditorExpor
 Error EditorExportPlatformPC::export_project(const Ref<EditorExportPreset> &p_preset, bool p_debug, const String &p_path, int p_flags) {
 	ExportNotifier notifier(*this, p_preset, p_debug, p_path, p_flags);
 
-	if (!DirAccess::exists(p_path.get_base_dir())) {
-		return ERR_FILE_BAD_PATH;
-	}
-
 	String custom_debug = p_preset->get("custom_template/debug");
 	String custom_release = p_preset->get("custom_template/release");
 
@@ -1643,9 +1652,9 @@ Error EditorExportPlatformPC::export_project(const Ref<EditorExportPreset> &p_pr
 		return ERR_FILE_NOT_FOUND;
 	}
 
-	DirAccess *da = DirAccess::create(DirAccess::ACCESS_FILESYSTEM);
+	DirAccessRef da = DirAccess::create(DirAccess::ACCESS_FILESYSTEM);
+	da->make_dir_recursive(p_path.get_base_dir());
 	Error err = da->copy(template_path, p_path, get_chmod_flags());
-	memdelete(da);
 
 	if (err == OK) {
 		String pck_path;
@@ -1681,7 +1690,6 @@ Error EditorExportPlatformPC::export_project(const Ref<EditorExportPreset> &p_pr
 					err = sign_shared_object(p_preset, p_debug, p_path.get_base_dir().plus_file(so_files[i].path.get_file()));
 				}
 			}
-			memdelete(da);
 		}
 	}
 

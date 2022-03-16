@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2021 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2021 Godot Engine contributors (cf. AUTHORS.md).   */
+/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -65,6 +65,7 @@
 #include "core/math/triangle_mesh.h"
 #include "core/os/input.h"
 #include "core/os/main_loop.h"
+#include "core/os/time.h"
 #include "core/packed_data_container.h"
 #include "core/path_remap.h"
 #include "core/project_settings.h"
@@ -250,6 +251,7 @@ void register_core_singletons() {
 	ClassDB::register_class<InputMap>();
 	ClassDB::register_class<_JSON>();
 	ClassDB::register_class<Expression>();
+	ClassDB::register_class<Time>();
 
 	Engine::get_singleton()->add_singleton(Engine::Singleton("ProjectSettings", ProjectSettings::get_singleton()));
 	Engine::get_singleton()->add_singleton(Engine::Singleton("IP", IP::get_singleton()));
@@ -264,6 +266,7 @@ void register_core_singletons() {
 	Engine::get_singleton()->add_singleton(Engine::Singleton("Input", Input::get_singleton()));
 	Engine::get_singleton()->add_singleton(Engine::Singleton("InputMap", InputMap::get_singleton()));
 	Engine::get_singleton()->add_singleton(Engine::Singleton("JSON", _JSON::get_singleton()));
+	Engine::get_singleton()->add_singleton(Engine::Singleton("Time", Time::get_singleton()));
 }
 
 void unregister_core_types() {

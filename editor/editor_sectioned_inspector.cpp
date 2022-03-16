@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2021 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2021 Godot Engine contributors (cf. AUTHORS.md).   */
+/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -29,7 +29,10 @@
 /*************************************************************************/
 
 #include "editor_sectioned_inspector.h"
+
+#include "editor_property_name_processor.h"
 #include "editor_scale.h"
+
 class SectionedInspectorFilter : public Object {
 	GDCLASS(SectionedInspectorFilter, Object);
 
@@ -266,7 +269,8 @@ void SectionedInspector::update_category_list() {
 			if (!section_map.has(metasection)) {
 				TreeItem *ms = sections->create_item(parent);
 				section_map[metasection] = ms;
-				ms->set_text(0, sectionarr[i].capitalize());
+				ms->set_text(0, EditorPropertyNameProcessor::get_singleton()->process_name(sectionarr[i]));
+				ms->set_tooltip(0, EditorPropertyNameProcessor::get_singleton()->make_tooltip_for_name(sectionarr[i]));
 				ms->set_metadata(0, metasection);
 				ms->set_selectable(0, false);
 			}

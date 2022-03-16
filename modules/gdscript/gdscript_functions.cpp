@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2021 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2021 Godot Engine contributors (cf. AUTHORS.md).   */
+/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -134,6 +134,7 @@ const char *GDScriptFunctions::get_func_name(Function p_func) {
 		"instance_from_id",
 		"len",
 		"is_instance_valid",
+		"deep_equal",
 	};
 
 	return _names[p_func];
@@ -1386,6 +1387,10 @@ void GDScriptFunctions::call(Function p_func, const Variant **p_args, int p_arg_
 			}
 
 		} break;
+		case DEEP_EQUAL: {
+			VALIDATE_ARG_COUNT(2);
+			r_ret = p_args[0]->deep_equal(*p_args[1]);
+		} break;
 		case FUNC_MAX: {
 			ERR_FAIL();
 		} break;
@@ -1952,6 +1957,11 @@ MethodInfo GDScriptFunctions::get_info(Function p_func) {
 		} break;
 		case IS_INSTANCE_VALID: {
 			MethodInfo mi("is_instance_valid", PropertyInfo(Variant::OBJECT, "instance"));
+			mi.return_val.type = Variant::BOOL;
+			return mi;
+		} break;
+		case DEEP_EQUAL: {
+			MethodInfo mi("deep_equal", PropertyInfo(Variant::NIL, "a"), PropertyInfo(Variant::NIL, "b"));
 			mi.return_val.type = Variant::BOOL;
 			return mi;
 		} break;

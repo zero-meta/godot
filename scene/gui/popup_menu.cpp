@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2021 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2021 Godot Engine contributors (cf. AUTHORS.md).   */
+/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -78,9 +78,7 @@ Size2 PopupMenu::get_minimum_size() const {
 
 		String text = items[i].xl_text;
 		size.width += font->get_string_size(text).width;
-		if (i > 0) {
-			size.height += vseparation;
-		}
+		size.height += vseparation;
 
 		if (items[i].accel || (items[i].shortcut.is_valid() && items[i].shortcut->is_valid())) {
 			int accel_w = hseparation * 2;
@@ -148,7 +146,7 @@ void PopupMenu::_activate_submenu(int over) {
 	Popup *pm = Object::cast_to<Popup>(n);
 	ERR_FAIL_COND_MSG(!pm, "Item subnode is not a Popup: " + items[over].submenu + ".");
 	if (pm->is_visible_in_tree()) {
-		return; //already visible!
+		return; // Already visible.
 	}
 
 	Point2 p = get_global_position();
@@ -157,17 +155,21 @@ void PopupMenu::_activate_submenu(int over) {
 
 	Point2 pos = p + Point2(get_size().width, items[over]._ofs_cache - style->get_offset().y) * get_global_transform().get_scale();
 	Size2 size = pm->get_size();
-	// fix pos
+	// Fix pos.
 	if (pos.x + size.width > get_viewport_rect().size.width) {
 		pos.x = p.x - size.width;
 	}
 
 	pm->set_position(pos);
 	pm->set_scale(get_global_transform().get_scale());
-	pm->popup();
 
 	PopupMenu *pum = Object::cast_to<PopupMenu>(pm);
 	if (pum) {
+		// If not triggered by the mouse, start the popup with its first item selected.
+		if (pum->get_item_count() > 0 && Input::get_singleton()->is_action_just_pressed("ui_accept")) {
+			pum->set_current_index(0);
+		}
+
 		pr.position -= pum->get_global_position();
 		pum->clear_autohide_areas();
 		pum->add_autohide_area(Rect2(pr.position.x, pr.position.y, pr.size.x, items[over]._ofs_cache));
@@ -176,6 +178,8 @@ void PopupMenu::_activate_submenu(int over) {
 			pum->add_autohide_area(Rect2(pr.position.x, pr.position.y + from, pr.size.x, pr.size.y - from));
 		}
 	}
+
+	pm->popup();
 }
 
 void PopupMenu::_submenu_timeout() {
@@ -522,7 +526,9 @@ void PopupMenu::_notification(int p_what) {
 			}
 
 			for (int i = 0; i < items.size(); i++) {
-				if (i > 0) {
+				if (i == 0) {
+					ofs.y += vseparation / 2;
+				} else {
 					ofs.y += vseparation;
 				}
 				Point2 item_ofs = ofs;
@@ -1033,6 +1039,12 @@ bool PopupMenu::is_item_shortcut_disabled(int p_idx) const {
 	return items[p_idx].shortcut_is_disabled;
 }
 
+void PopupMenu::set_current_index(int p_idx) {
+	ERR_FAIL_INDEX(p_idx, items.size());
+	mouse_over = p_idx;
+	update();
+}
+
 int PopupMenu::get_current_index() const {
 	return mouse_over;
 }
@@ -1403,6 +1415,7 @@ void PopupMenu::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_item_tooltip", "idx"), &PopupMenu::get_item_tooltip);
 	ClassDB::bind_method(D_METHOD("get_item_shortcut", "idx"), &PopupMenu::get_item_shortcut);
 
+	ClassDB::bind_method(D_METHOD("set_current_index", "index"), &PopupMenu::set_current_index);
 	ClassDB::bind_method(D_METHOD("get_current_index"), &PopupMenu::get_current_index);
 	ClassDB::bind_method(D_METHOD("get_item_count"), &PopupMenu::get_item_count);
 

@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2021 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2021 Godot Engine contributors (cf. AUTHORS.md).   */
+/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -152,6 +152,7 @@ JNIEXPORT void JNICALL Java_org_godotengine_godot_GodotLib_ondestroy(JNIEnv *env
 		delete godot_io_java;
 	}
 	if (godot_java) {
+		godot_java->destroy_offscreen_gl(env);
 		delete godot_java;
 	}
 	if (input_handler) {
@@ -212,11 +213,11 @@ JNIEXPORT void JNICALL Java_org_godotengine_godot_GodotLib_resize(JNIEnv *env, j
 		os_android->set_display_size(Size2(width, height));
 }
 
-JNIEXPORT void JNICALL Java_org_godotengine_godot_GodotLib_newcontext(JNIEnv *env, jclass clazz, jboolean p_32_bits) {
+JNIEXPORT void JNICALL Java_org_godotengine_godot_GodotLib_newcontext(JNIEnv *env, jclass clazz) {
 	if (os_android) {
 		if (step.get() == 0) {
 			// During startup
-			os_android->set_context_is_16_bits(!p_32_bits);
+			os_android->set_offscreen_gl_available(godot_java->create_offscreen_gl(env));
 		} else {
 			// GL context recreated because it was lost; restart app to let it reload everything
 			step.set(-1); // Ensure no further steps are attempted and no further events are sent
@@ -485,7 +486,8 @@ JNIEXPORT void JNICALL Java_org_godotengine_godot_GodotLib_calldeferred(JNIEnv *
 		env->DeleteLocalRef(obj);
 	};
 
-	obj->call_deferred(str_method, args[0], args[1], args[2], args[3], args[4]);
+	static_assert(VARIANT_ARG_MAX == 8, "This code needs to be updated if VARIANT_ARG_MAX != 8");
+	obj->call_deferred(str_method, args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7]);
 	// something
 	env->PopLocalFrame(NULL);
 }

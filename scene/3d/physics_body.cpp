@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2021 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2021 Godot Engine contributors (cf. AUTHORS.md).   */
+/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -99,7 +99,7 @@ void PhysicsBody::_bind_methods() {
 }
 
 PhysicsBody::PhysicsBody(PhysicsServer::BodyMode p_mode) :
-		CollisionObject(PhysicsServer::get_singleton()->body_create(p_mode), false) {
+		CollisionObject(RID_PRIME(PhysicsServer::get_singleton()->body_create(p_mode)), false) {
 }
 
 #ifndef DISABLE_DEPRECATED
@@ -875,8 +875,8 @@ void RigidBody::_bind_methods() {
 	BIND_VMETHOD(MethodInfo("_integrate_forces", PropertyInfo(Variant::OBJECT, "state", PROPERTY_HINT_RESOURCE_TYPE, "PhysicsDirectBodyState")));
 
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "mode", PROPERTY_HINT_ENUM, "Rigid,Static,Character,Kinematic"), "set_mode", "get_mode");
-	ADD_PROPERTY(PropertyInfo(Variant::REAL, "mass", PROPERTY_HINT_EXP_RANGE, "0.01,65535,0.01"), "set_mass", "get_mass");
-	ADD_PROPERTY(PropertyInfo(Variant::REAL, "weight", PROPERTY_HINT_EXP_RANGE, "0.01,65535,0.01", PROPERTY_USAGE_EDITOR), "set_weight", "get_weight");
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "mass", PROPERTY_HINT_EXP_RANGE, "0.01,65535,0.01,or_greater"), "set_mass", "get_mass");
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "weight", PROPERTY_HINT_EXP_RANGE, "0.01,65535,0.01,or_greater", PROPERTY_USAGE_EDITOR), "set_weight", "get_weight");
 #ifndef DISABLE_DEPRECATED
 	ADD_PROPERTY(PropertyInfo(Variant::REAL, "friction", PROPERTY_HINT_RANGE, "0,1,0.01", 0), "set_friction", "get_friction");
 	ADD_PROPERTY(PropertyInfo(Variant::REAL, "bounce", PROPERTY_HINT_RANGE, "0,1,0.01", 0), "set_bounce", "get_bounce");
@@ -1074,6 +1074,10 @@ Vector3 KinematicBody::_move_and_slide_internal(const Vector3 &p_linear_velocity
 			Transform gt = get_global_transform();
 			Vector3 local_position = gt.origin - bs->get_transform().origin;
 			current_floor_velocity = bs->get_velocity_at_local_position(local_position);
+		} else {
+			// Body is removed or destroyed, invalidate floor.
+			current_floor_velocity = Vector3();
+			on_floor_body = RID();
 		}
 	}
 
@@ -1194,9 +1198,14 @@ Vector3 KinematicBody::_move_and_slide_internal(const Vector3 &p_linear_velocity
 		}
 	}
 
-	if (!on_floor) {
+	if (moving_platform_apply_velocity_on_leave != PLATFORM_VEL_ON_LEAVE_NEVER) {
 		// Add last platform velocity when just left a moving platform.
-		return body_velocity + current_floor_velocity;
+		if (!on_floor) {
+			if (moving_platform_apply_velocity_on_leave == PLATFORM_VEL_ON_LEAVE_UPWARD_ONLY && current_floor_velocity.dot(up_direction) < 0) {
+				current_floor_velocity = current_floor_velocity.slide(up_direction);
+			}
+			return body_velocity + current_floor_velocity;
+		}
 	}
 
 	return body_velocity;
@@ -1252,10 +1261,26 @@ Vector3 KinematicBody::get_floor_velocity() const {
 	return floor_velocity;
 }
 
+void KinematicBody::set_moving_platform_apply_velocity_on_leave(MovingPlatformApplyVelocityOnLeave p_on_leave_apply_velocity) {
+	moving_platform_apply_velocity_on_leave = p_on_leave_apply_velocity;
+}
+
+KinematicBody::MovingPlatformApplyVelocityOnLeave KinematicBody::get_moving_platform_apply_velocity_on_leave() const {
+	return moving_platform_apply_velocity_on_leave;
+}
+
 bool KinematicBody::test_move(const Transform &p_from, const Vector3 &p_motion, bool p_infinite_inertia) {
 	ERR_FAIL_COND_V(!is_inside_tree(), false);
 
-	return PhysicsServer::get_singleton()->body_test_motion(get_rid(), p_from, p_motion, p_infinite_inertia);
+	PhysicsServer::MotionResult result;
+	bool colliding = PhysicsServer::get_singleton()->body_test_motion(get_rid(), p_from, p_motion, p_infinite_inertia, &result);
+
+	if (colliding) {
+		// Don't report collision when the whole motion is done.
+		return (result.collision_safe_fraction < 1.0);
+	} else {
+		return false;
+	}
 }
 
 bool KinematicBody::separate_raycast_shapes(bool p_infinite_inertia, Collision &r_collision) {
@@ -1433,6 +1458,9 @@ void KinematicBody::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_safe_margin", "pixels"), &KinematicBody::set_safe_margin);
 	ClassDB::bind_method(D_METHOD("get_safe_margin"), &KinematicBody::get_safe_margin);
 
+	ClassDB::bind_method(D_METHOD("set_moving_platform_apply_velocity_on_leave", "on_leave_apply_velocity"), &KinematicBody::set_moving_platform_apply_velocity_on_leave);
+	ClassDB::bind_method(D_METHOD("get_moving_platform_apply_velocity_on_leave"), &KinematicBody::get_moving_platform_apply_velocity_on_leave);
+
 	ClassDB::bind_method(D_METHOD("get_slide_count"), &KinematicBody::get_slide_count);
 	ClassDB::bind_method(D_METHOD("get_slide_collision", "slide_idx"), &KinematicBody::_get_slide_collision);
 	ClassDB::bind_method(D_METHOD("get_last_slide_collision"), &KinematicBody::_get_last_slide_collision);
@@ -1452,6 +1480,12 @@ void KinematicBody::_bind_methods() {
 
 	ADD_PROPERTY(PropertyInfo(Variant::REAL, "collision/safe_margin", PROPERTY_HINT_RANGE, "0.001,256,0.001"), "set_safe_margin", "get_safe_margin");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "motion/sync_to_physics"), "set_sync_to_physics", "is_sync_to_physics_enabled");
+	ADD_GROUP("Moving platform", "moving_platform");
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "moving_platform_apply_velocity_on_leave", PROPERTY_HINT_ENUM, "Always,Upward Only,Never", PROPERTY_USAGE_DEFAULT), "set_moving_platform_apply_velocity_on_leave", "get_moving_platform_apply_velocity_on_leave");
+
+	BIND_ENUM_CONSTANT(PLATFORM_VEL_ON_LEAVE_ALWAYS);
+	BIND_ENUM_CONSTANT(PLATFORM_VEL_ON_LEAVE_UPWARD_ONLY);
+	BIND_ENUM_CONSTANT(PLATFORM_VEL_ON_LEAVE_NEVER);
 }
 
 KinematicBody::KinematicBody() :
@@ -2399,7 +2433,7 @@ void PhysicalBone::_reload_joint() {
 
 	switch (get_joint_type()) {
 		case JOINT_TYPE_PIN: {
-			joint = PhysicsServer::get_singleton()->joint_create_pin(body_a->get_rid(), local_a.origin, get_rid(), joint_offset.origin);
+			joint = RID_PRIME(PhysicsServer::get_singleton()->joint_create_pin(body_a->get_rid(), local_a.origin, get_rid(), joint_offset.origin));
 			const PinJointData *pjd(static_cast<const PinJointData *>(joint_data));
 			PhysicsServer::get_singleton()->pin_joint_set_param(joint, PhysicsServer::PIN_JOINT_BIAS, pjd->bias);
 			PhysicsServer::get_singleton()->pin_joint_set_param(joint, PhysicsServer::PIN_JOINT_DAMPING, pjd->damping);
@@ -2407,7 +2441,7 @@ void PhysicalBone::_reload_joint() {
 
 		} break;
 		case JOINT_TYPE_CONE: {
-			joint = PhysicsServer::get_singleton()->joint_create_cone_twist(body_a->get_rid(), local_a, get_rid(), joint_offset);
+			joint = RID_PRIME(PhysicsServer::get_singleton()->joint_create_cone_twist(body_a->get_rid(), local_a, get_rid(), joint_offset));
 			const ConeJointData *cjd(static_cast<const ConeJointData *>(joint_data));
 			PhysicsServer::get_singleton()->cone_twist_joint_set_param(joint, PhysicsServer::CONE_TWIST_JOINT_SWING_SPAN, cjd->swing_span);
 			PhysicsServer::get_singleton()->cone_twist_joint_set_param(joint, PhysicsServer::CONE_TWIST_JOINT_TWIST_SPAN, cjd->twist_span);
@@ -2417,7 +2451,7 @@ void PhysicalBone::_reload_joint() {
 
 		} break;
 		case JOINT_TYPE_HINGE: {
-			joint = PhysicsServer::get_singleton()->joint_create_hinge(body_a->get_rid(), local_a, get_rid(), joint_offset);
+			joint = RID_PRIME(PhysicsServer::get_singleton()->joint_create_hinge(body_a->get_rid(), local_a, get_rid(), joint_offset));
 			const HingeJointData *hjd(static_cast<const HingeJointData *>(joint_data));
 			PhysicsServer::get_singleton()->hinge_joint_set_flag(joint, PhysicsServer::HINGE_JOINT_FLAG_USE_LIMIT, hjd->angular_limit_enabled);
 			PhysicsServer::get_singleton()->hinge_joint_set_param(joint, PhysicsServer::HINGE_JOINT_LIMIT_UPPER, hjd->angular_limit_upper);
@@ -2428,7 +2462,7 @@ void PhysicalBone::_reload_joint() {
 
 		} break;
 		case JOINT_TYPE_SLIDER: {
-			joint = PhysicsServer::get_singleton()->joint_create_slider(body_a->get_rid(), local_a, get_rid(), joint_offset);
+			joint = RID_PRIME(PhysicsServer::get_singleton()->joint_create_slider(body_a->get_rid(), local_a, get_rid(), joint_offset));
 			const SliderJointData *sjd(static_cast<const SliderJointData *>(joint_data));
 			PhysicsServer::get_singleton()->slider_joint_set_param(joint, PhysicsServer::SLIDER_JOINT_LINEAR_LIMIT_UPPER, sjd->linear_limit_upper);
 			PhysicsServer::get_singleton()->slider_joint_set_param(joint, PhysicsServer::SLIDER_JOINT_LINEAR_LIMIT_LOWER, sjd->linear_limit_lower);
@@ -2443,7 +2477,7 @@ void PhysicalBone::_reload_joint() {
 
 		} break;
 		case JOINT_TYPE_6DOF: {
-			joint = PhysicsServer::get_singleton()->joint_create_generic_6dof(body_a->get_rid(), local_a, get_rid(), joint_offset);
+			joint = RID_PRIME(PhysicsServer::get_singleton()->joint_create_generic_6dof(body_a->get_rid(), local_a, get_rid(), joint_offset));
 			const SixDOFJointData *g6dofjd(static_cast<const SixDOFJointData *>(joint_data));
 			for (int axis = 0; axis < 3; ++axis) {
 				PhysicsServer::get_singleton()->generic_6dof_joint_set_flag(joint, static_cast<Vector3::Axis>(axis), PhysicsServer::G6DOF_JOINT_FLAG_ENABLE_LINEAR_LIMIT, g6dofjd->axis_data[axis].linear_limit_enabled);

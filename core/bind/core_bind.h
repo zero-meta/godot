@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2021 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2021 Godot Engine contributors (cf. AUTHORS.md).   */
+/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -164,6 +164,7 @@ public:
 
 	void set_clipboard(const String &p_text);
 	String get_clipboard() const;
+	bool has_clipboard() const;
 
 	void set_video_mode(const Size2 &p_size, bool p_fullscreen, bool p_resizeable, int p_screen = 0);
 	Size2 get_video_mode(int p_screen = 0) const;
@@ -190,6 +191,7 @@ public:
 	virtual int get_screen_dpi(int p_screen = -1) const;
 	virtual float get_screen_scale(int p_screen = -1) const;
 	virtual float get_screen_max_scale() const;
+	virtual float get_screen_refresh_rate(int p_screen = -1) const;
 	virtual Point2 get_window_position() const;
 	virtual void set_window_position(const Point2 &p_position);
 	virtual Size2 get_max_window_size() const;
@@ -241,7 +243,7 @@ public:
 	int get_low_processor_usage_mode_sleep_usec() const;
 
 	String get_executable_path() const;
-	int execute(const String &p_path, const Vector<String> &p_arguments, bool p_blocking = true, Array p_output = Array(), bool p_read_stderr = false);
+	int execute(const String &p_path, const Vector<String> &p_arguments, bool p_blocking = true, Array p_output = Array(), bool p_read_stderr = false, bool p_open_console = false);
 
 	Error kill(int p_pid);
 	Error shell_open(String p_uri);
@@ -263,6 +265,7 @@ public:
 	void keyboard_set_current_layout(int p_index);
 	String keyboard_get_layout_language(int p_index) const;
 	String keyboard_get_layout_name(int p_index) const;
+	uint32_t keyboard_get_scancode_from_physical(uint32_t p_scancode) const;
 
 	String get_model_name() const;
 
@@ -325,6 +328,7 @@ public:
 	bool is_stdout_verbose() const;
 
 	int get_processor_count() const;
+	String get_processor_name() const;
 
 	enum SystemDir {
 		SYSTEM_DIR_DESKTOP,
@@ -356,6 +360,7 @@ public:
 	String get_cache_dir() const;
 
 	void alert(const String &p_alert, const String &p_title = "ALERT!");
+	void crash(const String &p_message);
 
 	void set_screen_orientation(ScreenOrientation p_orientation);
 	ScreenOrientation get_screen_orientation() const;
@@ -367,6 +372,7 @@ public:
 
 	Error set_thread_name(const String &p_name);
 	Thread::ID get_thread_caller_id() const;
+	Thread::ID get_main_thread_id() const;
 
 	void set_use_vsync(bool p_enable);
 	bool is_vsync_enabled() const;

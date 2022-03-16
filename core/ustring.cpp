@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2021 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2021 Godot Engine contributors (cf. AUTHORS.md).   */
+/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -42,6 +42,7 @@
 #include "core/translation.h"
 #include "core/ucaps.h"
 #include "core/variant.h"
+#include "core/version_generated.gen.h"
 
 #include <wchar.h>
 #include <cstdint>
@@ -107,9 +108,12 @@ bool CharString::operator<(const CharString &p_right) const {
 }
 
 CharString &CharString::operator+=(char p_char) {
-	resize(size() ? size() + 1 : 2);
-	set(length(), 0);
-	set(length() - 1, p_char);
+	const int lhs_len = length();
+	resize(lhs_len + 2);
+
+	char *dst = ptrw();
+	dst[lhs_len] = p_char;
+	dst[lhs_len + 1] = 0;
 
 	return *this;
 }
@@ -216,11 +220,7 @@ void String::copy_from(const char *p_cstr) {
 		return;
 	}
 
-	int len = 0;
-	const char *ptr = p_cstr;
-	while (*(ptr++) != 0) {
-		len++;
-	}
+	const size_t len = strlen(p_cstr);
 
 	if (len == 0) {
 		resize(0);
@@ -231,7 +231,7 @@ void String::copy_from(const char *p_cstr) {
 
 	CharType *dst = this->ptrw();
 
-	for (int i = 0; i < len + 1; i++) {
+	for (size_t i = 0; i <= len; i++) {
 		dst[i] = p_cstr[i];
 	}
 }
@@ -262,19 +262,17 @@ void String::copy_from(const CharType *p_cstr, const int p_clip_to) {
 // p_length <= p_char strlen
 void String::copy_from_unchecked(const CharType *p_char, const int p_length) {
 	resize(p_length + 1);
-	set(p_length, 0);
 
 	CharType *dst = ptrw();
-
-	for (int i = 0; i < p_length; i++) {
-		dst[i] = p_char[i];
-	}
+	memcpy(dst, p_char, p_length * sizeof(CharType));
+	dst[p_length] = 0;
 }
 
 void String::copy_from(const CharType &p_char) {
 	resize(2);
-	set(0, p_char);
-	set(1, 0);
+	CharType *dst = ptrw();
+	dst[0] = p_char;
+	dst[1] = 0;
 }
 
 bool String::operator==(const String &p_str) const {
@@ -311,27 +309,23 @@ String String::operator+(const String &p_str) const {
 }
 
 String &String::operator+=(const String &p_str) {
-	if (empty()) {
+	const int lhs_len = length();
+	if (lhs_len == 0) {
 		*this = p_str;
 		return *this;
 	}
 
-	if (p_str.empty()) {
+	const int rhs_len = p_str.length();
+	if (rhs_len == 0) {
 		return *this;
 	}
 
-	int from = length();
-
-	resize(length() + p_str.size());
+	resize(lhs_len + rhs_len + 1);
 
 	const CharType *src = p_str.c_str();
-	CharType *dst = ptrw();
+	CharType *dst = ptrw() + lhs_len;
 
-	set(length(), 0);
-
-	for (int i = 0; i < p_str.length(); i++) {
-		dst[from + i] = src[i];
-	}
+	memcpy(dst, src, (rhs_len + 1) * sizeof(CharType));
 
 	return *this;
 }
@@ -342,9 +336,12 @@ String &String::operator+=(const CharType *p_str) {
 }
 
 String &String::operator+=(CharType p_char) {
-	resize(size() ? size() + 1 : 2);
-	set(length(), 0);
-	set(length() - 1, p_char);
+	const int lhs_len = length();
+	resize(lhs_len + 2);
+
+	CharType *dst = ptrw();
+	dst[lhs_len] = p_char;
+	dst[lhs_len + 1] = 0;
 
 	return *this;
 }
@@ -354,22 +351,15 @@ String &String::operator+=(const char *p_str) {
 		return *this;
 	}
 
-	int src_len = 0;
-	const char *ptr = p_str;
-	while (*(ptr++) != 0) {
-		src_len++;
-	}
+	const size_t rhs_len = strlen(p_str);
+	const int lhs_len = length();
 
-	int from = length();
+	resize(lhs_len + rhs_len + 1);
 
-	resize(from + src_len + 1);
+	CharType *dst = ptrw() + lhs_len;
 
-	CharType *dst = ptrw();
-
-	set(length(), 0);
-
-	for (int i = 0; i < src_len; i++) {
-		dst[from + i] = p_str[i];
+	for (size_t i = 0; i <= rhs_len; i++) {
+		dst[i] = p_str[i];
 	}
 
 	return *this;
@@ -1480,10 +1470,15 @@ bool String::parse_utf8(const char *p_utf8, int p_len) {
 					skip = 2;
 				} else if ((c & 0xF8) == 0xF0) {
 					skip = 3;
+					if (sizeof(wchar_t) == 2) {
+						str_size++; // encode as surrogate pair.
+					}
 				} else if ((c & 0xFC) == 0xF8) {
 					skip = 4;
+					// invalid character, too long to encode as surrogates.
 				} else if ((c & 0xFE) == 0xFC) {
 					skip = 5;
+					// invalid character, too long to encode as surrogates.
 				} else {
 					_UNICERROR("invalid skip");
 					return true; //invalid utf8
@@ -1575,12 +1570,14 @@ bool String::parse_utf8(const char *p_utf8, int p_len) {
 			}
 		}
 
-		//printf("char %i, len %i\n",unichar,len);
-		if (sizeof(wchar_t) == 2 && unichar > 0xFFFF) {
-			unichar = ' '; //too long for windows
+		if (sizeof(wchar_t) == 2 && unichar > 0x10FFFF) {
+			unichar = ' '; // invalid character, too long to encode as surrogates.
+		} else if (sizeof(wchar_t) == 2 && unichar > 0xFFFF) {
+			*(dst++) = uint32_t((unichar >> 10) + 0xD7C0); // lead surrogate.
+			*(dst++) = uint32_t((unichar & 0x3FF) | 0xDC00); // trail surrogate.
+		} else {
+			*(dst++) = unichar;
 		}
-
-		*(dst++) = unichar;
 		cstr_size -= len;
 		p_utf8 += len;
 	}
@@ -1598,6 +1595,18 @@ CharString String::utf8() const {
 	int fl = 0;
 	for (int i = 0; i < l; i++) {
 		uint32_t c = d[i];
+		if ((c & 0xfffffc00) == 0xd800) { // decode surrogate pair.
+			if ((i < l - 1) && (d[i + 1] & 0xfffffc00) == 0xdc00) {
+				c = (c << 10UL) + d[i + 1] - ((0xd800 << 10UL) + 0xdc00 - 0x10000);
+				i++; // skip trail surrogate.
+			} else {
+				fl += 1;
+				continue;
+			}
+		} else if ((c & 0xfffffc00) == 0xdc00) {
+			fl += 1;
+			continue;
+		}
 		if (c <= 0x7f) { // 7 bits.
 			fl += 1;
 		} else if (c <= 0x7ff) { // 11 bits
@@ -1606,7 +1615,6 @@ CharString String::utf8() const {
 			fl += 3;
 		} else if (c <= 0x001fffff) { // 21 bits
 			fl += 4;
-
 		} else if (c <= 0x03ffffff) { // 26 bits
 			fl += 5;
 		} else if (c <= 0x7fffffff) { // 31 bits
@@ -1626,6 +1634,18 @@ CharString String::utf8() const {
 
 	for (int i = 0; i < l; i++) {
 		uint32_t c = d[i];
+		if ((c & 0xfffffc00) == 0xd800) { // decode surrogate pair.
+			if ((i < l - 1) && (d[i + 1] & 0xfffffc00) == 0xdc00) {
+				c = (c << 10UL) + d[i + 1] - ((0xd800 << 10UL) + 0xdc00 - 0x10000);
+				i++; // skip trail surrogate.
+			} else {
+				APPEND_CHAR(' ');
+				continue;
+			}
+		} else if ((c & 0xfffffc00) == 0xdc00) {
+			APPEND_CHAR(' ');
+			continue;
+		}
 
 		if (c <= 0x7f) { // 7 bits.
 			APPEND_CHAR(c);
@@ -2412,15 +2432,7 @@ String String::substr(int p_from, int p_chars) const {
 }
 
 int String::find_last(const String &p_str) const {
-	int pos = -1;
-	int findfrom = 0;
-	int findres = -1;
-	while ((findres = find(p_str, findfrom)) != -1) {
-		pos = findres;
-		findfrom = pos + 1;
-	}
-
-	return pos;
+	return rfind(p_str);
 }
 
 int String::find(const String &p_str, int p_from) const {
@@ -3111,6 +3123,27 @@ String String::right(int p_pos) const {
 CharType String::ord_at(int p_idx) const {
 	ERR_FAIL_INDEX_V(p_idx, length(), 0);
 	return operator[](p_idx);
+}
+
+String String::indent(const String &p_prefix) const {
+	String new_string;
+	int line_start = 0;
+
+	for (int i = 0; i < length(); i++) {
+		const char32_t c = operator[](i);
+		if (c == '\n') {
+			if (i == line_start) {
+				new_string += c; // Leave empty lines empty.
+			} else {
+				new_string += p_prefix + substr(line_start, i - line_start + 1);
+			}
+			line_start = i + 1;
+		}
+	}
+	if (line_start != length()) {
+		new_string += p_prefix + substr(line_start);
+	}
+	return new_string;
 }
 
 String String::dedent() const {
@@ -4010,7 +4043,7 @@ String String::get_base_dir() const {
 }
 
 String String::get_file() const {
-	int sep = MAX(find_last("/"), find_last("\\"));
+	int sep = MAX(rfind("/"), rfind("\\"));
 	if (sep == -1) {
 		return *this;
 	}
@@ -4019,8 +4052,8 @@ String String::get_file() const {
 }
 
 String String::get_extension() const {
-	int pos = find_last(".");
-	if (pos < 0 || pos < MAX(find_last("/"), find_last("\\"))) {
+	int pos = rfind(".");
+	if (pos < 0 || pos < MAX(rfind("/"), rfind("\\"))) {
 		return "";
 	}
 
@@ -4098,7 +4131,7 @@ String String::property_name_encode() const {
 	// as well as '"', '=' or ' ' (32)
 	const CharType *cstr = c_str();
 	for (int i = 0; cstr[i]; i++) {
-		if (cstr[i] == '=' || cstr[i] == '"' || cstr[i] < 33 || cstr[i] > 126) {
+		if (cstr[i] == '=' || cstr[i] == '"' || cstr[i] == ';' || cstr[i] == '[' || cstr[i] == ']' || cstr[i] < 33 || cstr[i] > 126) {
 			return "\"" + c_escape_multiline() + "\"";
 		}
 	}
@@ -4119,8 +4152,8 @@ String String::validate_node_name() const {
 }
 
 String String::get_basename() const {
-	int pos = find_last(".");
-	if (pos < 0 || pos < MAX(find_last("/"), find_last("\\"))) {
+	int pos = rfind(".");
+	if (pos < 0 || pos < MAX(rfind("/"), rfind("\\"))) {
 		return *this;
 	}
 
@@ -4468,15 +4501,19 @@ String TTR(const String &p_text) {
 	return p_text;
 }
 
+/* DTR is used for the documentation, handling descriptions extracted from the XML.
+ * It also replaces `$DOCS_URL` with the actual URL to the documentation's branch,
+ * to allow dehardcoding it in the XML and doing proper substitutions everywhere.
+ */
 String DTR(const String &p_text) {
 	// Comes straight from the XML, so remove indentation and any trailing whitespace.
 	const String text = p_text.dedent().strip_edges();
 
 	if (TranslationServer::get_singleton()) {
-		return TranslationServer::get_singleton()->doc_translate(text);
+		return String(TranslationServer::get_singleton()->doc_translate(text)).replace("$DOCS_URL", VERSION_DOCS_URL);
 	}
 
-	return text;
+	return text.replace("$DOCS_URL", VERSION_DOCS_URL);
 }
 #endif
 

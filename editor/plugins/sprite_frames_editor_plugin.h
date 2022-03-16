@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2021 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2021 Godot Engine contributors (cf. AUTHORS.md).   */
+/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -99,7 +99,6 @@ class SpriteFramesEditor : public HSplitContainer {
 	float min_sheet_zoom;
 
 	void _load_pressed();
-	void _load_scene_pressed();
 	void _file_load_request(const PoolVector<String> &p_path, int p_at_pos = -1);
 	void _copy_pressed();
 	void _paste_pressed();
@@ -127,7 +126,6 @@ class SpriteFramesEditor : public HSplitContainer {
 
 	UndoRedo *undo_redo;
 
-	bool _is_drop_valid(const Dictionary &p_drag_data, const Dictionary &p_item_data) const;
 	Variant get_drag_data_fw(const Point2 &p_point, Control *p_from);
 	bool can_drop_data_fw(const Point2 &p_point, const Variant &p_data, Control *p_from) const;
 	void drop_data_fw(const Point2 &p_point, const Variant &p_data, Control *p_from);
@@ -140,6 +138,7 @@ class SpriteFramesEditor : public HSplitContainer {
 	void _sheet_preview_input(const Ref<InputEvent> &p_event);
 	void _sheet_scroll_input(const Ref<InputEvent> &p_event);
 	void _sheet_add_frames();
+	void _sheet_zoom_on_position(float p_zoom, const Vector2 &p_position);
 	void _sheet_zoom_in();
 	void _sheet_zoom_out();
 	void _sheet_zoom_reset();

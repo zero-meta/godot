@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2021 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2021 Godot Engine contributors (cf. AUTHORS.md).   */
+/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -1223,7 +1223,9 @@ GDScriptParser::Node *GDScriptParser::_parse_expression(Node *p_parent, bool p_s
 
 				tokenizer->advance(1);
 
+				parenthesis++;
 				Node *subexpr = _parse_expression(op, p_static, p_allow_assign, p_parsing_constant);
+				parenthesis--;
 				if (!subexpr) {
 					return nullptr;
 				}
@@ -2941,9 +2943,7 @@ void GDScriptParser::_parse_block(BlockNode *p_block, bool p_static) {
 				if (tokenizer->get_token() == GDScriptTokenizer::TK_COLON) {
 					if (tokenizer->get_token(1) == GDScriptTokenizer::TK_OP_ASSIGN) {
 						lv->datatype = DataType();
-#ifdef DEBUG_ENABLED
 						lv->datatype.infer_type = true;
-#endif
 						tokenizer->advance();
 					} else if (!_parse_type(lv->datatype)) {
 						_set_error("Expected a type for the variable.");
@@ -4903,9 +4903,7 @@ void GDScriptParser::_parse_class(ClassNode *p_class) {
 				if (tokenizer->get_token() == GDScriptTokenizer::TK_COLON) {
 					if (tokenizer->get_token(1) == GDScriptTokenizer::TK_OP_ASSIGN) {
 						member.data_type = DataType();
-#ifdef DEBUG_ENABLED
 						member.data_type.infer_type = true;
-#endif
 						tokenizer->advance();
 					} else if (!_parse_type(member.data_type)) {
 						_set_error("Expected a type for the class variable.");
@@ -4997,21 +4995,21 @@ void GDScriptParser::_parse_class(ClassNode *p_class) {
 						}
 					}
 #ifdef TOOLS_ENABLED
+					// Warn if the default value set is not the same as the export type, since it won't be coerced and
+					// may create wrong expectations.
 					if (subexpr->type == Node::TYPE_CONSTANT && (member._export.type != Variant::NIL || member.data_type.has_type)) {
 						ConstantNode *cn = static_cast<ConstantNode *>(subexpr);
 						if (cn->value.get_type() != Variant::NIL) {
 							if (member._export.type != Variant::NIL && cn->value.get_type() != member._export.type) {
-								if (Variant::can_convert(cn->value.get_type(), member._export.type)) {
-									Variant::CallError err;
-									const Variant *args = &cn->value;
-									cn->value = Variant::construct(member._export.type, &args, 1, err);
-								} else {
+								if (!Variant::can_convert(cn->value.get_type(), member._export.type)) {
 									_set_error("Can't convert the provided value to the export type.");
 									return;
+								} else if (!member.data_type.has_type) {
+									_add_warning(GDScriptWarning::EXPORT_HINT_TYPE_MISTMATCH, member.line, Variant::get_type_name(cn->value.get_type()), Variant::get_type_name(member._export.type));
 								}
 							}
-							member.default_value = cn->value;
 						}
+						member.default_value = cn->value;
 					}
 #endif
 
@@ -5147,9 +5145,7 @@ void GDScriptParser::_parse_class(ClassNode *p_class) {
 				if (tokenizer->get_token() == GDScriptTokenizer::TK_COLON) {
 					if (tokenizer->get_token(1) == GDScriptTokenizer::TK_OP_ASSIGN) {
 						constant.type = DataType();
-#ifdef DEBUG_ENABLED
 						constant.type.infer_type = true;
-#endif
 						tokenizer->advance();
 					} else if (!_parse_type(constant.type)) {
 						_set_error("Expected a type for the class constant.");

@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2021 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2021 Godot Engine contributors (cf. AUTHORS.md).   */
+/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -142,6 +142,9 @@ void EditorRunNative::_run_native(int p_idx, int p_platform) {
 	if (debug_navigation) {
 		flags |= EditorExportPlatform::DEBUG_FLAG_VIEW_NAVIGATION;
 	}
+	if (debug_shader_fallbacks) {
+		flags |= EditorExportPlatform::DEBUG_FLAG_SHADER_FALLBACKS;
+	}
 
 	eep->run(preset, p_idx, flags);
 }
@@ -188,6 +191,14 @@ bool EditorRunNative::get_debug_navigation() const {
 	return debug_navigation;
 }
 
+void EditorRunNative::set_debug_shader_fallbacks(bool p_debug) {
+	debug_shader_fallbacks = p_debug;
+}
+
+bool EditorRunNative::get_debug_shader_fallbacks() const {
+	return debug_shader_fallbacks;
+}
+
 EditorRunNative::EditorRunNative() {
 	set_process(true);
 	first = true;
@@ -195,6 +206,7 @@ EditorRunNative::EditorRunNative() {
 	deploy_debug_remote = false;
 	debug_collisions = false;
 	debug_navigation = false;
+	debug_shader_fallbacks = false;
 	resume_idx = 0;
 	resume_platform = 0;
 }

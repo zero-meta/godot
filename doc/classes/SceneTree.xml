@@ -9,8 +9,8 @@
 		[SceneTree] is the default [MainLoop] implementation used by scenes, and is thus in charge of the game loop.
 	</description>
 	<tutorials>
-		<link>https://docs.godotengine.org/en/3.4/getting_started/step_by_step/scene_tree.html</link>
-		<link>https://docs.godotengine.org/en/3.4/tutorials/viewports/multiple_resolutions.html</link>
+		<link>$DOCS_URL/tutorials/scripting/scene_tree.html</link>
+		<link>$DOCS_URL/tutorials/rendering/multiple_resolutions.html</link>
 	</tutorials>
 	<methods>
 		<method name="call_group" qualifiers="vararg">
@@ -254,6 +254,9 @@
 			- 2D and 3D physics will be stopped. This includes signals and collision detection.
 			- [method Node._process], [method Node._physics_process] and [method Node._input] will not be called anymore in nodes.
 		</member>
+		<member name="physics_interpolation" type="bool" setter="set_physics_interpolation_enabled" getter="is_physics_interpolation_enabled" default="false">
+			Although physics interpolation would normally be globally turned on and off using [member ProjectSettings.physics/common/physics_interpolation], this property allows control over interpolation at runtime.
+		</member>
 		<member name="refuse_new_network_connections" type="bool" setter="set_refuse_new_network_connections" getter="is_refusing_new_network_connections" default="false">
 			If [code]true[/code], the [SceneTree]'s [member network_peer] refuses new incoming connections.
 		</member>
@@ -261,7 +264,9 @@
 			The [SceneTree]'s root [Viewport].
 		</member>
 		<member name="use_font_oversampling" type="bool" setter="set_use_font_oversampling" getter="is_using_font_oversampling" default="false">
-			If [code]true[/code], font oversampling is used.
+			If [code]true[/code], font oversampling is enabled. This means that [DynamicFont]s will be rendered at higher or lower size than configured based on the viewport's scaling ratio. For example, in a viewport scaled with a factor 1.5, a font configured with size 14 would be rendered with size 21 ([code]14 * 1.5[/code]).
+			[b]Note:[/b] Font oversampling is only used if the viewport stretch mode is [constant STRETCH_MODE_VIEWPORT], and if the stretch aspect mode is different from [constant STRETCH_ASPECT_IGNORE].
+			[b]Note:[/b] This property is set automatically for the active [SceneTree] when the project starts based on the configuration of [code]rendering/quality/dynamic_fonts/use_oversampling[/code] in [ProjectSettings]. The property can however be overridden at runtime as needed.
 		</member>
 	</members>
 	<signals>

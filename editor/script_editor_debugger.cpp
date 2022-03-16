@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2021 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2021 Godot Engine contributors (cf. AUTHORS.md).   */
+/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -34,7 +34,6 @@
 #include "core/project_settings.h"
 #include "core/ustring.h"
 #include "core/version.h"
-#include "core/version_hash.gen.h"
 #include "editor/editor_log.h"
 #include "editor/plugins/canvas_item_editor_plugin.h"
 #include "editor/plugins/spatial_editor_plugin.h"
@@ -142,9 +141,15 @@ protected:
 	}
 
 	void _get_property_list(List<PropertyInfo> *p_list) const {
-		p_list->clear(); //sorry, no want category
+		p_list->clear(); // Sorry, no want category.
 		for (const List<PropertyInfo>::Element *E = prop_list.front(); E; E = E->next()) {
-			p_list->push_back(E->get());
+			const PropertyInfo &prop = E->get();
+			if (prop.name == "script") {
+				// Skip the script property, it's always added by the non-virtual method.
+				continue;
+			}
+
+			p_list->push_back(prop);
 		}
 	}
 
@@ -1299,6 +1304,7 @@ void ScriptEditorDebugger::_notification(int p_what) {
 			error_tree->connect("item_activated", this, "_error_activated");
 			vmem_refresh->set_icon(get_icon("Reload", "EditorIcons"));
 			vmem_export->set_icon(get_icon("Save", "EditorIcons"));
+			search->set_right_icon(get_icon("Search", "EditorIcons"));
 
 			reason->add_color_override("font_color", get_color("error_color", "Editor"));
 
@@ -1370,6 +1376,7 @@ void ScriptEditorDebugger::_notification(int p_what) {
 				if (error_count == 0 && warning_count == 0) {
 					errors_tab->set_name(TTR("Errors"));
 					debugger_button->set_text(TTR("Debugger"));
+					debugger_button->add_color_override("font_color", get_color("font_color", "Editor"));
 					debugger_button->set_icon(Ref<Texture>());
 					tabs->set_tab_icon(errors_tab->get_index(), Ref<Texture>());
 				} else {
@@ -1377,12 +1384,16 @@ void ScriptEditorDebugger::_notification(int p_what) {
 					debugger_button->set_text(TTR("Debugger") + " (" + itos(error_count + warning_count) + ")");
 					if (error_count >= 1 && warning_count >= 1) {
 						debugger_button->set_icon(get_icon("ErrorWarning", "EditorIcons"));
+						// Use error color to represent the highest level of severity reported.
+						debugger_button->add_color_override("font_color", get_color("error_color", "Editor"));
 						tabs->set_tab_icon(errors_tab->get_index(), get_icon("ErrorWarning", "EditorIcons"));
 					} else if (error_count >= 1) {
 						debugger_button->set_icon(get_icon("Error", "EditorIcons"));
+						debugger_button->add_color_override("font_color", get_color("error_color", "Editor"));
 						tabs->set_tab_icon(errors_tab->get_index(), get_icon("Error", "EditorIcons"));
 					} else {
 						debugger_button->set_icon(get_icon("Warning", "EditorIcons"));
+						debugger_button->add_color_override("font_color", get_color("warning_color", "Editor"));
 						tabs->set_tab_icon(errors_tab->get_index(), get_icon("Warning", "EditorIcons"));
 					}
 				}
@@ -1535,6 +1546,7 @@ void ScriptEditorDebugger::_notification(int p_what) {
 			docontinue->set_icon(get_icon("DebugContinue", "EditorIcons"));
 			vmem_refresh->set_icon(get_icon("Reload", "EditorIcons"));
 			vmem_export->set_icon(get_icon("Save", "EditorIcons"));
+			search->set_right_icon(get_icon("Search", "EditorIcons"));
 		} break;
 	}
 }
@@ -2282,19 +2294,10 @@ void ScriptEditorDebugger::_item_menu_id_pressed(int p_option) {
 			const int line_number = file_line_number[1].to_int();
 
 			// Construct a GitHub repository URL and open it in the user's default web browser.
-			if (String(VERSION_HASH).length() >= 1) {
-				// Git commit hash information available; use it for greater accuracy, including for development versions.
-				OS::get_singleton()->shell_open(vformat("https://github.com/godotengine/godot/blob/%s/%s#L%d",
-						VERSION_HASH,
-						file,
-						line_number));
-			} else {
-				// Git commit hash information unavailable; fall back to tagged releases.
-				OS::get_singleton()->shell_open(vformat("https://github.com/godotengine/godot/blob/%s-stable/%s#L%d",
-						VERSION_NUMBER,
-						file,
-						line_number));
-			}
+			// If the commit hash is available, use it for greater accuracy. Otherwise fall back to tagged release.
+			String git_ref = String(VERSION_HASH).empty() ? String(VERSION_NUMBER) + "-stable" : String(VERSION_HASH);
+			OS::get_singleton()->shell_open(vformat("https://github.com/godotengine/godot/blob/%s/%s#L%d",
+					git_ref, file, line_number));
 		} break;
 	}
 }
@@ -2463,12 +2466,27 @@ ScriptEditorDebugger::ScriptEditorDebugger(EditorNode *p_editor) {
 		stack_dump->connect("cell_selected", this, "_stack_dump_frame_selected");
 		sc->add_child(stack_dump);
 
+		VBoxContainer *inspector_vbox = memnew(VBoxContainer);
+		sc->add_child(inspector_vbox);
+
+		HBoxContainer *tools_hb = memnew(HBoxContainer);
+		inspector_vbox->add_child(tools_hb);
+
+		search = memnew(LineEdit);
+		search->set_h_size_flags(Control::SIZE_EXPAND_FILL);
+		search->set_placeholder(TTR("Filter stack variables"));
+		search->set_clear_button_enabled(true);
+		tools_hb->add_child(search);
+
 		inspector = memnew(EditorInspector);
 		inspector->set_h_size_flags(SIZE_EXPAND_FILL);
+		inspector->set_v_size_flags(SIZE_EXPAND_FILL);
 		inspector->set_enable_capitalize_paths(false);
 		inspector->set_read_only(true);
 		inspector->connect("object_id_selected", this, "_scene_tree_property_select_object");
-		sc->add_child(inspector);
+		inspector->register_text_enter(search);
+		inspector->set_use_filter(true);
+		inspector_vbox->add_child(inspector);
 
 		server.instance();
 

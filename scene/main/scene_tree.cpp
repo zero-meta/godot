@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2021 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2021 Godot Engine contributors (cf. AUTHORS.md).   */
+/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -30,8 +30,6 @@
 
 #include "scene_tree.h"
 
-#include "modules/modules_enabled.gen.h"
-
 #include "core/io/marshalls.h"
 #include "core/io/resource_loader.h"
 #include "core/message_queue.h"
@@ -48,9 +46,12 @@
 #include "scene/resources/mesh.h"
 #include "scene/resources/packed_scene.h"
 #include "scene/scene_string_names.h"
+#include "servers/navigation_server.h"
 #include "servers/physics_2d_server.h"
 #include "servers/physics_server.h"
 #include "viewport.h"
+
+#include "modules/modules_enabled.gen.h" // For freetype.
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -80,6 +81,14 @@ bool SceneTreeTimer::is_pause_mode_process() {
 	return process_pause;
 }
 
+void SceneTreeTimer::set_ignore_time_scale(bool p_ignore) {
+	ignore_time_scale = p_ignore;
+}
+
+bool SceneTreeTimer::is_ignore_time_scale() {
+	return ignore_time_scale;
+}
+
 void SceneTreeTimer::release_connections() {
 	List<Connection> connections;
 	get_all_signal_connections(&connections);
@@ -93,6 +102,27 @@ void SceneTreeTimer::release_connections() {
 SceneTreeTimer::SceneTreeTimer() {
 	time_left = 0;
 	process_pause = true;
+}
+
+// This should be called once per physics tick, to make sure the transform previous and current
+// is kept up to date on the few spatials that are using client side physics interpolation
+void SceneTree::ClientPhysicsInterpolation::physics_process() {
+	for (SelfList<Spatial> *E = _spatials_list.first(); E;) {
+		Spatial *spatial = E->self();
+
+		SelfList<Spatial> *current = E;
+
+		// get the next element here BEFORE we potentially delete one
+		E = E->next();
+
+		// This will return false if the spatial has timed out ..
+		// i.e. If get_global_transform_interpolated() has not been called
+		// for a few seconds, we can delete from the list to keep processing
+		// to a minimum.
+		if (!spatial->update_client_physics_interpolation_data()) {
+			_spatials_list.remove(current);
+		}
+	}
 }
 
 void SceneTree::tree_changed() {
@@ -170,7 +200,8 @@ void SceneTree::_flush_ugc() {
 			v[i] = E->get()[i];
 		}
 
-		call_group_flags(GROUP_CALL_REALTIME, E->key().group, E->key().call, v[0], v[1], v[2], v[3], v[4]);
+		static_assert(VARIANT_ARG_MAX == 8, "This code needs to be updated if VARIANT_ARG_MAX != 8");
+		call_group_flags(GROUP_CALL_REALTIME, E->key().group, E->key().call, v[0], v[1], v[2], v[3], v[4], v[5], v[6], v[7]);
 
 		unique_group_calls.erase(E);
 	}
@@ -465,10 +496,56 @@ void SceneTree::init() {
 	MainLoop::init();
 }
 
+void SceneTree::set_physics_interpolation_enabled(bool p_enabled) {
+	// disallow interpolation in editor
+	if (Engine::get_singleton()->is_editor_hint()) {
+		p_enabled = false;
+	}
+
+	if (p_enabled == _physics_interpolation_enabled) {
+		return;
+	}
+
+	_physics_interpolation_enabled = p_enabled;
+
+	if (root->get_world().is_valid()) {
+		RID scenario = root->get_world()->get_scenario();
+		if (scenario.is_valid()) {
+			VisualServer::get_singleton()->scenario_set_physics_interpolation_enabled(scenario, p_enabled);
+		}
+	}
+}
+
+bool SceneTree::is_physics_interpolation_enabled() const {
+	return _physics_interpolation_enabled;
+}
+
+void SceneTree::client_physics_interpolation_add_spatial(SelfList<Spatial> *p_elem) {
+	// This ensures that _update_physics_interpolation_data() will be called at least once every
+	// physics tick, to ensure the previous and current transforms are kept up to date.
+	_client_physics_interpolation._spatials_list.add(p_elem);
+}
+
+void SceneTree::client_physics_interpolation_remove_spatial(SelfList<Spatial> *p_elem) {
+	_client_physics_interpolation._spatials_list.remove(p_elem);
+}
+
 bool SceneTree::iteration(float p_time) {
 	root_lock++;
 
 	current_frame++;
+
+	if (root->get_world().is_valid()) {
+		RID scenario = root->get_world()->get_scenario();
+		if (scenario.is_valid()) {
+			VisualServer::get_singleton()->scenario_tick(scenario);
+		}
+	}
+
+	// Any objects performing client physics interpolation
+	// should be given an opportunity to keep their previous transforms
+	// up to take before each new physics tick.
+	_client_physics_interpolation.physics_process();
 
 	flush_transform_notifications();
 
@@ -527,7 +604,7 @@ bool SceneTree::idle(float p_time) {
 	_notify_group_pause("idle_process_internal", Node::NOTIFICATION_INTERNAL_PROCESS);
 	_notify_group_pause("idle_process", Node::NOTIFICATION_PROCESS);
 
-	Size2 win_size = Size2(OS::get_singleton()->get_window_size().width, OS::get_singleton()->get_window_size().height);
+	Size2 win_size = OS::get_singleton()->get_window_size();
 
 	if (win_size != last_screen_size) {
 		last_screen_size = win_size;
@@ -557,8 +634,13 @@ bool SceneTree::idle(float p_time) {
 			E = N;
 			continue;
 		}
+
 		float time_left = E->get()->get_time_left();
-		time_left -= p_time;
+		if (E->get()->is_ignore_time_scale()) {
+			time_left -= Engine::get_singleton()->get_idle_frame_step();
+		} else {
+			time_left -= p_time;
+		}
 		E->get()->set_time_left(time_left);
 
 		if (time_left < 0) {
@@ -574,6 +656,8 @@ bool SceneTree::idle(float p_time) {
 	flush_transform_notifications(); //additional transforms after timers update
 
 	_call_idle_callbacks();
+
+	ProjectSettings::get_singleton()->update();
 
 #ifdef TOOLS_ENABLED
 
@@ -602,6 +686,13 @@ bool SceneTree::idle(float p_time) {
 
 #endif
 
+	if (root->get_world().is_valid()) {
+		RID scenario = root->get_world()->get_scenario();
+		if (scenario.is_valid()) {
+			VisualServer::get_singleton()->scenario_pre_draw(scenario, true);
+		}
+	}
+
 	return _quit;
 }
 
@@ -616,7 +707,7 @@ void SceneTree::finish() {
 
 	if (root) {
 		root->_set_tree(nullptr);
-		root->_propagate_after_exit_tree();
+		root->_propagate_after_exit_branch(true);
 		memdelete(root); //delete root
 		root = nullptr;
 	}
@@ -881,6 +972,7 @@ void SceneTree::set_pause(bool p_enabled) {
 		return;
 	}
 	pause = p_enabled;
+	NavigationServer::get_singleton()->set_active(!p_enabled);
 	PhysicsServer::get_singleton()->set_active(!p_enabled);
 	Physics2DServer::get_singleton()->set_active(!p_enabled);
 	if (get_root()) {
@@ -1008,11 +1100,12 @@ Variant SceneTree::_call_group_flags(const Variant **p_args, int p_argcount, Var
 	StringName method = *p_args[2];
 	Variant v[VARIANT_ARG_MAX];
 
-	for (int i = 0; i < MIN(p_argcount - 3, 5); i++) {
+	for (int i = 0; i < MIN(p_argcount - 3, VARIANT_ARG_MAX); i++) {
 		v[i] = *p_args[i + 3];
 	}
 
-	call_group_flags(flags, group, method, v[0], v[1], v[2], v[3], v[4]);
+	static_assert(VARIANT_ARG_MAX == 8, "This code needs to be updated if VARIANT_ARG_MAX != 8");
+	call_group_flags(flags, group, method, v[0], v[1], v[2], v[3], v[4], v[5], v[6], v[7]);
 	return Variant();
 }
 
@@ -1120,7 +1213,7 @@ void SceneTree::_update_root_rect() {
 	}
 
 	//actual screen video mode
-	Size2 video_mode = Size2(OS::get_singleton()->get_window_size().width, OS::get_singleton()->get_window_size().height);
+	Size2 video_mode = OS::get_singleton()->get_window_size();
 	Size2 desired_res = stretch_min;
 
 	Size2 viewport_size;
@@ -1128,10 +1221,6 @@ void SceneTree::_update_root_rect() {
 
 	float viewport_aspect = desired_res.aspect();
 	float video_mode_aspect = video_mode.aspect();
-
-	if (use_font_oversampling && stretch_aspect == STRETCH_ASPECT_IGNORE) {
-		WARN_PRINT("Font oversampling only works with the stretch modes \"Keep Width\", \"Keep Height\" and \"Expand\", not \"Ignore\". To remove this warning, disable Rendering > Quality > Dynamic Fonts > Use Oversampling in the Project Settings.");
-	}
 
 	if (stretch_aspect == STRETCH_ASPECT_IGNORE || Math::is_equal_approx(viewport_aspect, video_mode_aspect)) {
 		//same aspect or ignore aspect
@@ -1206,10 +1295,6 @@ void SceneTree::_update_root_rect() {
 			root->set_size_override_stretch(false);
 			root->set_size_override(false, Size2());
 			root->update_canvas_items(); //force them to update just in case
-
-			if (use_font_oversampling) {
-				WARN_PRINT("Font oversampling does not work in \"Viewport\" stretch mode, only \"2D\". To remove this warning, disable Rendering > Quality > Dynamic Fonts > Use Oversampling in the Project Settings.");
-			}
 
 		} break;
 	}
@@ -1831,6 +1916,9 @@ void SceneTree::_bind_methods() {
 
 	ClassDB::bind_method(D_METHOD("set_screen_stretch", "mode", "aspect", "minsize", "scale"), &SceneTree::set_screen_stretch, DEFVAL(1));
 
+	ClassDB::bind_method(D_METHOD("set_physics_interpolation_enabled", "enabled"), &SceneTree::set_physics_interpolation_enabled);
+	ClassDB::bind_method(D_METHOD("is_physics_interpolation_enabled"), &SceneTree::is_physics_interpolation_enabled);
+
 	ClassDB::bind_method(D_METHOD("queue_delete", "obj"), &SceneTree::queue_delete);
 
 	MethodInfo mi;
@@ -1900,6 +1988,7 @@ void SceneTree::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "root", PROPERTY_HINT_RESOURCE_TYPE, "Node", 0), "", "get_root");
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "multiplayer", PROPERTY_HINT_RESOURCE_TYPE, "MultiplayerAPI", 0), "set_multiplayer", "get_multiplayer");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "multiplayer_poll"), "set_multiplayer_poll_enabled", "is_multiplayer_poll_enabled");
+	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "physics_interpolation"), "set_physics_interpolation_enabled", "is_physics_interpolation_enabled");
 
 	ADD_SIGNAL(MethodInfo("tree_changed"));
 	ADD_SIGNAL(MethodInfo("node_added", PropertyInfo(Variant::OBJECT, "node", PROPERTY_HINT_RESOURCE_TYPE, "Node")));
@@ -2036,6 +2125,7 @@ SceneTree::SceneTree() {
 	call_lock = 0;
 	root_lock = 0;
 	node_count = 0;
+	_physics_interpolation_enabled = false;
 
 	//create with mainloop
 
@@ -2046,19 +2136,26 @@ SceneTree::SceneTree() {
 		root->set_world(Ref<World>(memnew(World)));
 	}
 
+	set_physics_interpolation_enabled(GLOBAL_DEF("physics/common/physics_interpolation", false));
+	// Always disable jitter fix if physics interpolation is enabled -
+	// Jitter fix will interfere with interpolation, and is not necessary
+	// when interpolation is active.
+	if (is_physics_interpolation_enabled()) {
+		Engine::get_singleton()->set_physics_jitter_fix(0);
+	}
+
 	// Initialize network state
 	multiplayer_poll = true;
 	set_multiplayer(Ref<MultiplayerAPI>(memnew(MultiplayerAPI)));
 
-	//root->set_world_2d( Ref<World2D>( memnew( World2D )));
 	root->set_as_audio_listener(true);
 	root->set_as_audio_listener_2d(true);
 	current_scene = nullptr;
 
 	int ref_atlas_size = GLOBAL_DEF_RST("rendering/quality/reflections/atlas_size", 2048);
-	ProjectSettings::get_singleton()->set_custom_property_info("rendering/quality/reflections/atlas_size", PropertyInfo(Variant::INT, "rendering/quality/reflections/atlas_size", PROPERTY_HINT_RANGE, "0,8192,or_greater")); //next_power_of_2 will return a 0 as min value
+	ProjectSettings::get_singleton()->set_custom_property_info("rendering/quality/reflections/atlas_size", PropertyInfo(Variant::INT, "rendering/quality/reflections/atlas_size", PROPERTY_HINT_RANGE, "0,8192,1,or_greater")); // next_power_of_2 will return a 0 as min value.
 	int ref_atlas_subdiv = GLOBAL_DEF_RST("rendering/quality/reflections/atlas_subdiv", 8);
-	ProjectSettings::get_singleton()->set_custom_property_info("rendering/quality/reflections/atlas_subdiv", PropertyInfo(Variant::INT, "rendering/quality/reflections/atlas_subdiv", PROPERTY_HINT_RANGE, "0,32,or_greater")); //next_power_of_2 will return a 0 as min value
+	ProjectSettings::get_singleton()->set_custom_property_info("rendering/quality/reflections/atlas_subdiv", PropertyInfo(Variant::INT, "rendering/quality/reflections/atlas_subdiv", PROPERTY_HINT_RANGE, "0,32,1,or_greater")); // next_power_of_2 will return a 0 as min value.
 	int msaa_mode = GLOBAL_DEF("rendering/quality/filters/msaa", 0);
 	ProjectSettings::get_singleton()->set_custom_property_info("rendering/quality/filters/msaa", PropertyInfo(Variant::INT, "rendering/quality/filters/msaa", PROPERTY_HINT_ENUM, "Disabled,2x,4x,8x,16x,AndroidVR 2x,AndroidVR 4x"));
 	root->set_msaa(Viewport::MSAA(msaa_mode));
@@ -2072,11 +2169,16 @@ SceneTree::SceneTree() {
 	const float sharpen_intensity = GLOBAL_GET("rendering/quality/filters/sharpen_intensity");
 	root->set_sharpen_intensity(sharpen_intensity);
 
-	GLOBAL_DEF_RST("rendering/quality/depth/hdr", true);
+	GLOBAL_DEF("rendering/quality/depth/hdr", true);
 	GLOBAL_DEF("rendering/quality/depth/hdr.mobile", false);
 
-	bool hdr = GLOBAL_GET("rendering/quality/depth/hdr");
+	const bool hdr = GLOBAL_GET("rendering/quality/depth/hdr");
 	root->set_hdr(hdr);
+
+	GLOBAL_DEF("rendering/quality/depth/use_32_bpc_depth", false);
+
+	const bool use_32_bpc_depth = GLOBAL_GET("rendering/quality/depth/use_32_bpc_depth");
+	root->set_use_32_bpc_depth(use_32_bpc_depth);
 
 	VS::get_singleton()->scenario_set_reflection_atlas_size(root->get_world()->get_scenario(), ref_atlas_size, ref_atlas_subdiv);
 
@@ -2116,7 +2218,7 @@ SceneTree::SceneTree() {
 	stretch_aspect = STRETCH_ASPECT_IGNORE;
 	stretch_scale = 1.0;
 
-	last_screen_size = Size2(OS::get_singleton()->get_window_size().width, OS::get_singleton()->get_window_size().height);
+	last_screen_size = OS::get_singleton()->get_window_size();
 	_update_root_rect();
 
 	if (ScriptDebugger::get_singleton()) {
@@ -2144,7 +2246,7 @@ SceneTree::SceneTree() {
 SceneTree::~SceneTree() {
 	if (root) {
 		root->_set_tree(nullptr);
-		root->_propagate_after_exit_tree();
+		root->_propagate_after_exit_branch(true);
 		memdelete(root);
 	}
 

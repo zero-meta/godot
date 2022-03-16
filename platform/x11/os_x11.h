@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2021 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2021 Godot Engine contributors (cf. AUTHORS.md).   */
+/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -157,7 +157,7 @@ class OS_X11 : public OS_Unix {
 
 	void _handle_key_event(XKeyEvent *p_event, LocalVector<XEvent> &p_events, uint32_t &p_event_index, bool p_echo = false);
 
-	Atom _process_selection_request_target(Atom p_target, Window p_requestor, Atom p_property) const;
+	Atom _process_selection_request_target(Atom p_target, Window p_requestor, Atom p_property, Atom p_selection) const;
 	void _handle_selection_request_event(XSelectionRequestEvent *p_event) const;
 
 	String _get_clipboard_impl(Atom p_source, Window x11_window, Atom target) const;
@@ -239,6 +239,9 @@ protected:
 	virtual Error initialize(const VideoMode &p_desired, int p_video_driver, int p_audio_driver);
 	virtual void finalize();
 
+	virtual bool is_offscreen_gl_available() const;
+	virtual void set_offscreen_gl_current(bool p_current);
+
 	virtual void set_main_loop(MainLoop *p_main_loop);
 
 	void _window_changed(XEvent *event);
@@ -270,6 +273,8 @@ public:
 
 	virtual void set_clipboard(const String &p_text);
 	virtual String get_clipboard() const;
+	virtual void set_clipboard_primary(const String &p_text);
+	virtual String get_clipboard_primary() const;
 
 	virtual void release_rendering_thread();
 	virtual void make_rendering_thread();
@@ -293,6 +298,7 @@ public:
 	virtual Point2 get_screen_position(int p_screen = -1) const;
 	virtual Size2 get_screen_size(int p_screen = -1) const;
 	virtual int get_screen_dpi(int p_screen = -1) const;
+	virtual float get_screen_refresh_rate(int p_screen = -1) const;
 	virtual Point2 get_window_position() const;
 	virtual void set_window_position(const Point2 &p_position);
 	virtual Size2 get_window_size() const;
@@ -326,6 +332,7 @@ public:
 	virtual void set_ime_position(const Point2 &p_pos);
 
 	virtual String get_unique_id() const;
+	virtual String get_processor_name() const;
 
 	virtual void move_window_to_foreground();
 	virtual void alert(const String &p_alert, const String &p_title = "ALERT!");
@@ -358,6 +365,7 @@ public:
 	virtual void keyboard_set_current_layout(int p_index);
 	virtual String keyboard_get_layout_language(int p_index) const;
 	virtual String keyboard_get_layout_name(int p_index) const;
+	virtual uint32_t keyboard_get_scancode_from_physical(uint32_t p_scancode) const;
 
 	void update_real_mouse_position();
 	OS_X11();

@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2021 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2021 Godot Engine contributors (cf. AUTHORS.md).   */
+/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -358,7 +358,7 @@ SpriteBase3D::SpriteBase3D() {
 	pending_update = false;
 	opacity = 1.0;
 
-	material = VisualServer::get_singleton()->material_create();
+	material = RID_PRIME(VisualServer::get_singleton()->material_create());
 	// Set defaults for material, names need to match up those in SpatialMaterial
 	VS::get_singleton()->material_set_param(material, "albedo", Color(1, 1, 1, 1));
 	VS::get_singleton()->material_set_param(material, "specular", 0.5);
@@ -370,7 +370,7 @@ SpriteBase3D::SpriteBase3D() {
 	VS::get_singleton()->material_set_param(material, "uv2_scale", Vector3(1, 1, 1));
 	VS::get_singleton()->material_set_param(material, "alpha_scissor_threshold", 0.98);
 
-	mesh = VisualServer::get_singleton()->mesh_create();
+	mesh = RID_PRIME(VisualServer::get_singleton()->mesh_create());
 
 	PoolVector3Array mesh_vertices;
 	PoolVector3Array mesh_normals;
@@ -980,14 +980,14 @@ void AnimatedSprite3D::_notification(int p_what) {
 				return;
 			}
 
-			float speed = frames->get_animation_speed(animation);
-			if (speed == 0) {
-				return; //do nothing
-			}
-
 			float remaining = get_process_delta_time();
 
 			while (remaining) {
+				float speed = frames->get_animation_speed(animation);
+				if (speed == 0) {
+					return; // Do nothing.
+				}
+
 				if (timeout <= 0) {
 					timeout = 1.0 / speed;
 

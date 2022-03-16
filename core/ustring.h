@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2021 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2021 Godot Engine contributors (cf. AUTHORS.md).   */
+/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -45,11 +45,15 @@ class CharProxy {
 	CowData<T> &_cowdata;
 	static const T _null = 0;
 
-	_FORCE_INLINE_ CharProxy(const int &p_index, CowData<T> &cowdata) :
+	_FORCE_INLINE_ CharProxy(const int &p_index, CowData<T> &p_cowdata) :
 			_index(p_index),
-			_cowdata(cowdata) {}
+			_cowdata(p_cowdata) {}
 
 public:
+	_FORCE_INLINE_ CharProxy(const CharProxy<T> &p_other) :
+			_index(p_other._index),
+			_cowdata(p_other._cowdata) {}
+
 	_FORCE_INLINE_ operator T() const {
 		if (unlikely(_index == _cowdata.size())) {
 			return _null;
@@ -62,12 +66,12 @@ public:
 		return _cowdata.ptr() + _index;
 	}
 
-	_FORCE_INLINE_ void operator=(const T &other) const {
-		_cowdata.set(_index, other);
+	_FORCE_INLINE_ void operator=(const T &p_other) const {
+		_cowdata.set(_index, p_other);
 	}
 
-	_FORCE_INLINE_ void operator=(const CharProxy<T> &other) const {
-		_cowdata.set(_index, other.operator T());
+	_FORCE_INLINE_ void operator=(const CharProxy<T> &p_other) const {
+		_cowdata.set(_index, p_other.operator T());
 	}
 };
 
@@ -282,6 +286,7 @@ public:
 
 	String left(int p_pos) const;
 	String right(int p_pos) const;
+	String indent(const String &p_prefix) const;
 	String dedent() const;
 	String strip_edges(bool left = true, bool right = true) const;
 	String strip_escapes() const;

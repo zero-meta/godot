@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2021 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2021 Godot Engine contributors (cf. AUTHORS.md).   */
+/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -45,11 +45,12 @@ class OS_Android : public OS_Unix {
 	bool use_gl2;
 	bool use_apk_expansion;
 
-	bool use_16bits_fbo;
+	bool secondary_gl_available = false;
 
 	VisualServer *visual_server;
 
 	mutable String data_dir_cache;
+	mutable String cache_dir_cache;
 
 	AudioDriverOpenSL audio_driver_android;
 
@@ -88,7 +89,6 @@ public:
 
 	typedef int64_t ProcessID;
 
-	static OS *get_singleton();
 	GodotJavaWrapper *get_godot_java();
 	GodotIOJavaWrapper *get_godot_io_java();
 
@@ -136,7 +136,9 @@ public:
 	void set_opengl_extensions(const char *p_gl_extensions);
 	void set_display_size(Size2 p_size);
 
-	void set_context_is_16_bits(bool p_is_16);
+	void set_offscreen_gl_available(bool p_available);
+	virtual bool is_offscreen_gl_available() const;
+	virtual void set_offscreen_gl_current(bool p_current);
 
 	virtual void set_screen_orientation(ScreenOrientation p_orientation);
 	virtual ScreenOrientation get_screen_orientation() const;
@@ -149,8 +151,10 @@ public:
 	virtual String get_locale() const;
 	virtual void set_clipboard(const String &p_text);
 	virtual String get_clipboard() const;
+	virtual bool has_clipboard() const;
 	virtual String get_model_name() const;
 	virtual int get_screen_dpi(int p_screen = 0) const;
+	virtual float get_screen_refresh_rate(int p_screen = 0) const;
 
 	virtual bool get_window_per_pixel_transparency_enabled() const { return transparency_enabled; }
 	virtual void set_window_per_pixel_transparency_enabled(bool p_enabled) { ERR_FAIL_MSG("Setting per-pixel transparency is not supported at runtime, please set it in project settings instead."); }

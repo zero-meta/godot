@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2021 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2021 Godot Engine contributors (cf. AUTHORS.md).   */
+/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -98,6 +98,10 @@ void Camera::_update_camera() {
 	}
 }
 
+void Camera::_physics_interpolated_changed() {
+	VisualServer::get_singleton()->camera_set_interpolated(camera, is_physics_interpolated());
+}
+
 void Camera::_notification(int p_what) {
 	switch (p_what) {
 		case NOTIFICATION_ENTER_WORLD: {
@@ -112,6 +116,9 @@ void Camera::_notification(int p_what) {
 				viewport->_camera_set(this);
 			}
 
+			ERR_FAIL_COND(get_world().is_null());
+			VisualServer::get_singleton()->camera_set_scenario(camera, get_world()->get_scenario());
+
 		} break;
 		case NOTIFICATION_TRANSFORM_CHANGED: {
 			_request_camera_update();
@@ -119,7 +126,14 @@ void Camera::_notification(int p_what) {
 				velocity_tracker->update_position(get_global_transform().origin);
 			}
 		} break;
+		case NOTIFICATION_RESET_PHYSICS_INTERPOLATION: {
+			if (is_physics_interpolated()) {
+				VisualServer::get_singleton()->camera_reset_physics_interpolation(camera);
+			}
+		} break;
 		case NOTIFICATION_EXIT_WORLD: {
+			VisualServer::get_singleton()->camera_set_scenario(camera, RID());
+
 			if (!get_tree()->is_node_being_edited(this)) {
 				if (is_current()) {
 					clear_current();
@@ -645,7 +659,7 @@ Vector3 Camera::get_doppler_tracked_velocity() const {
 	}
 }
 Camera::Camera() {
-	camera = VisualServer::get_singleton()->camera_create();
+	camera = RID_PRIME(VisualServer::get_singleton()->camera_create());
 	size = 1;
 	fov = 0;
 	frustum_offset = Vector2();
@@ -880,7 +894,7 @@ ClippedCamera::ClippedCamera() {
 	collision_mask = 1;
 	set_notify_local_transform(Engine::get_singleton()->is_editor_hint());
 	points.resize(5);
-	pyramid_shape = PhysicsServer::get_singleton()->shape_create(PhysicsServer::SHAPE_CONVEX_POLYGON);
+	pyramid_shape = RID_PRIME(PhysicsServer::get_singleton()->shape_create(PhysicsServer::SHAPE_CONVEX_POLYGON));
 	clip_to_areas = false;
 	clip_to_bodies = true;
 }

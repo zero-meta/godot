@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2021 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2021 Godot Engine contributors (cf. AUTHORS.md).   */
+/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -257,7 +257,9 @@ void ScrollContainer::_notification(int p_what) {
 	};
 
 	if (p_what == NOTIFICATION_READY) {
-		get_viewport()->connect("gui_focus_changed", this, "_gui_focus_changed");
+		Viewport *viewport = get_viewport();
+		ERR_FAIL_COND(!viewport);
+		viewport->connect("gui_focus_changed", this, "_gui_focus_changed");
 	}
 
 	if (p_what == NOTIFICATION_SORT_CHILDREN) {

@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2021 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2021 Godot Engine contributors (cf. AUTHORS.md).   */
+/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -54,6 +54,8 @@ class VisualServerWrapMT : public VisualServer {
 	SafeNumeric<uint64_t> draw_pending;
 	void thread_draw(bool p_swap_buffers, double frame_step);
 	void thread_flush();
+	void thread_scenario_tick(RID p_scenario);
+	void thread_scenario_pre_draw(RID p_scenario, bool p_will_draw);
 
 	void thread_exit();
 
@@ -130,6 +132,8 @@ public:
 	FUNC2SC(shader_get_custom_defines, RID, Vector<String> *)
 	FUNC2(shader_remove_custom_define, RID, const String &)
 
+	FUNC1(set_shader_async_hidden_forbidden, bool)
+
 	/* COMMON MATERIAL API */
 
 	FUNCRID(material)
@@ -205,6 +209,11 @@ public:
 	FUNC2RC(Color, multimesh_instance_get_custom_data, RID, int)
 
 	FUNC2(multimesh_set_as_bulk_array, RID, const PoolVector<float> &)
+
+	FUNC3(multimesh_set_as_bulk_array_interpolated, RID, const PoolVector<float> &, const PoolVector<float> &)
+	FUNC2(multimesh_set_physics_interpolated, RID, bool)
+	FUNC2(multimesh_set_physics_interpolation_quality, RID, int)
+	FUNC2(multimesh_instance_reset_physics_interpolation, RID, int)
 
 	FUNC2(multimesh_set_visible_instances, RID, int)
 	FUNC1RC(int, multimesh_get_visible_instances, RID)
@@ -365,10 +374,13 @@ public:
 	/* CAMERA API */
 
 	FUNCRID(camera)
+	FUNC2(camera_set_scenario, RID, RID)
 	FUNC4(camera_set_perspective, RID, float, float, float)
 	FUNC4(camera_set_orthogonal, RID, float, float, float)
 	FUNC5(camera_set_frustum, RID, float, Vector2, float, float)
 	FUNC2(camera_set_transform, RID, const Transform &)
+	FUNC2(camera_set_interpolated, RID, bool)
+	FUNC1(camera_reset_physics_interpolation, RID)
 	FUNC2(camera_set_cull_mask, RID, uint32_t)
 	FUNC2(camera_set_environment, RID, RID)
 	FUNC2(camera_set_use_vertical_aspect, RID, bool)
@@ -418,6 +430,7 @@ public:
 	FUNC2(viewport_set_use_debanding, RID, bool)
 	FUNC2(viewport_set_sharpen_intensity, RID, float)
 	FUNC2(viewport_set_hdr, RID, bool)
+	FUNC2(viewport_set_use_32_bpc_depth, RID, bool)
 	FUNC2(viewport_set_usage, RID, ViewportUsage)
 
 	//this passes directly to avoid stalling, but it's pretty dangerous, so don't call after freeing a viewport
@@ -461,6 +474,7 @@ public:
 	FUNC2(scenario_set_environment, RID, RID)
 	FUNC3(scenario_set_reflection_atlas_size, RID, int, int)
 	FUNC2(scenario_set_fallback_environment, RID, RID)
+	FUNC2(scenario_set_physics_interpolation_enabled, RID, bool)
 
 	/* INSTANCING API */
 	FUNCRID(instance)
@@ -469,6 +483,8 @@ public:
 	FUNC2(instance_set_scenario, RID, RID)
 	FUNC2(instance_set_layer_mask, RID, uint32_t)
 	FUNC2(instance_set_transform, RID, const Transform &)
+	FUNC2(instance_set_interpolated, RID, bool)
+	FUNC1(instance_reset_physics_interpolation, RID)
 	FUNC2(instance_attach_object_instance_id, RID, ObjectID)
 	FUNC3(instance_set_blend_shape_weight, RID, int, float)
 	FUNC3(instance_set_surface_material, RID, int, RID)
@@ -502,12 +518,18 @@ public:
 	FUNC2(roomgroup_add_room, RID, RID)
 
 	// Occluders
-	FUNCRID(occluder)
-	FUNC3(occluder_set_scenario, RID, RID, OccluderType)
-	FUNC2(occluder_spheres_update, RID, const Vector<Plane> &)
-	FUNC2(occluder_set_transform, RID, const Transform &)
-	FUNC2(occluder_set_active, RID, bool)
+	FUNCRID(occluder_instance)
+	FUNC2(occluder_instance_set_scenario, RID, RID)
+	FUNC2(occluder_instance_link_resource, RID, RID)
+	FUNC2(occluder_instance_set_transform, RID, const Transform &)
+	FUNC2(occluder_instance_set_active, RID, bool)
+
+	FUNCRID(occluder_resource)
+	FUNC2(occluder_resource_prepare, RID, OccluderType)
+	FUNC2(occluder_resource_spheres_update, RID, const Vector<Plane> &)
+	FUNC2(occluder_resource_mesh_update, RID, const Geometry::OccluderMeshData &)
 	FUNC1(set_use_occlusion_culling, bool)
+	FUNC1RC(Geometry::MeshData, occlusion_debug_get_current_polys, RID)
 
 	// Rooms
 	FUNCRID(room)
@@ -521,7 +543,7 @@ public:
 	FUNC8(rooms_finalize, RID, bool, bool, bool, bool, String, bool, bool)
 	FUNC4(rooms_override_camera, RID, bool, const Vector3 &, const Vector<Plane> *)
 	FUNC2(rooms_set_active, RID, bool)
-	FUNC2(rooms_set_params, RID, int)
+	FUNC3(rooms_set_params, RID, int, real_t)
 	FUNC3(rooms_set_debug_feature, RID, RoomsDebugFeature, bool)
 	FUNC2(rooms_update_gameplay_monitor, RID, const Vector<Vector3> &)
 
@@ -539,6 +561,7 @@ public:
 	FUNC3(instance_geometry_set_flag, RID, InstanceFlags, bool)
 	FUNC2(instance_geometry_set_cast_shadows_setting, RID, ShadowCastingSetting)
 	FUNC2(instance_geometry_set_material_override, RID, RID)
+	FUNC2(instance_geometry_set_material_overlay, RID, RID)
 
 	FUNC5(instance_geometry_set_draw_range, RID, float, float, float, float)
 	FUNC2(instance_geometry_set_as_instance_lod, RID, RID)
@@ -651,7 +674,9 @@ public:
 	virtual void finish();
 	virtual void draw(bool p_swap_buffers, double frame_step);
 	virtual void sync();
-	FUNC0RC(bool, has_changed)
+	virtual void scenario_tick(RID p_scenario);
+	virtual void scenario_pre_draw(RID p_scenario, bool p_will_draw);
+	FUNC1RC(bool, has_changed, ChangedPriority)
 
 	/* RENDER INFO */
 

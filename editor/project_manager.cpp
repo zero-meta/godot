@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2021 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2021 Godot Engine contributors (cf. AUTHORS.md).   */
+/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -40,7 +40,6 @@
 #include "core/os/os.h"
 #include "core/translation.h"
 #include "core/version.h"
-#include "core/version_hash.gen.h"
 #include "editor_scale.h"
 #include "editor_settings.h"
 #include "editor_themes.h"
@@ -51,6 +50,7 @@
 #include "scene/gui/separator.h"
 #include "scene/gui/texture_rect.h"
 #include "scene/gui/tool_button.h"
+#include "servers/navigation_server.h"
 
 // Used to test for GLES3 support.
 #ifndef SERVER_ENABLED
@@ -203,7 +203,7 @@ private:
 						char fname[16384];
 						ret = unzGetCurrentFileInfo(pkg, &info, fname, 16384, nullptr, 0, nullptr, 0);
 
-						if (String(fname).ends_with("project.godot")) {
+						if (String::utf8(fname).ends_with("project.godot")) {
 							break;
 						}
 
@@ -298,7 +298,7 @@ private:
 			// If the project name is empty or default, infer the project name from the selected folder name
 			if (project_name->get_text().strip_edges() == "" || project_name->get_text().strip_edges() == TTR("New Game Project")) {
 				sp = sp.replace("\\", "/");
-				int lidx = sp.find_last("/");
+				int lidx = sp.rfind("/");
 
 				if (lidx != -1) {
 					sp = sp.substr(lidx + 1, sp.length()).capitalize();
@@ -470,6 +470,7 @@ private:
 					initial_settings["application/config/icon"] = "res://icon.png";
 					initial_settings["rendering/environment/default_environment"] = "res://default_env.tres";
 					initial_settings["physics/common/enable_pause_aware_picking"] = true;
+					initial_settings["gui/common/drop_mouse_on_gui_input_disabled"] = true;
 
 					if (ProjectSettings::get_singleton()->save_custom(dir.plus_file("project.godot"), initial_settings, Vector<String>(), false) != OK) {
 						set_message(TTR("Couldn't create project.godot in project path."), MESSAGE_ERROR);
@@ -513,7 +514,7 @@ private:
 						char fname[16384];
 						unzGetCurrentFileInfo(pkg, &info, fname, 16384, nullptr, 0, nullptr, 0);
 
-						String name = fname;
+						String name = String::utf8(fname);
 						if (name.ends_with("project.godot")) {
 							zip_root = name.substr(0, name.rfind("project.godot"));
 							break;
@@ -533,7 +534,7 @@ private:
 						char fname[16384];
 						ret = unzGetCurrentFileInfo(pkg, &info, fname, 16384, nullptr, 0, nullptr, 0);
 
-						String path = fname;
+						String path = String::utf8(fname);
 
 						if (path == String() || path == zip_root || !zip_root.is_subsequence_of(path)) {
 							//
@@ -2374,6 +2375,11 @@ ProjectManager::ProjectManager() {
 		EditorSettings::create();
 	}
 
+	// Turn off some servers we aren't going to be using in the Project Manager.
+	NavigationServer::get_singleton()->set_active(false);
+	PhysicsServer::get_singleton()->set_active(false);
+	Physics2DServer::get_singleton()->set_active(false);
+
 	EditorSettings::get_singleton()->set_optimize_save(false); //just write settings as they came
 
 	{
@@ -2554,6 +2560,7 @@ ProjectManager::ProjectManager() {
 
 	Button *rename = memnew(Button);
 	rename->set_text(TTR("Rename"));
+	// The F2 shortcut isn't overridden with Enter on macOS as Enter is already used to edit a project.
 	rename->set_shortcut(ED_SHORTCUT("project_manager/rename_project", TTR("Rename Project"), KEY_F2));
 	tree_vb->add_child(rename);
 	rename->connect("pressed", this, "_rename_project");
@@ -2634,7 +2641,7 @@ ProjectManager::ProjectManager() {
 	for (int i = 0; i < editor_languages.size(); i++) {
 		String lang = editor_languages[i];
 		String lang_name = TranslationServer::get_singleton()->get_locale_name(lang);
-		language_btn->add_item(lang_name + " [" + lang + "]", i);
+		language_btn->add_item(vformat("[%s] %s", lang, lang_name), i);
 		language_btn->set_item_metadata(i, lang);
 		if (current_lang == lang) {
 			language_btn->select(i);

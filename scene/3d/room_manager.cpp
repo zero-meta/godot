@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2021 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2021 Godot Engine contributors (cf. AUTHORS.md).   */
+/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -41,6 +41,7 @@
 #include "room_group.h"
 #include "scene/3d/camera.h"
 #include "scene/3d/light.h"
+#include "scene/3d/particles.h"
 #include "scene/3d/sprite_3d.h"
 #include "visibility_notifier.h"
 
@@ -48,7 +49,7 @@
 #include "editor/plugins/spatial_editor_plugin.h"
 #endif
 
-#include "modules/modules_enabled.gen.h"
+#include "modules/modules_enabled.gen.h" // For csg.
 #ifdef MODULE_CSG_ENABLED
 #include "modules/csg/csg_shape.h"
 #endif
@@ -313,6 +314,7 @@ void RoomManager::_bind_methods() {
 	LIMPL_PROPERTY_RANGE(Variant::INT, portal_depth_limit, set_portal_depth_limit, get_portal_depth_limit, "0,255,1");
 	LIMPL_PROPERTY_RANGE(Variant::REAL, room_simplify, set_room_simplify, get_room_simplify, "0.0,1.0,0.005");
 	LIMPL_PROPERTY_RANGE(Variant::REAL, default_portal_margin, set_default_portal_margin, get_default_portal_margin, "0.0, 10.0, 0.01");
+	LIMPL_PROPERTY_RANGE(Variant::REAL, roaming_expansion_margin, set_roaming_expansion_margin, get_roaming_expansion_margin, "0.0, 3.0, 0.01");
 
 #undef LIMPL_PROPERTY
 #undef LIMPL_PROPERTY_RANGE
@@ -382,7 +384,15 @@ void RoomManager::set_portal_depth_limit(int p_limit) {
 	_settings_portal_depth_limit = p_limit;
 
 	if (is_inside_world() && get_world().is_valid()) {
-		VisualServer::get_singleton()->rooms_set_params(get_world()->get_scenario(), p_limit);
+		VisualServer::get_singleton()->rooms_set_params(get_world()->get_scenario(), p_limit, _settings_roaming_expansion_margin);
+	}
+}
+
+void RoomManager::set_roaming_expansion_margin(real_t p_dist) {
+	_settings_roaming_expansion_margin = p_dist;
+
+	if (is_inside_world() && get_world().is_valid()) {
+		VisualServer::get_singleton()->rooms_set_params(get_world()->get_scenario(), _settings_portal_depth_limit, _settings_roaming_expansion_margin);
 	}
 }
 
@@ -1272,13 +1282,17 @@ void RoomManager::_process_static(Room *p_room, Spatial *p_node, Vector<Vector3>
 	bool ignore = false;
 	VisualInstance *vi = Object::cast_to<VisualInstance>(p_node);
 
+	bool is_dynamic = false;
+
 	// we are only interested in VIs with static or dynamic mode
 	if (vi) {
 		switch (vi->get_portal_mode()) {
 			default: {
 				ignore = true;
 			} break;
-			case CullInstance::PORTAL_MODE_DYNAMIC:
+			case CullInstance::PORTAL_MODE_DYNAMIC: {
+				is_dynamic = true;
+			} break;
 			case CullInstance::PORTAL_MODE_STATIC:
 				break;
 		}
@@ -1312,9 +1326,7 @@ void RoomManager::_process_static(Room *p_room, Spatial *p_node, Vector<Vector3>
 			// MeshInstance is the most interesting type for portalling, so we handle this explicitly
 			MeshInstance *mi = Object::cast_to<MeshInstance>(p_node);
 			if (mi) {
-				if (p_add_to_portal_renderer) {
-					convert_log("\t\t\tMESH\t" + mi->get_name());
-				}
+				bool added = false;
 
 				Vector<Vector3> object_pts;
 				AABB aabb;
@@ -1326,37 +1338,62 @@ void RoomManager::_process_static(Room *p_room, Spatial *p_node, Vector<Vector3>
 					// NOTE the is_visible check MAY cause problems if conversion run on nodes that
 					// aren't properly in the tree. It can optionally be removed. Certainly calling is_visible_in_tree
 					// DID cause problems.
-					if (mi->get_include_in_bound() && mi->is_visible()) {
+					if (!is_dynamic && mi->get_include_in_bound() && mi->is_visible()) {
 						r_room_pts.append_array(object_pts);
 					}
 
 					if (p_add_to_portal_renderer) {
-						VisualServer::get_singleton()->room_add_instance(p_room->_room_rid, mi->get_instance(), mi->get_transformed_aabb(), object_pts);
+						// We are sending the VisualInstance AABB rather than the manually calced AABB, maybe we don't need to calc the AABB.
+						// If this works okay we can maybe later remove the manual AABB calculation in _bound_findpoints_mesh_instance().
+						VisualServer::get_singleton()->room_add_instance(p_room->_room_rid, mi->get_instance(), mi->get_transformed_aabb().grow(mi->get_extra_cull_margin()), object_pts);
+						added = true;
 					}
 				} // if bound found points
+
+				if (p_add_to_portal_renderer) {
+					String msg = "\t\t\tMESH\t" + mi->get_name();
+					if (!added) {
+						msg += "\t(unrecognized)";
+					}
+					convert_log(msg);
+				}
 			} else {
 				// geometry instance but not a mesh instance ..
-				if (p_add_to_portal_renderer) {
-					convert_log("\t\t\tGEOM\t" + gi->get_name());
-				}
-
 				Vector<Vector3> object_pts;
 				AABB aabb;
 
+				bool added = false;
+
 				// attempt to recognise this GeometryInstance and read back the geometry
-				if (_bound_findpoints_geom_instance(gi, object_pts, aabb)) {
+				// Note: never attempt to add dynamics to the room aabb
+				if (is_dynamic || _bound_findpoints_geom_instance(gi, object_pts, aabb)) {
 					// need to keep track of room bound
 					// NOTE the is_visible check MAY cause problems if conversion run on nodes that
 					// aren't properly in the tree. It can optionally be removed. Certainly calling is_visible_in_tree
 					// DID cause problems.
-					if (gi->get_include_in_bound() && gi->is_visible()) {
+					if (!is_dynamic && gi->get_include_in_bound() && gi->is_visible()) {
 						r_room_pts.append_array(object_pts);
 					}
 
 					if (p_add_to_portal_renderer) {
-						VisualServer::get_singleton()->room_add_instance(p_room->_room_rid, gi->get_instance(), gi->get_transformed_aabb(), object_pts);
+						// if dynamic, we won't have properly calculated the aabb yet
+						if (is_dynamic) {
+							aabb = gi->get_transformed_aabb();
+						}
+
+						aabb.grow_by(gi->get_extra_cull_margin());
+						VisualServer::get_singleton()->room_add_instance(p_room->_room_rid, gi->get_instance(), aabb, object_pts);
+						added = true;
 					}
 				} // if bound found points
+
+				if (p_add_to_portal_renderer) {
+					String msg = "\t\t\tGEOM\t" + gi->get_name();
+					if (!added) {
+						msg += "\t(unrecognized)";
+					}
+					convert_log(msg);
+				}
 			}
 		} // if gi
 
@@ -1818,7 +1855,17 @@ bool RoomManager::_bound_findpoints_geom_instance(GeometryInstance *p_gi, Vector
 		return true;
 	}
 
-	return false;
+	// Particles have a "visibility aabb" we can use for this
+	Particles *particles = Object::cast_to<Particles>(p_gi);
+	if (particles) {
+		r_aabb = particles->get_global_transform().xform(particles->get_visibility_aabb());
+		return true;
+	}
+
+	// Fallback path for geometry that is not recognised
+	// (including CPUParticles, which will need to rely on an expansion margin)
+	r_aabb = p_gi->get_transformed_aabb();
+	return true;
 }
 
 bool RoomManager::_bound_findpoints_mesh_instance(MeshInstance *p_mi, Vector<Vector3> &r_room_pts, AABB &r_aabb) {
@@ -2026,9 +2073,10 @@ void RoomManager::_flip_portals_recursive(Spatial *p_node) {
 }
 
 void RoomManager::_set_owner_recursive(Node *p_node, Node *p_owner) {
-	if (p_node != p_owner) {
+	if (!p_node->get_owner() && (p_node != p_owner)) {
 		p_node->set_owner(p_owner);
 	}
+
 	for (int n = 0; n < p_node->get_child_count(); n++) {
 		_set_owner_recursive(p_node->get_child(n), p_owner);
 	}
@@ -2125,8 +2173,7 @@ void RoomManager::_merge_meshes_in_room(Room *p_room) {
 			if (!bf.get_bit(c)) {
 				MeshInstance *b = source_meshes[c];
 
-				//				if (_are_meshes_mergeable(a, b)) {
-				if (a->is_mergeable_with(*b)) {
+				if (a->is_mergeable_with(b)) {
 					merge_list.push_back(b);
 					bf.set_bit(c, true);
 				}
@@ -2143,7 +2190,7 @@ void RoomManager::_merge_meshes_in_room(Room *p_room) {
 
 			_merge_log("\t\t" + merged->get_name());
 
-			if (merged->create_by_merging(merge_list)) {
+			if (merged->merge_meshes(merge_list, true, false)) {
 				// set all the source meshes to portal mode ignore so not shown
 				for (int i = 0; i < merge_list.size(); i++) {
 					merge_list[i]->set_portal_mode(CullInstance::PORTAL_MODE_IGNORE);

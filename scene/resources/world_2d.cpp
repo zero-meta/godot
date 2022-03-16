@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2021 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2021 Godot Engine contributors (cf. AUTHORS.md).   */
+/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -348,8 +348,8 @@ Physics2DDirectSpaceState *World2D::get_direct_space_state() {
 }
 
 World2D::World2D() {
-	canvas = VisualServer::get_singleton()->canvas_create();
-	space = Physics2DServer::get_singleton()->space_create();
+	canvas = RID_PRIME(VisualServer::get_singleton()->canvas_create());
+	space = RID_PRIME(Physics2DServer::get_singleton()->space_create());
 
 	//set space2D to be more friendly with pixels than meters, by adjusting some constants
 	Physics2DServer::get_singleton()->space_set_active(space, true);

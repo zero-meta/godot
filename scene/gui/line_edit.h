@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2021 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2021 Godot Engine contributors (cf. AUTHORS.md).   */
+/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -75,6 +75,7 @@ private:
 	Point2 ime_selection;
 
 	bool selecting_enabled;
+	bool deselect_on_focus_loss_enabled;
 
 	bool context_menu_enabled;
 	PopupMenu *menu;
@@ -91,6 +92,10 @@ private:
 	bool shortcut_keys_enabled;
 
 	bool virtual_keyboard_enabled = true;
+
+	bool drag_action = false;
+	bool drag_caret_force_displayed = false;
+	bool middle_mouse_paste_enabled;
 
 	Ref<Texture> right_icon;
 
@@ -154,7 +159,6 @@ private:
 	void _toggle_draw_caret();
 
 	void clear_internal();
-	void changed_internal();
 
 	void _editor_settings_changed();
 
@@ -236,8 +240,14 @@ public:
 	void set_virtual_keyboard_enabled(bool p_enable);
 	bool is_virtual_keyboard_enabled() const;
 
+	void set_middle_mouse_paste_enabled(bool p_enabled);
+	bool is_middle_mouse_paste_enabled() const;
+
 	void set_selecting_enabled(bool p_enabled);
 	bool is_selecting_enabled() const;
+
+	void set_deselect_on_focus_loss_enabled(const bool p_enabled);
+	bool is_deselect_on_focus_loss_enabled() const;
 
 	void set_right_icon(const Ref<Texture> &p_icon);
 	Ref<Texture> get_right_icon();

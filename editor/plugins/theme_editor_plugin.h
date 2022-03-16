@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2021 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2021 Godot Engine contributors (cf. AUTHORS.md).   */
+/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -31,6 +31,7 @@
 #ifndef THEME_EDITOR_PLUGIN_H
 #define THEME_EDITOR_PLUGIN_H
 
+#include "scene/gui/dialogs.h"
 #include "scene/gui/margin_container.h"
 #include "scene/gui/option_button.h"
 #include "scene/gui/scroll_container.h"
@@ -256,6 +257,42 @@ public:
 	ThemeItemEditorDialog();
 };
 
+class ThemeTypeDialog : public ConfirmationDialog {
+	GDCLASS(ThemeTypeDialog, ConfirmationDialog);
+
+	Ref<Theme> edited_theme;
+	bool include_own_types = false;
+
+	String pre_submitted_value;
+
+	LineEdit *add_type_filter;
+	ItemList *add_type_options;
+	ConfirmationDialog *add_type_confirmation;
+
+	void _dialog_about_to_show();
+	void ok_pressed();
+
+	void _update_add_type_options(const String &p_filter = "");
+
+	void _add_type_filter_cbk(const String &p_value);
+	void _add_type_options_cbk(int p_index);
+	void _add_type_dialog_entered(const String &p_value);
+	void _add_type_dialog_activated(int p_index);
+
+	void _add_type_selected(const String &p_type_name);
+	void _add_type_confirmed();
+
+protected:
+	void _notification(int p_what);
+	static void _bind_methods();
+
+public:
+	void set_edited_theme(const Ref<Theme> &p_theme);
+	void set_include_own_types(bool p_enable);
+
+	ThemeTypeDialog();
+};
+
 class ThemeTypeEditor : public MarginContainer {
 	GDCLASS(ThemeTypeEditor, MarginContainer);
 
@@ -274,9 +311,6 @@ class ThemeTypeEditor : public MarginContainer {
 
 	OptionButton *theme_type_list;
 	Button *add_type_button;
-	ConfirmationDialog *add_type_dialog;
-	LineEdit *add_type_filter;
-	ItemList *add_type_options;
 
 	CheckButton *show_default_items_button;
 
@@ -287,26 +321,31 @@ class ThemeTypeEditor : public MarginContainer {
 	VBoxContainer *icon_items_list;
 	VBoxContainer *stylebox_items_list;
 
+	LineEdit *type_variation_edit;
+	Button *type_variation_button;
+	Label *type_variation_locked;
+
+	enum TypeDialogMode {
+		ADD_THEME_TYPE,
+		ADD_VARIATION_BASE,
+	};
+
+	TypeDialogMode add_type_mode = ADD_THEME_TYPE;
+	ThemeTypeDialog *add_type_dialog;
+
 	Vector<Control *> focusables;
 	Timer *update_debounce_timer;
 
 	VBoxContainer *_create_item_list(Theme::DataType p_data_type);
 	void _update_type_list();
 	void _update_type_list_debounced();
-	void _update_add_type_options(const String &p_filter = "");
 	OrderedHashMap<StringName, bool> _get_type_items(String p_type_name, void (Theme::*get_list_func)(StringName, List<StringName> *) const, bool include_default);
 	HBoxContainer *_create_property_control(Theme::DataType p_data_type, String p_item_name, bool p_editable);
 	void _add_focusable(Control *p_control);
 	void _update_type_items();
 
 	void _list_type_selected(int p_index);
-	void _select_type(String p_type_name);
 	void _add_type_button_cbk();
-	void _add_type_filter_cbk(const String &p_value);
-	void _add_type_options_cbk(int p_index);
-	void _add_type_dialog_confirmed();
-	void _add_type_dialog_entered(const String &p_value);
-	void _add_type_dialog_activated(int p_index);
 	void _add_default_type_items();
 
 	void _item_add_cbk(int p_data_type, Control *p_control);
@@ -327,6 +366,11 @@ class ThemeTypeEditor : public MarginContainer {
 	void _pin_leading_stylebox(Control *p_editor, String p_item_name);
 	void _unpin_leading_stylebox();
 	void _update_stylebox_from_leading();
+
+	void _type_variation_changed(const String p_value);
+	void _add_type_variation_cbk();
+
+	void _add_type_dialog_selected(const String p_type_name);
 
 protected:
 	void _notification(int p_what);

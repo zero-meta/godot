@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2021 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2021 Godot Engine contributors (cf. AUTHORS.md).   */
+/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -215,6 +215,8 @@ struct _VariantCall {
 	static void _call_##m_type##_##m_method(Variant &r_ret, Variant &p_self, const Variant **p_args) { reinterpret_cast<m_type *>(p_self._data._mem)->m_method(); }
 #define VCALL_LOCALMEM0R(m_type, m_method) \
 	static void _call_##m_type##_##m_method(Variant &r_ret, Variant &p_self, const Variant **p_args) { r_ret = reinterpret_cast<m_type *>(p_self._data._mem)->m_method(); }
+#define VCALL_LOCALMEM0RI(m_type, m_method, m_internal_method) \
+	static void _call_##m_type##_##m_method(Variant &r_ret, Variant &p_self, const Variant **p_args) { r_ret = reinterpret_cast<m_type *>(p_self._data._mem)->m_internal_method(); }
 #define VCALL_LOCALMEM1(m_type, m_method) \
 	static void _call_##m_type##_##m_method(Variant &r_ret, Variant &p_self, const Variant **p_args) { reinterpret_cast<m_type *>(p_self._data._mem)->m_method(*p_args[0]); }
 #define VCALL_LOCALMEM1R(m_type, m_method) \
@@ -245,6 +247,7 @@ struct _VariantCall {
 	VCALL_LOCALMEM3R(String, count);
 	VCALL_LOCALMEM3R(String, countn);
 	VCALL_LOCALMEM2R(String, substr);
+	VCALL_LOCALMEM2R(String, get_slice);
 	VCALL_LOCALMEM2R(String, find);
 	VCALL_LOCALMEM1R(String, find_last);
 	VCALL_LOCALMEM2R(String, findn);
@@ -267,10 +270,12 @@ struct _VariantCall {
 	VCALL_LOCALMEM3R(String, split);
 	VCALL_LOCALMEM3R(String, rsplit);
 	VCALL_LOCALMEM2R(String, split_floats);
+	VCALL_LOCALMEM1R(String, join);
 	VCALL_LOCALMEM0R(String, to_upper);
 	VCALL_LOCALMEM0R(String, to_lower);
 	VCALL_LOCALMEM1R(String, left);
 	VCALL_LOCALMEM1R(String, right);
+	VCALL_LOCALMEM1R(String, indent);
 	VCALL_LOCALMEM0R(String, dedent);
 	VCALL_LOCALMEM2R(String, strip_edges);
 	VCALL_LOCALMEM0R(String, strip_escapes);
@@ -312,9 +317,9 @@ struct _VariantCall {
 	VCALL_LOCALMEM0R(String, is_valid_html_color);
 	VCALL_LOCALMEM0R(String, is_valid_ip_address);
 	VCALL_LOCALMEM0R(String, is_valid_filename);
-	VCALL_LOCALMEM0R(String, to_int);
+	VCALL_LOCALMEM0RI(String, to_int, to_int64);
 	VCALL_LOCALMEM0R(String, to_float);
-	VCALL_LOCALMEM0R(String, hex_to_int);
+	VCALL_LOCALMEM0RI(String, hex_to_int, hex_to_int64);
 	VCALL_LOCALMEM1R(String, pad_decimals);
 	VCALL_LOCALMEM1R(String, pad_zeros);
 	VCALL_LOCALMEM1R(String, trim_prefix);
@@ -405,9 +410,11 @@ struct _VariantCall {
 	VCALL_LOCALMEM1R(Vector2, cross);
 	VCALL_LOCALMEM0R(Vector2, abs);
 	VCALL_LOCALMEM1R(Vector2, clamped);
+	VCALL_LOCALMEM1R(Vector2, limit_length);
 	VCALL_LOCALMEM0R(Vector2, sign);
 
 	VCALL_LOCALMEM0R(Rect2, get_area);
+	VCALL_LOCALMEM0R(Rect2, get_center);
 	VCALL_LOCALMEM0R(Rect2, has_no_area);
 	VCALL_LOCALMEM1R(Rect2, has_point);
 	VCALL_LOCALMEM1R(Rect2, is_equal_approx);
@@ -454,6 +461,7 @@ struct _VariantCall {
 	VCALL_LOCALMEM1R(Vector3, slide);
 	VCALL_LOCALMEM1R(Vector3, bounce);
 	VCALL_LOCALMEM1R(Vector3, reflect);
+	VCALL_LOCALMEM1R(Vector3, limit_length);
 	VCALL_LOCALMEM0R(Vector3, sign);
 
 	VCALL_LOCALMEM0R(Plane, normalized);
@@ -516,6 +524,7 @@ struct _VariantCall {
 	VCALL_LOCALMEM0R(Color, to_abgr64);
 	VCALL_LOCALMEM0R(Color, to_rgba64);
 	VCALL_LOCALMEM0R(Color, gray);
+	VCALL_LOCALMEM0R(Color, get_luminance);
 	VCALL_LOCALMEM0R(Color, inverted);
 	VCALL_LOCALMEM0R(Color, contrasted);
 	VCALL_LOCALMEM2R(Color, linear_interpolate);
@@ -651,17 +660,17 @@ struct _VariantCall {
 
 	static void _call_PoolByteArray_decompress_dynamic(Variant &r_ret, Variant &p_self, const Variant **p_args) {
 		PoolByteArray *ba = reinterpret_cast<PoolByteArray *>(p_self._data._mem);
-		PoolByteArray *decompressed = memnew(PoolByteArray);
+		PoolByteArray decompressed;
 		int max_output_size = (int)(*p_args[0]);
 		Compression::Mode mode = (Compression::Mode)(int)(*p_args[1]);
 
-		decompressed->resize(1024);
-		int result = Compression::decompress_dynamic(decompressed, max_output_size, ba->read().ptr(), ba->size(), mode);
+		decompressed.resize(1024);
+		int result = Compression::decompress_dynamic(&decompressed, max_output_size, ba->read().ptr(), ba->size(), mode);
 
 		if (result == OK) {
 			r_ret = decompressed;
 		} else {
-			decompressed->resize(0);
+			decompressed.resize(0);
 			r_ret = decompressed;
 			ERR_FAIL_MSG("Decompression failed.");
 		}
@@ -791,6 +800,7 @@ struct _VariantCall {
 
 	VCALL_PTR0R(AABB, abs);
 	VCALL_PTR0R(AABB, get_area);
+	VCALL_PTR0R(AABB, get_center);
 	VCALL_PTR0R(AABB, has_no_area);
 	VCALL_PTR0R(AABB, has_no_surface);
 	VCALL_PTR1R(AABB, has_point);
@@ -1390,6 +1400,7 @@ bool Variant::has_method(const StringName &p_method) const {
 }
 
 Vector<Variant::Type> Variant::get_method_argument_types(Variant::Type p_type, const StringName &p_method) {
+	ERR_FAIL_INDEX_V(p_type, Variant::VARIANT_MAX, Vector<Variant::Type>());
 	const _VariantCall::TypeFunc &tf = _VariantCall::type_funcs[p_type];
 
 	const Map<StringName, _VariantCall::FuncData>::Element *E = tf.functions.find(p_method);
@@ -1401,6 +1412,7 @@ Vector<Variant::Type> Variant::get_method_argument_types(Variant::Type p_type, c
 }
 
 bool Variant::is_method_const(Variant::Type p_type, const StringName &p_method) {
+	ERR_FAIL_INDEX_V(p_type, Variant::VARIANT_MAX, false);
 	const _VariantCall::TypeFunc &tf = _VariantCall::type_funcs[p_type];
 
 	const Map<StringName, _VariantCall::FuncData>::Element *E = tf.functions.find(p_method);
@@ -1412,6 +1424,7 @@ bool Variant::is_method_const(Variant::Type p_type, const StringName &p_method) 
 }
 
 Vector<StringName> Variant::get_method_argument_names(Variant::Type p_type, const StringName &p_method) {
+	ERR_FAIL_INDEX_V(p_type, Variant::VARIANT_MAX, Vector<StringName>());
 	const _VariantCall::TypeFunc &tf = _VariantCall::type_funcs[p_type];
 
 	const Map<StringName, _VariantCall::FuncData>::Element *E = tf.functions.find(p_method);
@@ -1423,6 +1436,7 @@ Vector<StringName> Variant::get_method_argument_names(Variant::Type p_type, cons
 }
 
 Variant::Type Variant::get_method_return_type(Variant::Type p_type, const StringName &p_method, bool *r_has_return) {
+	ERR_FAIL_INDEX_V(p_type, Variant::VARIANT_MAX, Variant::NIL);
 	const _VariantCall::TypeFunc &tf = _VariantCall::type_funcs[p_type];
 
 	const Map<StringName, _VariantCall::FuncData>::Element *E = tf.functions.find(p_method);
@@ -1633,6 +1647,7 @@ void register_variant_methods() {
 	ADDFUNC1R(STRING, INT, String, naturalnocasecmp_to, STRING, "to", varray());
 	ADDFUNC0R(STRING, INT, String, length, varray());
 	ADDFUNC2R(STRING, STRING, String, substr, INT, "from", INT, "len", varray(-1));
+	ADDFUNC2R(STRING, STRING, String, get_slice, STRING, "delimiter", INT, "slice", varray());
 
 	ADDFUNC2R(STRING, INT, String, find, STRING, "what", INT, "from", varray(0));
 
@@ -1661,6 +1676,7 @@ void register_variant_methods() {
 	ADDFUNC3R(STRING, POOL_STRING_ARRAY, String, split, STRING, "delimiter", BOOL, "allow_empty", INT, "maxsplit", varray(true, 0));
 	ADDFUNC3R(STRING, POOL_STRING_ARRAY, String, rsplit, STRING, "delimiter", BOOL, "allow_empty", INT, "maxsplit", varray(true, 0));
 	ADDFUNC2R(STRING, POOL_REAL_ARRAY, String, split_floats, STRING, "delimiter", BOOL, "allow_empty", varray(true));
+	ADDFUNC1R(STRING, STRING, String, join, POOL_STRING_ARRAY, "parts", varray());
 
 	ADDFUNC0R(STRING, STRING, String, to_upper, varray());
 	ADDFUNC0R(STRING, STRING, String, to_lower, varray());
@@ -1675,6 +1691,7 @@ void register_variant_methods() {
 	ADDFUNC0R(STRING, STRING, String, get_basename, varray());
 	ADDFUNC1R(STRING, STRING, String, plus_file, STRING, "file", varray());
 	ADDFUNC1R(STRING, INT, String, ord_at, INT, "at", varray());
+	ADDFUNC1R(STRING, STRING, String, indent, STRING, "prefix", varray());
 	ADDFUNC0R(STRING, STRING, String, dedent, varray());
 	ADDFUNC2(STRING, NIL, String, erase, INT, "position", INT, "chars", varray());
 	ADDFUNC0R(STRING, INT, String, hash, varray());
@@ -1752,9 +1769,11 @@ void register_variant_methods() {
 	ADDFUNC1R(VECTOR2, REAL, Vector2, cross, VECTOR2, "with", varray());
 	ADDFUNC0R(VECTOR2, VECTOR2, Vector2, abs, varray());
 	ADDFUNC1R(VECTOR2, VECTOR2, Vector2, clamped, REAL, "length", varray());
+	ADDFUNC1R(VECTOR2, VECTOR2, Vector2, limit_length, REAL, "length", varray(1.0));
 	ADDFUNC0R(VECTOR2, VECTOR2, Vector2, sign, varray());
 
 	ADDFUNC0R(RECT2, REAL, Rect2, get_area, varray());
+	ADDFUNC0R(RECT2, VECTOR2, Rect2, get_center, varray());
 	ADDFUNC0R(RECT2, BOOL, Rect2, has_no_area, varray());
 	ADDFUNC1R(RECT2, BOOL, Rect2, has_point, VECTOR2, "point", varray());
 	ADDFUNC1R(RECT2, BOOL, Rect2, is_equal_approx, RECT2, "rect", varray());
@@ -1801,6 +1820,7 @@ void register_variant_methods() {
 	ADDFUNC1R(VECTOR3, VECTOR3, Vector3, slide, VECTOR3, "n", varray());
 	ADDFUNC1R(VECTOR3, VECTOR3, Vector3, bounce, VECTOR3, "n", varray());
 	ADDFUNC1R(VECTOR3, VECTOR3, Vector3, reflect, VECTOR3, "n", varray());
+	ADDFUNC1R(VECTOR3, VECTOR3, Vector3, limit_length, REAL, "length", varray(1.0));
 	ADDFUNC0R(VECTOR3, VECTOR3, Vector3, sign, varray());
 
 	ADDFUNC0R(PLANE, PLANE, Plane, normalized, varray());
@@ -1838,6 +1858,7 @@ void register_variant_methods() {
 	ADDFUNC0R(COLOR, INT, Color, to_abgr64, varray());
 	ADDFUNC0R(COLOR, INT, Color, to_rgba64, varray());
 	ADDFUNC0R(COLOR, REAL, Color, gray, varray());
+	ADDFUNC0R(COLOR, REAL, Color, get_luminance, varray());
 	ADDFUNC0R(COLOR, COLOR, Color, inverted, varray());
 	ADDFUNC0R(COLOR, COLOR, Color, contrasted, varray());
 	ADDFUNC2R(COLOR, COLOR, Color, linear_interpolate, COLOR, "to", REAL, "weight", varray());
@@ -1994,6 +2015,7 @@ void register_variant_methods() {
 
 	ADDFUNC0R(AABB, AABB, AABB, abs, varray());
 	ADDFUNC0R(AABB, REAL, AABB, get_area, varray());
+	ADDFUNC0R(AABB, VECTOR3, AABB, get_center, varray());
 	ADDFUNC0R(AABB, BOOL, AABB, has_no_area, varray());
 	ADDFUNC0R(AABB, BOOL, AABB, has_no_surface, varray());
 	ADDFUNC1R(AABB, BOOL, AABB, has_point, VECTOR3, "point", varray());

@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2021 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2021 Godot Engine contributors (cf. AUTHORS.md).   */
+/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -33,7 +33,6 @@
 #include "core/os/os.h"
 #include "core/project_settings.h"
 #include "core/version.h"
-#include "core/version_hash.gen.h"
 #include "main/main.h"
 
 #ifdef CRASH_HANDLER_EXCEPTION
@@ -179,10 +178,10 @@ DWORD CrashHandlerException(EXCEPTION_POINTERS *ep) {
 	}
 
 	// Print the engine version just before, so that people are reminded to include the version in backtrace reports.
-	if (String(VERSION_HASH).length() != 0) {
-		fprintf(stderr, "Engine version: " VERSION_FULL_NAME " (" VERSION_HASH ")\n");
+	if (String(VERSION_HASH).empty()) {
+		fprintf(stderr, "Engine version: %s\n", VERSION_FULL_NAME);
 	} else {
-		fprintf(stderr, "Engine version: " VERSION_FULL_NAME "\n");
+		fprintf(stderr, "Engine version: %s (%s)\n", VERSION_FULL_NAME, VERSION_HASH);
 	}
 	fprintf(stderr, "Dumping the backtrace. %ls\n", msg.c_str());
 

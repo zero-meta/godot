@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2021 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2021 Godot Engine contributors (cf. AUTHORS.md).   */
+/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -51,6 +51,8 @@ SceneStringNames::SceneStringNames() {
 	tree_exiting = StaticCString::create("tree_exiting");
 	tree_exited = StaticCString::create("tree_exited");
 	ready = StaticCString::create("ready");
+	child_entered_tree = StaticCString::create("child_entered_tree");
+	child_exited_tree = StaticCString::create("child_exited_tree");
 	item_rect_changed = StaticCString::create("item_rect_changed");
 	size_flags_changed = StaticCString::create("size_flags_changed");
 	minimum_size_changed = StaticCString::create("minimum_size_changed");

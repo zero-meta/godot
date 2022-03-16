@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2021 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2021 Godot Engine contributors (cf. AUTHORS.md).   */
+/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -252,7 +252,7 @@ bool PrimitiveMesh::get_flip_faces() const {
 PrimitiveMesh::PrimitiveMesh() {
 	flip_faces = false;
 	// defaults
-	mesh = VisualServer::get_singleton()->mesh_create();
+	mesh = RID_PRIME(VisualServer::get_singleton()->mesh_create());
 
 	// assume primitive triangles as the type, correct for all but one and it will change this :)
 	primitive_type = Mesh::PRIMITIVE_TRIANGLES;

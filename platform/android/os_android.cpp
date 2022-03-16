@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2021 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2021 Godot Engine contributors (cf. AUTHORS.md).   */
+/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -423,6 +423,15 @@ String OS_Android::get_clipboard() const {
 	return OS_Unix::get_clipboard();
 }
 
+bool OS_Android::has_clipboard() const {
+	// DO we really need the fallback to OS_Unix here?!
+	if (godot_java->has_has_clipboard()) {
+		return godot_java->has_clipboard();
+	}
+
+	return OS_Unix::has_clipboard();
+}
+
 String OS_Android::get_model_name() const {
 	String model = godot_io_java->get_model();
 	if (model != "")
@@ -433,6 +442,10 @@ String OS_Android::get_model_name() const {
 
 int OS_Android::get_screen_dpi(int p_screen) const {
 	return godot_io_java->get_screen_dpi();
+}
+
+float OS_Android::get_screen_refresh_rate(int p_screen) const {
+	return godot_io_java->get_screen_refresh_rate(OS::get_singleton()->SCREEN_REFRESH_RATE_FALLBACK);
 }
 
 String OS_Android::get_data_path() const {
@@ -452,10 +465,13 @@ String OS_Android::get_user_data_dir() const {
 }
 
 String OS_Android::get_cache_path() const {
+	if (cache_dir_cache != String())
+		return cache_dir_cache;
+
 	String cache_dir = godot_io_java->get_cache_dir();
 	if (cache_dir != "") {
-		cache_dir = _remove_symlink(cache_dir);
-		return cache_dir;
+		cache_dir_cache = _remove_symlink(cache_dir);
+		return cache_dir_cache;
 	}
 	return ".";
 }
@@ -466,6 +482,7 @@ void OS_Android::set_screen_orientation(ScreenOrientation p_orientation) {
 
 OS::ScreenOrientation OS_Android::get_screen_orientation() const {
 	const int orientation = godot_io_java->get_screen_orientation();
+	ERR_FAIL_INDEX_V_MSG(orientation, 7, OS::ScreenOrientation(0), "Unrecognized screen orientation.");
 	return OS::ScreenOrientation(orientation);
 }
 
@@ -481,10 +498,18 @@ String OS_Android::get_system_dir(SystemDir p_dir, bool p_shared_storage) const 
 	return godot_io_java->get_system_dir(p_dir, p_shared_storage);
 }
 
-void OS_Android::set_context_is_16_bits(bool p_is_16) {
-	//use_16bits_fbo = p_is_16;
-	//if (rasterizer)
-	//	rasterizer->set_force_16_bits_fbo(p_is_16);
+void OS_Android::set_offscreen_gl_available(bool p_available) {
+	secondary_gl_available = p_available;
+}
+
+bool OS_Android::is_offscreen_gl_available() const {
+	return secondary_gl_available;
+}
+
+void OS_Android::set_offscreen_gl_current(bool p_current) {
+	if (secondary_gl_available) {
+		godot_java->set_offscreen_gl_current(nullptr, p_current);
+	}
 }
 
 bool OS_Android::is_joy_known(int p_device) {

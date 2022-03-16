@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2021 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2021 Godot Engine contributors (cf. AUTHORS.md).   */
+/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -32,13 +32,14 @@
 
 #include "core/os/input.h"
 #include "core/os/keyboard.h"
+#include "core/version_generated.gen.h"
 #include "doc_data_compressed.gen.h"
 #include "editor/plugins/script_editor_plugin.h"
 #include "editor_node.h"
 #include "editor_scale.h"
 #include "editor_settings.h"
 
-#define CONTRIBUTE_URL "https://docs.godotengine.org/en/latest/community/contributing/updating_the_class_reference.html"
+#define CONTRIBUTE_URL vformat("%s/community/contributing/updating_the_class_reference.html", VERSION_DOCS_URL)
 
 DocData *EditorHelp::doc = nullptr;
 
@@ -233,8 +234,7 @@ void EditorHelp::_add_method(const DocData::MethodDoc &p_method, bool p_overview
 		class_desc->push_cell();
 		class_desc->push_align(RichTextLabel::ALIGN_RIGHT);
 	} else {
-		static const CharType prefix[3] = { 0x25CF /* filled circle */, ' ', 0 };
-		class_desc->add_text(String(prefix));
+		_add_bulletpoint();
 	}
 
 	_add_type(p_method.return_type, p_method.return_enum);
@@ -308,6 +308,11 @@ void EditorHelp::_add_method(const DocData::MethodDoc &p_method, bool p_overview
 	if (p_overview) {
 		class_desc->pop(); //cell
 	}
+}
+
+void EditorHelp::_add_bulletpoint() {
+	static const CharType prefix[3] = { 0x25CF /* filled circle */, ' ', 0 };
+	class_desc->add_text(String(prefix));
 }
 
 Error EditorHelp::_goto_desc(const String &p_class, int p_vscr) {
@@ -506,19 +511,20 @@ void EditorHelp::_update_doc() {
 		class_desc->add_newline();
 		class_desc->push_font(doc_code_font);
 		class_desc->push_indent(1);
-		class_desc->push_table(2);
+		class_desc->push_table(3);
 		class_desc->set_table_column_expand(1, true);
 
 		for (int i = 0; i < cd.properties.size(); i++) {
 			property_line[cd.properties[i].name] = class_desc->get_line_count() - 2; //gets overridden if description
 
+			// Property type.
 			class_desc->push_cell();
 			class_desc->push_align(RichTextLabel::ALIGN_RIGHT);
 			class_desc->push_font(doc_code_font);
 			_add_type(cd.properties[i].type, cd.properties[i].enumeration);
 			class_desc->pop();
 			class_desc->pop();
-			class_desc->pop();
+			class_desc->pop(); // cell
 
 			bool describe = false;
 
@@ -539,6 +545,7 @@ void EditorHelp::_update_doc() {
 				describe = false;
 			}
 
+			// Property name.
 			class_desc->push_cell();
 			class_desc->push_font(doc_code_font);
 			class_desc->push_color(headline_color);
@@ -554,25 +561,41 @@ void EditorHelp::_update_doc() {
 				property_descr = true;
 			}
 
+			class_desc->pop();
+			class_desc->pop();
+			class_desc->pop(); // cell
+
+			// Property value.
+			class_desc->push_cell();
+			class_desc->push_font(doc_code_font);
+
 			if (cd.properties[i].default_value != "") {
 				class_desc->push_color(symbol_color);
-				class_desc->add_text(cd.properties[i].overridden ? " [" + TTR("override:") + " " : " [" + TTR("default:") + " ");
+				if (cd.properties[i].overridden) {
+					class_desc->add_text(" [");
+					class_desc->push_meta("@member " + cd.properties[i].overrides + "." + cd.properties[i].name);
+					_add_text(vformat(TTR("overrides %s:"), cd.properties[i].overrides));
+					class_desc->pop();
+					class_desc->add_text(" ");
+				} else {
+					class_desc->add_text(" [" + TTR("default:") + " ");
+				}
 				class_desc->pop();
+
 				class_desc->push_color(value_color);
 				_add_text(_fix_constant(cd.properties[i].default_value));
 				class_desc->pop();
+
 				class_desc->push_color(symbol_color);
 				class_desc->add_text("]");
 				class_desc->pop();
 			}
 
 			class_desc->pop();
-			class_desc->pop();
-
-			class_desc->pop();
+			class_desc->pop(); // cell
 		}
 
-		class_desc->pop(); //table
+		class_desc->pop(); // table
 		class_desc->pop();
 		class_desc->pop(); // font
 		class_desc->add_newline();
@@ -676,27 +699,53 @@ void EditorHelp::_update_doc() {
 		class_desc->pop();
 		class_desc->pop();
 
+		class_desc->add_newline();
+		class_desc->add_newline();
+
 		class_desc->push_indent(1);
-		class_desc->push_table(2);
-		class_desc->set_table_column_expand(1, true);
+
+		String theme_data_type;
+		Map<String, String> data_type_names;
+		data_type_names["color"] = TTR("Colors");
+		data_type_names["constant"] = TTR("Constants");
+		data_type_names["font"] = TTR("Fonts");
+		data_type_names["icon"] = TTR("Icons");
+		data_type_names["style"] = TTR("Styles");
 
 		for (int i = 0; i < cd.theme_properties.size(); i++) {
 			theme_property_line[cd.theme_properties[i].name] = class_desc->get_line_count() - 2; //gets overridden if description
 
-			class_desc->push_cell();
-			class_desc->push_align(RichTextLabel::ALIGN_RIGHT);
-			class_desc->push_font(doc_code_font);
-			_add_type(cd.theme_properties[i].type);
-			class_desc->pop();
-			class_desc->pop();
-			class_desc->pop();
+			if (theme_data_type != cd.theme_properties[i].data_type) {
+				theme_data_type = cd.theme_properties[i].data_type;
 
-			class_desc->push_cell();
+				class_desc->push_color(title_color);
+				class_desc->push_font(doc_bold_font);
+				if (data_type_names.has(theme_data_type)) {
+					class_desc->add_text(data_type_names[theme_data_type]);
+				} else {
+					class_desc->add_text("");
+				}
+				class_desc->pop();
+				class_desc->pop();
+
+				class_desc->add_newline();
+				class_desc->add_newline();
+			}
+
+			// Theme item header.
 			class_desc->push_font(doc_code_font);
+			_add_bulletpoint();
+
+			// Theme item object type.
+			_add_type(cd.theme_properties[i].type);
+
+			// Theme item name.
 			class_desc->push_color(headline_color);
+			class_desc->add_text(" ");
 			_add_text(cd.theme_properties[i].name);
 			class_desc->pop();
 
+			// Theme item default value.
 			if (cd.theme_properties[i].default_value != "") {
 				class_desc->push_color(symbol_color);
 				class_desc->add_text(" [" + TTR("default:") + " ");
@@ -709,22 +758,24 @@ void EditorHelp::_update_doc() {
 				class_desc->pop();
 			}
 
-			class_desc->pop();
+			class_desc->pop(); // monofont
 
+			// Theme item description.
 			if (cd.theme_properties[i].description != "") {
 				class_desc->push_font(doc_font);
-				class_desc->add_text("  ");
 				class_desc->push_color(comment_color);
+				class_desc->push_indent(1);
 				_add_text(DTR(cd.theme_properties[i].description));
-				class_desc->pop();
-				class_desc->pop();
+				class_desc->pop(); // indent
+				class_desc->pop(); // color
+				class_desc->pop(); // font
 			}
-			class_desc->pop(); // cell
+
+			class_desc->add_newline();
+			class_desc->add_newline();
 		}
 
-		class_desc->pop(); // table
 		class_desc->pop();
-		class_desc->add_newline();
 		class_desc->add_newline();
 	}
 
@@ -748,10 +799,10 @@ void EditorHelp::_update_doc() {
 
 		for (int i = 0; i < cd.signals.size(); i++) {
 			signal_line[cd.signals[i].name] = class_desc->get_line_count() - 2; //gets overridden if description
+
 			class_desc->push_font(doc_code_font); // monofont
 			class_desc->push_color(headline_color);
-			static const CharType prefix[3] = { 0x25CF /* filled circle */, ' ', 0 };
-			class_desc->add_text(String(prefix));
+			_add_bulletpoint();
 			_add_text(cd.signals[i].name);
 			class_desc->pop();
 			class_desc->push_color(symbol_color);
@@ -865,8 +916,7 @@ void EditorHelp::_update_doc() {
 
 					class_desc->push_font(doc_code_font);
 					class_desc->push_color(headline_color);
-					static const CharType prefix[3] = { 0x25CF /* filled circle */, ' ', 0 };
-					class_desc->add_text(String(prefix));
+					_add_bulletpoint();
 					_add_text(enum_list[i].name);
 					class_desc->pop();
 					class_desc->push_color(symbol_color);
@@ -876,11 +926,12 @@ void EditorHelp::_update_doc() {
 					_add_text(_fix_constant(enum_list[i].value));
 					class_desc->pop();
 					class_desc->pop();
-					if (enum_list[i].description != "") {
+
+					class_desc->add_newline();
+
+					if (enum_list[i].description.strip_edges() != "") {
 						class_desc->push_font(doc_font);
 						class_desc->push_color(comment_color);
-						static const CharType dash[6] = { ' ', ' ', 0x2013 /* en dash */, ' ', ' ', 0 };
-						class_desc->add_text(String(dash));
 						_add_text(DTR(enum_list[i].description));
 						class_desc->pop();
 						class_desc->pop();
@@ -926,13 +977,11 @@ void EditorHelp::_update_doc() {
 					Vector<float> color = stripped.split_floats(",");
 					if (color.size() >= 3) {
 						class_desc->push_color(Color(color[0], color[1], color[2]));
-						static const CharType prefix[3] = { 0x25CF /* filled circle */, ' ', 0 };
-						class_desc->add_text(String(prefix));
+						_add_bulletpoint();
 						class_desc->pop();
 					}
 				} else {
-					static const CharType prefix[3] = { 0x25CF /* filled circle */, ' ', 0 };
-					class_desc->add_text(String(prefix));
+					_add_bulletpoint();
 				}
 
 				class_desc->push_color(headline_color);
@@ -946,11 +995,12 @@ void EditorHelp::_update_doc() {
 				class_desc->pop();
 
 				class_desc->pop();
+
+				class_desc->add_newline();
+
 				if (constants[i].description != "") {
 					class_desc->push_font(doc_font);
 					class_desc->push_color(comment_color);
-					static const CharType dash[6] = { ' ', ' ', 0x2013 /* en dash */, ' ', ' ', 0 };
-					class_desc->add_text(String(dash));
 					_add_text(DTR(constants[i].description));
 					class_desc->pop();
 					class_desc->pop();
@@ -991,8 +1041,7 @@ void EditorHelp::_update_doc() {
 
 			class_desc->push_cell();
 			class_desc->push_font(doc_code_font);
-			static const CharType prefix[3] = { 0x25CF /* filled circle */, ' ', 0 };
-			class_desc->add_text(String(prefix));
+			_add_bulletpoint();
 
 			_add_type(cd.properties[i].type, cd.properties[i].enumeration);
 			class_desc->add_text(" ");
@@ -1303,22 +1352,26 @@ static void _add_text_to_rt(const String &p_bbcode, RichTextLabel *p_rt) {
 			pos = brk_pos + 1;
 
 		} else if (tag.begins_with("method ") || tag.begins_with("member ") || tag.begins_with("signal ") || tag.begins_with("enum ") || tag.begins_with("constant ")) {
-			int tag_end = tag.find(" ");
+			const int tag_end = tag.find(" ");
+			const String link_tag = tag.substr(0, tag_end);
+			const String link_target = tag.substr(tag_end + 1, tag.length()).lstrip(" ");
 
-			String link_tag = tag.substr(0, tag_end);
-			String link_target = tag.substr(tag_end + 1, tag.length()).lstrip(" ");
-
+			p_rt->push_font(doc_code_font);
 			p_rt->push_color(link_color);
 			p_rt->push_meta("@" + link_tag + " " + link_target);
 			p_rt->add_text(link_target + (tag.begins_with("method ") ? "()" : ""));
 			p_rt->pop();
 			p_rt->pop();
+			p_rt->pop();
 			pos = brk_end + 1;
 
 		} else if (doc->class_list.has(tag)) {
+			// Class reference tag such as [Node2D] or [SceneTree].
+			p_rt->push_font(doc_code_font);
 			p_rt->push_color(link_color);
 			p_rt->push_meta("#" + tag);
 			p_rt->add_text(tag);
+			p_rt->pop();
 			p_rt->pop();
 			p_rt->pop();
 			pos = brk_end + 1;

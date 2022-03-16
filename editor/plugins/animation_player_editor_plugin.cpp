@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2021 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2021 Godot Engine contributors (cf. AUTHORS.md).   */
+/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -152,6 +152,8 @@ void AnimationPlayerEditor::_notification(int p_what) {
 			ITEM_ICON(TOOL_EDIT_TRANSITIONS, "Blend");
 			ITEM_ICON(TOOL_EDIT_RESOURCE, "Edit");
 			ITEM_ICON(TOOL_REMOVE_ANIM, "Remove");
+
+			_update_animation_list_icons();
 		} break;
 	}
 }
@@ -306,7 +308,7 @@ void AnimationPlayerEditor::_animation_selected(int p_which) {
 }
 
 void AnimationPlayerEditor::_animation_new() {
-	renaming = false;
+	name_dialog_op = TOOL_NEW_ANIM;
 	name_title->set_text(TTR("New Animation Name:"));
 
 	int count = 1;
@@ -338,7 +340,7 @@ void AnimationPlayerEditor::_animation_rename() {
 
 	name_title->set_text(TTR("Change Animation Name:"));
 	name->set_text(selected_name);
-	renaming = true;
+	name_dialog_op = TOOL_RENAME_ANIM;
 	name_dialog->popup_centered(Size2(300, 90));
 	name->select_all();
 	name->grab_focus();
@@ -490,7 +492,7 @@ void AnimationPlayerEditor::_animation_name_edited() {
 		return;
 	}
 
-	if (renaming && animation->get_item_count() > 0 && animation->get_item_text(animation->get_selected()) == new_name) {
+	if (name_dialog_op == TOOL_RENAME_ANIM && animation->get_item_count() > 0 && animation->get_item_text(animation->get_selected()) == new_name) {
 		name_dialog->hide();
 		return;
 	}
@@ -501,37 +503,66 @@ void AnimationPlayerEditor::_animation_name_edited() {
 		return;
 	}
 
-	if (renaming) {
-		String current = animation->get_item_text(animation->get_selected());
-		Ref<Animation> anim = player->get_animation(current);
+	switch (name_dialog_op) {
+		case TOOL_RENAME_ANIM: {
+			String current = animation->get_item_text(animation->get_selected());
+			Ref<Animation> anim = player->get_animation(current);
 
-		undo_redo->create_action(TTR("Rename Animation"));
-		undo_redo->add_do_method(player, "rename_animation", current, new_name);
-		undo_redo->add_do_method(anim.ptr(), "set_name", new_name);
-		undo_redo->add_undo_method(player, "rename_animation", new_name, current);
-		undo_redo->add_undo_method(anim.ptr(), "set_name", current);
-		undo_redo->add_do_method(this, "_animation_player_changed", player);
-		undo_redo->add_undo_method(this, "_animation_player_changed", player);
-		undo_redo->commit_action();
+			undo_redo->create_action(TTR("Rename Animation"));
+			undo_redo->add_do_method(player, "rename_animation", current, new_name);
+			undo_redo->add_do_method(anim.ptr(), "set_name", new_name);
+			undo_redo->add_undo_method(player, "rename_animation", new_name, current);
+			undo_redo->add_undo_method(anim.ptr(), "set_name", current);
+			undo_redo->add_do_method(this, "_animation_player_changed", player);
+			undo_redo->add_undo_method(this, "_animation_player_changed", player);
+			undo_redo->commit_action();
 
-		_select_anim_by_name(new_name);
+			_select_anim_by_name(new_name);
+		} break;
 
-	} else {
-		Ref<Animation> new_anim = Ref<Animation>(memnew(Animation));
-		new_anim->set_name(new_name);
+		case TOOL_NEW_ANIM: {
+			Ref<Animation> new_anim = Ref<Animation>(memnew(Animation));
+			new_anim->set_name(new_name);
 
-		undo_redo->create_action(TTR("Add Animation"));
-		undo_redo->add_do_method(player, "add_animation", new_name, new_anim);
-		undo_redo->add_undo_method(player, "remove_animation", new_name);
-		undo_redo->add_do_method(this, "_animation_player_changed", player);
-		undo_redo->add_undo_method(this, "_animation_player_changed", player);
-		if (animation->get_item_count() == 0) {
-			undo_redo->add_do_method(this, "_start_onion_skinning");
-			undo_redo->add_undo_method(this, "_stop_onion_skinning");
-		}
-		undo_redo->commit_action();
+			undo_redo->create_action(TTR("Add Animation"));
+			undo_redo->add_do_method(player, "add_animation", new_name, new_anim);
+			undo_redo->add_undo_method(player, "remove_animation", new_name);
+			undo_redo->add_do_method(this, "_animation_player_changed", player);
+			undo_redo->add_undo_method(this, "_animation_player_changed", player);
+			if (animation->get_item_count() == 0) {
+				undo_redo->add_do_method(this, "_start_onion_skinning");
+				undo_redo->add_undo_method(this, "_stop_onion_skinning");
+			}
+			undo_redo->commit_action();
 
-		_select_anim_by_name(new_name);
+			_select_anim_by_name(new_name);
+		} break;
+
+		case TOOL_DUPLICATE_ANIM: {
+			String current = animation->get_item_text(animation->get_selected());
+			Ref<Animation> anim = player->get_animation(current);
+
+			Ref<Animation> new_anim = Ref<Animation>(memnew(Animation));
+			List<PropertyInfo> plist;
+			anim->get_property_list(&plist);
+			for (List<PropertyInfo>::Element *E = plist.front(); E; E = E->next()) {
+				if (E->get().usage & PROPERTY_USAGE_STORAGE) {
+					new_anim->set(E->get().name, anim->get(E->get().name));
+				}
+			}
+			new_anim->set_path("");
+			new_anim->set_name(new_name);
+
+			undo_redo->create_action(TTR("Duplicate Animation"));
+			undo_redo->add_do_method(player, "add_animation", new_name, new_anim);
+			undo_redo->add_undo_method(player, "remove_animation", new_name);
+			undo_redo->add_do_method(player, "animation_set_next", new_name, player->animation_get_next(current));
+			undo_redo->add_do_method(this, "_animation_player_changed", player);
+			undo_redo->add_undo_method(this, "_animation_player_changed", player);
+			undo_redo->commit_action();
+
+			_select_anim_by_name(new_name);
+		} break;
 	}
 
 	name_dialog->hide();
@@ -722,11 +753,11 @@ void AnimationPlayerEditor::_dialog_action(String p_file) {
 			Ref<Resource> res = ResourceLoader::load(p_file, "Animation");
 			ERR_FAIL_COND_MSG(res.is_null(), "Cannot load Animation from file '" + p_file + "'.");
 			ERR_FAIL_COND_MSG(!res->is_class("Animation"), "Loaded resource from file '" + p_file + "' is not Animation.");
-			if (p_file.find_last("/") != -1) {
-				p_file = p_file.substr(p_file.find_last("/") + 1, p_file.length());
+			if (p_file.rfind("/") != -1) {
+				p_file = p_file.substr(p_file.rfind("/") + 1, p_file.length());
 			}
-			if (p_file.find_last("\\") != -1) {
-				p_file = p_file.substr(p_file.find_last("\\") + 1, p_file.length());
+			if (p_file.rfind("\\") != -1) {
+				p_file = p_file.substr(p_file.rfind("\\") + 1, p_file.length());
 			}
 
 			if (p_file.find(".") != -1) {
@@ -831,22 +862,13 @@ void AnimationPlayerEditor::_update_player() {
 
 	int active_idx = -1;
 	for (List<StringName>::Element *E = animlist.front(); E; E = E->next()) {
-		Ref<Texture> icon;
-		if (E->get() == player->get_autoplay()) {
-			if (E->get() == "RESET") {
-				icon = autoplay_reset_icon;
-			} else {
-				icon = autoplay_icon;
-			}
-		} else if (E->get() == "RESET") {
-			icon = reset_icon;
-		}
-		animation->add_icon_item(icon, E->get());
+		animation->add_item(E->get());
 
 		if (player->get_assigned_animation() == E->get()) {
 			active_idx = animation->get_item_count() - 1;
 		}
 	}
+	_update_animation_list_icons();
 
 	updating = false;
 	if (active_idx != -1) {
@@ -873,6 +895,25 @@ void AnimationPlayerEditor::_update_player() {
 	}
 
 	_update_animation();
+}
+
+void AnimationPlayerEditor::_update_animation_list_icons() {
+	for (int i = 0; i < animation->get_item_count(); i++) {
+		String name = animation->get_item_text(i);
+
+		Ref<Texture> icon;
+		if (name == player->get_autoplay()) {
+			if (name == "RESET") {
+				icon = autoplay_reset_icon;
+			} else {
+				icon = autoplay_icon;
+			}
+		} else if (name == "RESET") {
+			icon = reset_icon;
+		}
+
+		animation->set_item_icon(i, icon);
+	}
 }
 
 void AnimationPlayerEditor::edit(AnimationPlayer *p_player) {
@@ -963,37 +1004,17 @@ void AnimationPlayerEditor::_animation_duplicate() {
 		return;
 	}
 
-	Ref<Animation> new_anim = memnew(Animation);
-	List<PropertyInfo> plist;
-	anim->get_property_list(&plist);
-	for (List<PropertyInfo>::Element *E = plist.front(); E; E = E->next()) {
-		if (E->get().usage & PROPERTY_USAGE_STORAGE) {
-			new_anim->set(E->get().name, anim->get(E->get().name));
-		}
-	}
-	new_anim->set_path("");
-
 	String new_name = current;
 	while (player->has_animation(new_name)) {
 		new_name = new_name + " (copy)";
 	}
-	new_anim->set_name(new_name);
 
-	undo_redo->create_action(TTR("Duplicate Animation"));
-	undo_redo->add_do_method(player, "add_animation", new_name, new_anim);
-	undo_redo->add_undo_method(player, "remove_animation", new_name);
-	undo_redo->add_do_method(player, "animation_set_next", new_name, player->animation_get_next(current));
-	undo_redo->add_do_method(this, "_animation_player_changed", player);
-	undo_redo->add_undo_method(this, "_animation_player_changed", player);
-	undo_redo->commit_action();
-
-	for (int i = 0; i < animation->get_item_count(); i++) {
-		if (animation->get_item_text(i) == new_name) {
-			animation->select(i);
-			_animation_selected(i);
-			return;
-		}
-	}
+	name_title->set_text(TTR("New Animation Name:"));
+	name->set_text(new_name);
+	name_dialog_op = TOOL_DUPLICATE_ANIM;
+	name_dialog->popup_centered(Size2(300, 90));
+	name->select_all();
+	name->grab_focus();
 }
 
 void AnimationPlayerEditor::_seek_value_changed(float p_value, bool p_set) {
@@ -1273,7 +1294,7 @@ void AnimationPlayerEditor::_allocate_onion_layers() {
 		bool is_present = onion.differences_only && i == captures - 1;
 
 		// Each capture is a viewport with a canvas item attached that renders a full-size rect with the contents of the main viewport.
-		onion.captures.write[i] = VS::get_singleton()->viewport_create();
+		onion.captures.write[i] = RID_PRIME(VS::get_singleton()->viewport_create());
 		VS::get_singleton()->viewport_set_usage(onion.captures[i], VS::VIEWPORT_USAGE_2D);
 		VS::get_singleton()->viewport_set_size(onion.captures[i], capture_size.width, capture_size.height);
 		VS::get_singleton()->viewport_set_update_mode(onion.captures[i], VS::VIEWPORT_UPDATE_ALWAYS);
@@ -1597,7 +1618,7 @@ AnimationPlayerEditor::AnimationPlayerEditor(EditorNode *p_editor, AnimationPlay
 	tool_anim->get_popup()->add_shortcut(ED_SHORTCUT("animation_player_editor/copy_animation", TTR("Copy")), TOOL_COPY_ANIM);
 	tool_anim->get_popup()->add_shortcut(ED_SHORTCUT("animation_player_editor/paste_animation", TTR("Paste")), TOOL_PASTE_ANIM);
 	tool_anim->get_popup()->add_separator();
-	tool_anim->get_popup()->add_shortcut(ED_SHORTCUT("animation_player_editor/duplicate_animation", TTR("Duplicate")), TOOL_DUPLICATE_ANIM);
+	tool_anim->get_popup()->add_shortcut(ED_SHORTCUT("animation_player_editor/duplicate_animation", TTR("Duplicate...")), TOOL_DUPLICATE_ANIM);
 	tool_anim->get_popup()->add_separator();
 	tool_anim->get_popup()->add_shortcut(ED_SHORTCUT("animation_player_editor/rename_animation", TTR("Rename...")), TOOL_RENAME_ANIM);
 	tool_anim->get_popup()->add_shortcut(ED_SHORTCUT("animation_player_editor/edit_transitions", TTR("Edit Transitions...")), TOOL_EDIT_TRANSITIONS);
@@ -1709,7 +1730,7 @@ AnimationPlayerEditor::AnimationPlayerEditor(EditorNode *p_editor, AnimationPlay
 	frame->connect("value_changed", this, "_seek_value_changed", Vector<Variant>(), true);
 	scale->connect("text_entered", this, "_scale_changed", Vector<Variant>(), true);
 
-	renaming = false;
+	name_dialog_op = TOOL_NEW_ANIM;
 	last_active = false;
 	timeline_position = 0;
 
@@ -1737,8 +1758,8 @@ AnimationPlayerEditor::AnimationPlayerEditor(EditorNode *p_editor, AnimationPlay
 	onion.last_frame = 0;
 	onion.can_overlay = false;
 	onion.capture_size = Size2();
-	onion.capture.canvas = VS::get_singleton()->canvas_create();
-	onion.capture.canvas_item = VS::get_singleton()->canvas_item_create();
+	onion.capture.canvas = RID_PRIME(VS::get_singleton()->canvas_create());
+	onion.capture.canvas_item = RID_PRIME(VS::get_singleton()->canvas_item_create());
 	VS::get_singleton()->canvas_item_set_parent(onion.capture.canvas_item, onion.capture.canvas);
 
 	onion.capture.material = Ref<ShaderMaterial>(memnew(ShaderMaterial));

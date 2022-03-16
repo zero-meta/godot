@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2021 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2021 Godot Engine contributors (cf. AUTHORS.md).   */
+/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -30,8 +30,13 @@
 
 #include "visual_server.h"
 
+#include "core/engine.h"
 #include "core/method_bind_ext.gen.inc"
 #include "core/project_settings.h"
+
+#ifdef TOOLS_ENABLED
+#include "editor/editor_settings.h"
+#endif
 
 VisualServer *VisualServer::singleton = nullptr;
 VisualServer *(*VisualServer::create_func)() = nullptr;
@@ -154,7 +159,7 @@ RID VisualServer::get_test_texture() {
 
 	Ref<Image> data = memnew(Image(TEST_TEXTURE_SIZE, TEST_TEXTURE_SIZE, false, Image::FORMAT_RGB8, test_data));
 
-	test_texture = texture_create_from_image(data);
+	test_texture = RID_PRIME(texture_create_from_image(data));
 
 	return test_texture;
 }
@@ -320,7 +325,7 @@ RID VisualServer::get_white_texture() {
 		}
 	}
 	Ref<Image> white = memnew(Image(4, 4, 0, Image::FORMAT_RGB8, wt));
-	white_texture = texture_create();
+	white_texture = RID_PRIME(texture_create());
 	texture_allocate(white_texture, 4, 4, 0, Image::FORMAT_RGB8, TEXTURE_TYPE_2D);
 	texture_set_data(white_texture, white);
 	return white_texture;
@@ -329,7 +334,7 @@ RID VisualServer::get_white_texture() {
 #define SMALL_VEC2 Vector2(0.00001, 0.00001)
 #define SMALL_VEC3 Vector3(0.00001, 0.00001, 0.00001)
 
-// Maps normalized vector to an octohedron projected onto the cartesian plane
+// Maps normalized vector to an octahedron projected onto the cartesian plane
 // Resulting 2D vector in range [-1, 1]
 // See http://jcgt.org/published/0003/02/01/ for details
 Vector2 VisualServer::norm_to_oct(const Vector3 v) {
@@ -357,7 +362,7 @@ Vector2 VisualServer::norm_to_oct(const Vector3 v) {
 }
 
 // Maps normalized tangent vector to an octahedron projected onto the cartesian plane
-// Encodes the tangent vector sign in the second componenet of the returned Vector2 for use in shaders
+// Encodes the tangent vector sign in the second component of the returned Vector2 for use in shaders
 // high_precision specifies whether the encoding will be 32 bit (true) or 16 bit (false)
 // Resulting 2D vector in range [-1, 1]
 // See http://jcgt.org/published/0003/02/01/ for details
@@ -1868,6 +1873,7 @@ void VisualServer::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("shader_get_param_list", "shader"), &VisualServer::_shader_get_param_list_bind);
 	ClassDB::bind_method(D_METHOD("shader_set_default_texture_param", "shader", "name", "texture"), &VisualServer::shader_set_default_texture_param);
 	ClassDB::bind_method(D_METHOD("shader_get_default_texture_param", "shader", "name"), &VisualServer::shader_get_default_texture_param);
+	ClassDB::bind_method(D_METHOD("set_shader_async_hidden_forbidden", "forbidden"), &VisualServer::set_shader_async_hidden_forbidden);
 
 	ClassDB::bind_method(D_METHOD("material_create"), &VisualServer::material_create);
 	ClassDB::bind_method(D_METHOD("material_set_shader", "shader_material", "shader"), &VisualServer::material_set_shader);
@@ -2138,6 +2144,7 @@ void VisualServer::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("instance_geometry_set_flag", "instance", "flag", "enabled"), &VisualServer::instance_geometry_set_flag);
 	ClassDB::bind_method(D_METHOD("instance_geometry_set_cast_shadows_setting", "instance", "shadow_casting_setting"), &VisualServer::instance_geometry_set_cast_shadows_setting);
 	ClassDB::bind_method(D_METHOD("instance_geometry_set_material_override", "instance", "material"), &VisualServer::instance_geometry_set_material_override);
+	ClassDB::bind_method(D_METHOD("instance_geometry_set_material_overlay", "instance", "material"), &VisualServer::instance_geometry_set_material_overlay);
 	ClassDB::bind_method(D_METHOD("instance_geometry_set_draw_range", "instance", "min", "max", "min_margin", "max_margin"), &VisualServer::instance_geometry_set_draw_range);
 	ClassDB::bind_method(D_METHOD("instance_geometry_set_as_instance_lod", "instance", "as_lod_of_instance"), &VisualServer::instance_geometry_set_as_instance_lod);
 
@@ -2223,7 +2230,7 @@ void VisualServer::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("free_rid", "rid"), &VisualServer::free); // shouldn't conflict with Object::free()
 
 	ClassDB::bind_method(D_METHOD("request_frame_drawn_callback", "where", "method", "userdata"), &VisualServer::request_frame_drawn_callback);
-	ClassDB::bind_method(D_METHOD("has_changed"), &VisualServer::has_changed);
+	ClassDB::bind_method(D_METHOD("has_changed", "queried_priority"), &VisualServer::has_changed, DEFVAL(CHANGED_PRIORITY_ANY));
 	ClassDB::bind_method(D_METHOD("init"), &VisualServer::init);
 	ClassDB::bind_method(D_METHOD("finish"), &VisualServer::finish);
 	ClassDB::bind_method(D_METHOD("get_render_info", "info"), &VisualServer::get_render_info);
@@ -2515,6 +2522,10 @@ void VisualServer::_bind_methods() {
 	BIND_ENUM_CONSTANT(ENV_SSAO_BLUR_2x2);
 	BIND_ENUM_CONSTANT(ENV_SSAO_BLUR_3x3);
 
+	BIND_ENUM_CONSTANT(CHANGED_PRIORITY_ANY);
+	BIND_ENUM_CONSTANT(CHANGED_PRIORITY_LOW);
+	BIND_ENUM_CONSTANT(CHANGED_PRIORITY_HIGH);
+
 	ADD_SIGNAL(MethodInfo("frame_pre_draw"));
 	ADD_SIGNAL(MethodInfo("frame_post_draw"));
 }
@@ -2582,6 +2593,16 @@ void VisualServer::set_render_loop_enabled(bool p_enabled) {
 	render_loop_enabled = p_enabled;
 }
 
+#ifdef DEBUG_ENABLED
+bool VisualServer::is_force_shader_fallbacks_enabled() const {
+	return force_shader_fallbacks;
+}
+
+void VisualServer::set_force_shader_fallbacks_enabled(bool p_enabled) {
+	force_shader_fallbacks = p_enabled;
+}
+#endif
+
 VisualServer::VisualServer() {
 	//ERR_FAIL_COND(singleton);
 	singleton = this;
@@ -2599,7 +2620,7 @@ VisualServer::VisualServer() {
 	GLOBAL_DEF("rendering/limits/time/time_rollover_secs", 3600);
 	ProjectSettings::get_singleton()->set_custom_property_info("rendering/limits/time/time_rollover_secs", PropertyInfo(Variant::REAL, "rendering/limits/time/time_rollover_secs", PROPERTY_HINT_RANGE, "0,10000,1,or_greater"));
 
-	GLOBAL_DEF_RST("rendering/quality/directional_shadow/size", 4096);
+	GLOBAL_DEF("rendering/quality/directional_shadow/size", 4096);
 	GLOBAL_DEF("rendering/quality/directional_shadow/size.mobile", 2048);
 	ProjectSettings::get_singleton()->set_custom_property_info("rendering/quality/directional_shadow/size", PropertyInfo(Variant::INT, "rendering/quality/directional_shadow/size", PROPERTY_HINT_RANGE, "256,16384"));
 	GLOBAL_DEF_RST("rendering/quality/shadow_atlas/size", 4096);
@@ -2701,6 +2722,25 @@ VisualServer::VisualServer() {
 	// Occlusion culling
 	GLOBAL_DEF("rendering/misc/occlusion_culling/max_active_spheres", 8);
 	ProjectSettings::get_singleton()->set_custom_property_info("rendering/misc/occlusion_culling/max_active_spheres", PropertyInfo(Variant::INT, "rendering/misc/occlusion_culling/max_active_spheres", PROPERTY_HINT_RANGE, "0,64"));
+	GLOBAL_DEF("rendering/misc/occlusion_culling/max_active_polygons", 8);
+	ProjectSettings::get_singleton()->set_custom_property_info("rendering/misc/occlusion_culling/max_active_polygons", PropertyInfo(Variant::INT, "rendering/misc/occlusion_culling/max_active_polygons", PROPERTY_HINT_RANGE, "0,64"));
+
+	// Async. compilation and caching
+#ifdef DEBUG_ENABLED
+	if (!Engine::get_singleton()->is_editor_hint()) {
+		force_shader_fallbacks = GLOBAL_GET("rendering/gles3/shaders/debug_shader_fallbacks");
+	}
+#endif
+	GLOBAL_DEF("rendering/gles3/shaders/shader_compilation_mode", 0);
+	ProjectSettings::get_singleton()->set_custom_property_info("rendering/gles3/shaders/shader_compilation_mode", PropertyInfo(Variant::INT, "rendering/gles3/shaders/shader_compilation_mode", PROPERTY_HINT_ENUM, "Synchronous,Asynchronous,Asynchronous + Cache"));
+	GLOBAL_DEF("rendering/gles3/shaders/shader_compilation_mode.mobile", 0);
+	GLOBAL_DEF("rendering/gles3/shaders/max_simultaneous_compiles", 2);
+	ProjectSettings::get_singleton()->set_custom_property_info("rendering/gles3/shaders/max_simultaneous_compiles", PropertyInfo(Variant::INT, "rendering/gles3/shaders/max_simultaneous_compiles", PROPERTY_HINT_RANGE, "1,8,1"));
+	GLOBAL_DEF("rendering/gles3/shaders/max_simultaneous_compiles.mobile", 1);
+	GLOBAL_DEF("rendering/gles3/shaders/log_active_async_compiles_count", false);
+	GLOBAL_DEF("rendering/gles3/shaders/shader_cache_size_mb", 512);
+	ProjectSettings::get_singleton()->set_custom_property_info("rendering/gles3/shaders/shader_cache_size_mb", PropertyInfo(Variant::INT, "rendering/gles3/shaders/shader_cache_size_mb", PROPERTY_HINT_RANGE, "128,4096,128"));
+	GLOBAL_DEF("rendering/gles3/shaders/shader_cache_size_mb.mobile", 128);
 }
 
 VisualServer::~VisualServer() {

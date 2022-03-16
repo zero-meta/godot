@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2021 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2021 Godot Engine contributors (cf. AUTHORS.md).   */
+/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -146,6 +146,10 @@ bool OS::is_in_low_processor_usage_mode() const {
 	return low_processor_usage_mode;
 }
 
+void OS::set_update_vital_only(bool p_enabled) {
+	_update_vital_only = p_enabled;
+}
+
 void OS::set_low_processor_usage_mode_sleep_usec(int p_usec) {
 	low_processor_usage_mode_sleep_usec = p_usec;
 }
@@ -157,8 +161,21 @@ int OS::get_low_processor_usage_mode_sleep_usec() const {
 void OS::set_clipboard(const String &p_text) {
 	_local_clipboard = p_text;
 }
+
 String OS::get_clipboard() const {
 	return _local_clipboard;
+}
+
+bool OS::has_clipboard() const {
+	return !get_clipboard().empty();
+}
+
+void OS::set_clipboard_primary(const String &p_text) {
+	_primary_clipboard = p_text;
+}
+
+String OS::get_clipboard_primary() const {
+	return _primary_clipboard;
 }
 
 String OS::get_executable_path() const {
@@ -213,6 +230,10 @@ void OS::hide_virtual_keyboard() {
 
 int OS::get_virtual_keyboard_height() const {
 	return 0;
+}
+
+uint32_t OS::keyboard_get_scancode_from_physical(uint32_t p_scancode) const {
+	return p_scancode;
 }
 
 void OS::set_cursor_shape(CursorShape p_shape) {
@@ -478,7 +499,7 @@ String OS::get_model_name() const {
 }
 
 void OS::set_cmdline(const char *p_execpath, const List<String> &p_args) {
-	_execpath = p_execpath;
+	_execpath = String::utf8(p_execpath);
 	_cmdline = p_args;
 };
 
@@ -497,6 +518,10 @@ String OS::get_unique_id() const {
 
 int OS::get_processor_count() const {
 	return 1;
+}
+
+String OS::get_processor_name() const {
+	return "";
 }
 
 Error OS::native_video_play(String p_path, float p_volume, String p_audio_track, String p_subtitle_track) {
@@ -673,6 +698,15 @@ bool OS::has_feature(const String &p_feature) {
 	if (p_feature == "riscv") {
 		return true;
 	}
+#elif defined(__powerpc__)
+#if defined(__powerpc64__)
+	if (p_feature == "ppc64") {
+		return true;
+	}
+#endif
+	if (p_feature == "ppc") {
+		return true;
+	}
 #endif
 
 	if (_check_internal_feature_support(p_feature)) {
@@ -718,6 +752,12 @@ const char *OS::get_video_driver_name(int p_driver) const {
 			return "GLES3";
 	}
 }
+
+bool OS::is_offscreen_gl_available() const {
+	return false;
+}
+
+void OS::set_offscreen_gl_current(bool p_current) {}
 
 int OS::get_audio_driver_count() const {
 	return AudioDriverManager::get_driver_count();
@@ -810,6 +850,8 @@ OS::OS() {
 	_keep_screen_on = true; // set default value to true, because this had been true before godot 2.0.
 	low_processor_usage_mode = false;
 	low_processor_usage_mode_sleep_usec = 10000;
+	_update_vital_only = false;
+	_update_pending = false;
 	_verbose_stdout = false;
 	_debug_stdout = false;
 	_no_window = false;

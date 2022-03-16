@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2021 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2021 Godot Engine contributors (cf. AUTHORS.md).   */
+/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -273,13 +273,13 @@ Light::Light(VisualServer::LightType p_type) {
 	type = p_type;
 	switch (p_type) {
 		case VS::LIGHT_DIRECTIONAL:
-			light = VisualServer::get_singleton()->directional_light_create();
+			light = RID_PRIME(VisualServer::get_singleton()->directional_light_create());
 			break;
 		case VS::LIGHT_OMNI:
-			light = VisualServer::get_singleton()->omni_light_create();
+			light = RID_PRIME(VisualServer::get_singleton()->omni_light_create());
 			break;
 		case VS::LIGHT_SPOT:
-			light = VisualServer::get_singleton()->spot_light_create();
+			light = RID_PRIME(VisualServer::get_singleton()->spot_light_create());
 			break;
 		default: {
 		};

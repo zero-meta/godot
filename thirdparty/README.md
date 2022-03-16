@@ -8,7 +8,7 @@ readability.
 ## bullet
 
 - Upstream: https://github.com/bulletphysics/bullet3
-- Version: 3.17 (ebe1916b90acae8b13cd8c6b637d8327cdc64e94, 2021)
+- Version: 3.21 (6a59241074720e9df119f2f86bc01765917feb1e, 2021)
 - License: zlib
 
 Files extracted from upstream source:
@@ -118,14 +118,14 @@ comments.
 ## freetype
 
 - Upstream: https://www.freetype.org
-- Version: 2.10.4 (6a2b3e4007e794bfc6c91030d0ed987f925164a8, 2020)
+- Version: 2.11.1 (3f83daeecb1a78d851b660eed025eeba362c0e4a, 2021)
 - License: FreeType License (BSD-like)
 
 Files extracted from upstream source:
 
-- the `src/` folder, stripped of the `Jamfile` files and the `tools` subfolder
-- the `include/` folder
-- `docs/{FTL.TXT,LICENSE.TXT}`
+- the `src/` folder, minus the `.mk` files and the `dlg` and `tools` subfolders
+- the `include/` folder, minus the `dlg` subfolder
+- `LICENSE.TXT` and `docs/FTL.TXT`
 
 
 ## glad
@@ -153,14 +153,14 @@ Files extracted from upstream source:
 ## libogg
 
 - Upstream: https://www.xiph.org/ogg
-- Version: git (c8fca6b4a02d695b1ceea39b330d4406001c03ed, 2019)
+- Version: 1.3.5 (e1774cd77f471443541596e09078e78fdc342e4f, 2021)
 - License: BSD-3-Clause
 
 Files extracted from upstream source:
 
 - `src/*.{c,h}`
-- `include/ogg/*.h` in ogg/
-- COPYING
+- `include/ogg/*.h` in `ogg/` (run `configure` to generate `config_types.h`)
+- `COPYING`
 
 
 ## libpng
@@ -216,14 +216,14 @@ on top of the 1.1.1 source (not included in any stable release yet).
 ## libvorbis
 
 - Upstream: https://www.xiph.org/vorbis
-- Version: 1.3.6 (2018)
+- Version: 1.3.7 (0657aee69dec8508a0011f47f3b69d7538e9d262, 2020)
 - License: BSD-3-Clause
 
 Files extracted from upstream source:
 
-- `src/*` except from: `lookups.pl`, `Makefile.*`
-- `include/vorbis/*.h` as vorbis/
-- COPYING
+- `lib/*` except from: `lookups.pl`, `Makefile.*`
+- `include/vorbis/*.h` as `vorbis/`
+- `COPYING`
 
 
 ## libvpx
@@ -246,42 +246,43 @@ from the Android NDK r18.
 ## libwebp
 
 - Upstream: https://chromium.googlesource.com/webm/libwebp/
-- Version: 1.1.0 (d7844e9762b61c9638c263657bd49e1690184832, 2020)
+- Version: 1.2.2 (b0a860891dcd4c0c2d7c6149e5cccb6eb881cc21, 2022)
 - License: BSD-3-Clause
 
 Files extracted from upstream source:
 
-- `src/*` except from: .am, .rc and .in files
-- AUTHORS, COPYING, PATENTS
-
-Important: The files `utils/bit_reader_utils.{c,h}` have Godot-made
-changes to ensure they build for Javascript/HTML5. Those
-changes are marked with `// -- GODOT --` comments.
+- `src/*` except from: `.am`, `.rc` and `.in` files
+- `AUTHORS`, `COPYING`, `PATENTS`
 
 
 ## mbedtls
 
 - Upstream: https://tls.mbed.org/
-- Version: 2.16.11 (aa1d4e097342af799ba80dfb13640efef498227c, 2021)
+- Version: 2.16.12 (cf4667126010c665341f9e50ef691b7ef8294188, 2021)
 - License: Apache 2.0
 
 File extracted from upstream release tarball:
 
-- All `*.h` from `include/mbedtls/` to `thirdparty/mbedtls/include/mbedtls/`.
-- All `*.c` from `library/` to `thirdparty/mbedtls/library/`.
+- All `*.h` from `include/mbedtls/` to `thirdparty/mbedtls/include/mbedtls/` except `config_psa.h` and `psa_util.h`.
+- All `*.c` and `*.h` from `library/` to `thirdparty/mbedtls/library/` except those starting with `psa_*`.
 - `LICENSE` and `apache-2.0.txt` files.
 - Applied the patch in `patches/1453.diff` (upstream PR:
   https://github.com/ARMmbed/mbedtls/pull/1453).
-- Applied the patch in `patches/padlock.diff`. This disables VIA padlock
-  support which defines a symbol `unsupported` which clashes with a
-  pre-defined symbol.
-- Applied the patch in `patches/pr4948-fix-clang12-opt.patch`. Upstream bugfix
-  from PR 4948 to fix a bug caused by Clang 12 optimizations.
-- Applied the patch in `patches/pr4819-faster-base64.patch`. This fixes a certs
-  parsing speed regression since 2.16.10 (upstream PR:
-  https://github.com/ARMmbed/mbedtls/pull/4819).
 - Added 2 files `godot_core_mbedtls_platform.c` and `godot_core_mbedtls_config.h`
   providing configuration for light bundling with core.
+
+
+## minimp3
+
+- Upstream: https://github.com/lieff/minimp3
+- Version: git (afb604c06bc8beb145fecd42c0ceb5bda8795144, 2021)
+- License: CC0 1.0
+
+Files extracted from upstream repository:
+
+- `minimp3.h`
+- `minimp3_ex.h`
+- `LICENSE`
 
 
 ## miniupnpc
@@ -363,8 +364,8 @@ Collection of single-file libraries used in Godot components.
   * Modifications: use `const char*` instead of `char*` for input string
 - `stb_rect_pack.h`
   * Upstream: https://github.com/nothings/stb
-  * Version: 1.00
-  * License: Public Domain (Unlicense) or MIT
+  * Version: 1.01 (af1a5bc352164740c1cc1354942b1c6b72eacb8a, 2021)
+  * License: Public Domain or Unlicense or MIT
 - `stb_vorbis.c`
   * Upstream: https://github.com/nothings/stb
   * Version: 1.20 (314d0a6f9af5af27e585336eecea333e95c5a2d8, 2020)
@@ -442,7 +443,7 @@ Files extracted from upstream source:
 ## pcre2
 
 - Upstream: http://www.pcre.org
-- Version: 10.36 (r1288, 2020)
+- Version: 10.39 (35fee4193b852cb504892352bd0155de10809889, 2021)
 - License: BSD-3-Clause
 
 Files extracted from upstream source:
@@ -480,6 +481,22 @@ Files extracted from upstream source:
 - License.txt
 
 
+## rvo2
+
+- Upstream: https://github.com/snape/RVO2-3D
+- Version: 1.0.1 (e3883f288a9e55ecfed3633a01af3e12778c6acf, 2016)
+- License: Apache 2.0
+
+Files extracted from upstream source:
+
+- All .cpp and .h files in the `src/` folder except for RVO.h, RVOSimulator.cpp and RVOSimulator.h
+- LICENSE
+
+Important: Some files have Godot-made changes; so to enrich the features
+originally proposed by this library and better integrate this library with
+Godot. Please check the file to know what's new.
+
+
 ## squish
 
 - Upstream: https://sourceforge.net/projects/libsquish
@@ -498,12 +515,15 @@ comments and a patch is provided in the squish/ folder.
 ## tinyexr
 
 - Upstream: https://github.com/syoyo/tinyexr
-- Version: 1.0.0 (e4b7840d9448b7d57a88384ce26143004f3c0c71, 2020)
+- Version: 1.0.1 (67010eae802211202d0797f4df2b809f4ba7442c, 2021)
 - License: BSD-3-Clause
 
 Files extracted from upstream source:
 
 - `tinyexr.{cc,h}`
+
+The `tinyexr.cc` file was modified to include `zlib.h` which we provide,
+instead of `miniz.h` as an external dependency.
 
 
 ## vhacd
@@ -526,25 +546,29 @@ folder.
 ## wslay
 
 - Upstream: https://github.com/tatsuhiro-t/wslay
-- Version: 1.1.1 (c9a84aa6df8512584c77c8cd15be9536b89c35aa, 2020)
+- Version: 1.1.1+git (45d22583b488f79d5a4e598cc7675c191c5ab53f, 2021)
 - License: MIT
 
 File extracted from upstream release tarball:
 
-- All `*.c` and `*.h` in `lib/` and `lib/includes/`
-- `wslay.h` has a small Godot addition to fix MSVC build.
-  See `thirdparty/wslay/msvcfix.diff`
+- Run `cmake .` to generate `config.h` and `wslayver.h`.
+  Contents might need tweaking for Godot, review diff.
+- All `*.c` and `*.h` files from `lib/`
+- All `*.h` in `lib/includes/wslay/` as `wslay/`
+- `wslay/wslay.h` has a small Godot addition to fix MSVC build.
+  See `patches/msvcfix.diff`
+- `COPYING`
 
 
 ## xatlas
 
 - Upstream: https://github.com/jpcy/xatlas
-- Version: git (5571fc7ef0d06832947c0a935ccdcf083f7a9264, 2020)
+- Version: git (ec707faeac3b95e6b416076a9509718cce105b6a, 2021)
 - License: MIT
 
 Files extracted from upstream source:
 
-- `xatlas.{cpp,h}`
+- `source/xatlas/xatlas.{cpp,h}`
 - `LICENSE`
 
 
@@ -562,10 +586,10 @@ Files extracted from upstream source:
 ## zstd
 
 - Upstream: https://github.com/facebook/zstd
-- Version: 1.4.8 (97a3da1df009d4dc67251de0c4b1c9d7fe286fc1, 2020)
+- Version: 1.5.0 (a488ba114ec17ea1054b9057c26a046fc122b3b6, 2021)
 - License: BSD-3-Clause
 
 Files extracted from upstream source:
 
-- lib/{common/,compress/,decompress/,zstd.h}
-- LICENSE
+- `lib/{common/,compress/,decompress/,zstd.h,zstd_errors.h}`
+- `LICENSE`

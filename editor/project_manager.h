@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2021 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2021 Godot Engine contributors (cf. AUTHORS.md).   */
+/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -104,7 +104,6 @@ class ProjectManager : public Control {
 	void _update_project_buttons();
 	void _language_selected(int p_id);
 	void _restart_confirm();
-	void _exit_dialog();
 	void _scan_begin(const String &p_base);
 	void _global_menu_action(const Variant &p_id, const Variant &p_meta);
 
@@ -113,7 +112,6 @@ class ProjectManager : public Control {
 	void _load_recent_projects();
 	void _on_project_created(const String &dir);
 	void _on_projects_updated();
-	void _update_scroll_position(const String &dir);
 	void _scan_dir(const String &path, List<String> *r_projects);
 
 	void _install_project(const String &p_zip_path, const String &p_title);

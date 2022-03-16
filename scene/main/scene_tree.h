@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2021 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2021 Godot Engine contributors (cf. AUTHORS.md).   */
+/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -41,6 +41,7 @@
 
 class PackedScene;
 class Node;
+class Spatial;
 class Viewport;
 class Material;
 class Mesh;
@@ -50,6 +51,7 @@ class SceneTreeTimer : public Reference {
 
 	float time_left;
 	bool process_pause;
+	bool ignore_time_scale = false;
 
 protected:
 	static void _bind_methods();
@@ -60,6 +62,9 @@ public:
 
 	void set_pause_mode_process(bool p_pause_mode_process);
 	bool is_pause_mode_process();
+
+	void set_ignore_time_scale(bool p_ignore);
+	bool is_ignore_time_scale();
 
 	void release_connections();
 
@@ -98,6 +103,11 @@ private:
 		Group() { changed = false; };
 	};
 
+	struct ClientPhysicsInterpolation {
+		SelfList<Spatial>::List _spatials_list;
+		void physics_process();
+	} _client_physics_interpolation;
+
 	Viewport *root;
 
 	uint64_t tree_version;
@@ -117,6 +127,7 @@ private:
 	bool _quit;
 	bool initialized;
 	bool input_handled;
+	bool _physics_interpolation_enabled;
 
 	Size2 last_screen_size;
 	StringName tree_changed_name;
@@ -158,7 +169,6 @@ private:
 	void _flush_ugc();
 
 	_FORCE_INLINE_ void _update_group_order(Group &g, bool p_use_priority = false);
-	void _update_listener();
 
 	Array _get_nodes_in_group(const StringName &p_group);
 
@@ -316,9 +326,6 @@ public:
 	void set_pause(bool p_enabled);
 	bool is_paused() const;
 
-	void set_camera(const RID &p_camera);
-	RID get_camera() const;
-
 #ifdef DEBUG_ENABLED
 	void set_debug_collisions_hint(bool p_enabled);
 	bool is_debugging_collisions_hint() const;
@@ -406,6 +413,12 @@ public:
 
 	void set_refuse_new_network_connections(bool p_refuse);
 	bool is_refusing_new_network_connections() const;
+
+	void set_physics_interpolation_enabled(bool p_enabled);
+	bool is_physics_interpolation_enabled() const;
+
+	void client_physics_interpolation_add_spatial(SelfList<Spatial> *p_elem);
+	void client_physics_interpolation_remove_spatial(SelfList<Spatial> *p_elem);
 
 	static void add_idle_callback(IdleCallback p_callback);
 	SceneTree();

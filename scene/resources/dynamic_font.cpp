@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2021 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2021 Godot Engine contributors (cf. AUTHORS.md).   */
+/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -28,7 +28,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
 /*************************************************************************/
 
-#include "modules/modules_enabled.gen.h"
+#include "modules/modules_enabled.gen.h" // For freetype.
 #ifdef MODULE_FREETYPE_ENABLED
 
 #include "dynamic_font.h"
@@ -55,6 +55,7 @@ Ref<DynamicFontAtSize> DynamicFontData::_get_dynamic_font_at_size(CacheID p_cach
 	dfas.instance();
 
 	dfas->font = Ref<DynamicFontData>(this);
+	dfas->oversampling = (override_oversampling > 0) ? override_oversampling : DynamicFontAtSize::font_oversampling;
 
 	size_cache[p_cache_id] = dfas.ptr();
 	dfas->id = p_cache_id;
@@ -80,6 +81,19 @@ void DynamicFontData::set_force_autohinter(bool p_force) {
 	force_autohinter = p_force;
 }
 
+float DynamicFontData::get_override_oversampling() const {
+	return override_oversampling;
+}
+
+void DynamicFontData::set_override_oversampling(float p_oversampling) {
+	if (override_oversampling == p_oversampling) {
+		return;
+	}
+
+	override_oversampling = p_oversampling;
+	DynamicFont::update_oversampling();
+}
+
 void DynamicFontData::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_antialiased", "antialiased"), &DynamicFontData::set_antialiased);
 	ClassDB::bind_method(D_METHOD("is_antialiased"), &DynamicFontData::is_antialiased);
@@ -88,8 +102,12 @@ void DynamicFontData::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_hinting", "mode"), &DynamicFontData::set_hinting);
 	ClassDB::bind_method(D_METHOD("get_hinting"), &DynamicFontData::get_hinting);
 
+	ClassDB::bind_method(D_METHOD("get_override_oversampling"), &DynamicFontData::get_override_oversampling);
+	ClassDB::bind_method(D_METHOD("set_override_oversampling", "oversampling"), &DynamicFontData::set_override_oversampling);
+
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "antialiased"), "set_antialiased", "is_antialiased");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "hinting", PROPERTY_HINT_ENUM, "None,Light,Normal"), "set_hinting", "get_hinting");
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "override_oversampling"), "set_override_oversampling", "get_override_oversampling");
 
 	BIND_ENUM_CONSTANT(HINTING_NONE);
 	BIND_ENUM_CONSTANT(HINTING_LIGHT);
@@ -105,6 +123,7 @@ DynamicFontData::DynamicFontData() {
 	hinting = DynamicFontData::HINTING_NORMAL;
 	font_mem = nullptr;
 	font_mem_size = 0;
+	override_oversampling = 0.0;
 }
 
 DynamicFontData::~DynamicFontData() {
@@ -208,7 +227,7 @@ float DynamicFontAtSize::get_descent() const {
 	return descent;
 }
 
-const Pair<const DynamicFontAtSize::Character *, DynamicFontAtSize *> DynamicFontAtSize::_find_char_with_font(CharType p_char, const Vector<Ref<DynamicFontAtSize>> &p_fallbacks) const {
+const Pair<const DynamicFontAtSize::Character *, DynamicFontAtSize *> DynamicFontAtSize::_find_char_with_font(int32_t p_char, const Vector<Ref<DynamicFontAtSize>> &p_fallbacks) const {
 	const Character *chr = char_map.getptr(p_char);
 	ERR_FAIL_COND_V(!chr, (Pair<const Character *, DynamicFontAtSize *>(NULL, NULL)));
 
@@ -240,7 +259,7 @@ const Pair<const DynamicFontAtSize::Character *, DynamicFontAtSize *> DynamicFon
 	return Pair<const Character *, DynamicFontAtSize *>(chr, const_cast<DynamicFontAtSize *>(this));
 }
 
-float DynamicFontAtSize::_get_kerning_advance(const DynamicFontAtSize *font, CharType p_char, CharType p_next) const {
+float DynamicFontAtSize::_get_kerning_advance(const DynamicFontAtSize *font, int32_t p_char, int32_t p_next) const {
 	float advance = 0.0;
 
 	if (p_next) {
@@ -256,9 +275,20 @@ Size2 DynamicFontAtSize::get_char_size(CharType p_char, CharType p_next, const V
 	if (!valid) {
 		return Size2(1, 1);
 	}
-	const_cast<DynamicFontAtSize *>(this)->_update_char(p_char);
 
-	Pair<const Character *, DynamicFontAtSize *> char_pair_with_font = _find_char_with_font(p_char, p_fallbacks);
+	int32_t c = p_char;
+	bool skip_kerning = false;
+	if (((p_char & 0xfffffc00) == 0xd800) && (p_next & 0xfffffc00) == 0xdc00) { // decode surrogate pair.
+		c = (p_char << 10UL) + p_next - ((0xd800 << 10UL) + 0xdc00 - 0x10000);
+		skip_kerning = true;
+	}
+	if ((p_char & 0xfffffc00) == 0xdc00) { // skip trail surrogate.
+		return Size2();
+	}
+
+	const_cast<DynamicFontAtSize *>(this)->_update_char(c);
+
+	Pair<const Character *, DynamicFontAtSize *> char_pair_with_font = _find_char_with_font(c, p_fallbacks);
 	const Character *ch = char_pair_with_font.first;
 	DynamicFontAtSize *font = char_pair_with_font.second;
 	ERR_FAIL_COND_V(!ch, Size2());
@@ -268,7 +298,9 @@ Size2 DynamicFontAtSize::get_char_size(CharType p_char, CharType p_next, const V
 	if (ch->found) {
 		ret.x = ch->advance;
 	}
-	ret.x += _get_kerning_advance(font, p_char, p_next);
+	if (!skip_kerning) {
+		ret.x += _get_kerning_advance(font, p_char, p_next);
+	}
 
 	return ret;
 }
@@ -307,9 +339,19 @@ float DynamicFontAtSize::draw_char(RID p_canvas_item, const Point2 &p_pos, CharT
 		return 0;
 	}
 
-	const_cast<DynamicFontAtSize *>(this)->_update_char(p_char);
+	int32_t c = p_char;
+	bool skip_kerning = false;
+	if (((p_char & 0xfffffc00) == 0xd800) && (p_next & 0xfffffc00) == 0xdc00) { // decode surrogate pair.
+		c = (p_char << 10UL) + p_next - ((0xd800 << 10UL) + 0xdc00 - 0x10000);
+		skip_kerning = true;
+	}
+	if ((p_char & 0xfffffc00) == 0xdc00) { // skip trail surrogate.
+		return 0;
+	}
 
-	Pair<const Character *, DynamicFontAtSize *> char_pair_with_font = _find_char_with_font(p_char, p_fallbacks);
+	const_cast<DynamicFontAtSize *>(this)->_update_char(c);
+
+	Pair<const Character *, DynamicFontAtSize *> char_pair_with_font = _find_char_with_font(c, p_fallbacks);
 	const Character *ch = char_pair_with_font.first;
 	DynamicFontAtSize *font = char_pair_with_font.second;
 
@@ -320,7 +362,7 @@ float DynamicFontAtSize::draw_char(RID p_canvas_item, const Point2 &p_pos, CharT
 	// use normal character size if there's no outline character
 	if (p_outline && !ch->found) {
 		FT_GlyphSlot slot = face->glyph;
-		int error = FT_Load_Char(face, p_char, FT_HAS_COLOR(face) ? FT_LOAD_COLOR : FT_LOAD_DEFAULT);
+		int error = FT_Load_Char(face, c, FT_HAS_COLOR(face) ? FT_LOAD_COLOR : FT_LOAD_DEFAULT);
 		if (!error) {
 			error = FT_Render_Glyph(face->glyph, FT_RENDER_MODE_NORMAL);
 			if (!error) {
@@ -350,7 +392,9 @@ float DynamicFontAtSize::draw_char(RID p_canvas_item, const Point2 &p_pos, CharT
 		advance = ch->advance;
 	}
 
-	advance += _get_kerning_advance(font, p_char, p_next);
+	if (!skip_kerning) {
+		advance += _get_kerning_advance(font, p_char, p_next);
+	}
 
 	return advance;
 }
@@ -552,7 +596,7 @@ DynamicFontAtSize::Character DynamicFontAtSize::_bitmap_to_character(FT_Bitmap b
 	return chr;
 }
 
-DynamicFontAtSize::Character DynamicFontAtSize::_make_outline_char(CharType p_char) {
+DynamicFontAtSize::Character DynamicFontAtSize::_make_outline_char(int32_t p_char) {
 	Character ret = Character::not_found();
 
 	if (FT_Load_Char(face, p_char, FT_LOAD_NO_BITMAP | (font->force_autohinter ? FT_LOAD_FORCE_AUTOHINT : 0)) != 0) {
@@ -588,7 +632,7 @@ cleanup_stroker:
 	return ret;
 }
 
-void DynamicFontAtSize::_update_char(CharType p_char) {
+void DynamicFontAtSize::_update_char(int32_t p_char) {
 	if (char_map.has(p_char)) {
 		return;
 	}
@@ -637,14 +681,18 @@ void DynamicFontAtSize::_update_char(CharType p_char) {
 }
 
 void DynamicFontAtSize::update_oversampling() {
-	if (oversampling == font_oversampling || !valid) {
+	if (!valid) {
+		return;
+	}
+	float new_oversampling = (font.is_valid() && font->override_oversampling > 0) ? font->override_oversampling : font_oversampling;
+	if (oversampling == new_oversampling) {
 		return;
 	}
 
 	FT_Done_FreeType(library);
 	textures.clear();
 	char_map.clear();
-	oversampling = font_oversampling;
+	oversampling = new_oversampling;
 	valid = false;
 	_load();
 }

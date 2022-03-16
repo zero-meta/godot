@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2021 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2021 Godot Engine contributors (cf. AUTHORS.md).   */
+/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -36,7 +36,7 @@
 #include "editor_scale.h"
 #include "editor_settings.h"
 
-#include "modules/modules_enabled.gen.h"
+#include "modules/modules_enabled.gen.h" // For svg.
 #ifdef MODULE_SVG_ENABLED
 #include "modules/svg/image_loader_svg.h"
 #endif
@@ -387,7 +387,8 @@ Ref<Theme> create_editor_theme(const Ref<Theme> p_theme) {
 	const Color color_disabled = mono_color.inverted().linear_interpolate(base_color, 0.7);
 	const Color color_disabled_bg = mono_color.inverted().linear_interpolate(base_color, 0.9);
 
-	Color icon_color_hover = Color(1, 1, 1) * (dark_theme ? 1.15 : 1.45);
+	const Color icon_color_normal = Color(1, 1, 1);
+	Color icon_color_hover = icon_color_normal * (dark_theme ? 1.15 : 1.45);
 	icon_color_hover.a = 1.0;
 	// Make the pressed icon color overbright because icons are not completely white on a dark theme.
 	// On a light theme, icons are dark, so we need to modulate them with an even brighter color.
@@ -635,6 +636,7 @@ Ref<Theme> create_editor_theme(const Ref<Theme> p_theme) {
 	theme->set_color("font_color_focus", "Button", font_color_focus);
 	theme->set_color("font_color_pressed", "Button", accent_color);
 	theme->set_color("font_color_disabled", "Button", font_color_disabled);
+	theme->set_color("icon_color_normal", "Button", icon_color_normal);
 	theme->set_color("icon_color_hover", "Button", icon_color_hover);
 	theme->set_color("icon_color_pressed", "Button", icon_color_pressed);
 
@@ -1010,6 +1012,12 @@ Ref<Theme> create_editor_theme(const Ref<Theme> p_theme) {
 	theme->set_constant("margin_bottom", "MarginContainer", 0);
 	theme->set_constant("hseparation", "GridContainer", default_margin_size * EDSCALE);
 	theme->set_constant("vseparation", "GridContainer", default_margin_size * EDSCALE);
+	theme->set_constant("hseparation", "FlowContainer", default_margin_size * EDSCALE);
+	theme->set_constant("vseparation", "FlowContainer", default_margin_size * EDSCALE);
+	theme->set_constant("hseparation", "HFlowContainer", default_margin_size * EDSCALE);
+	theme->set_constant("vseparation", "HFlowContainer", default_margin_size * EDSCALE);
+	theme->set_constant("hseparation", "VFlowContainer", default_margin_size * EDSCALE);
+	theme->set_constant("vseparation", "VFlowContainer", default_margin_size * EDSCALE);
 
 	// WindowDialog
 	Ref<StyleBoxFlat> style_window = style_popup->duplicate();
@@ -1279,6 +1287,14 @@ Ref<Theme> create_editor_theme(const Ref<Theme> p_theme) {
 
 	theme->set_icon("bg", "ColorPickerButton", theme->get_icon("GuiMiniCheckerboard", "EditorIcons"));
 
+	// ColorPresetButton
+	Ref<StyleBoxFlat> preset_sb = make_flat_stylebox(Color(1, 1, 1), 2, 2, 2, 2);
+
+	preset_sb->set_anti_aliased(false);
+	theme->set_stylebox("preset_fg", "ColorPresetButton", preset_sb);
+	theme->set_icon("preset_bg_icon", "ColorPresetButton", theme->get_icon("GuiMiniCheckerboard", "EditorIcons"));
+	theme->set_icon("overbright_indicator", "ColorPresetButton", theme->get_icon("OverbrightIndicator", "EditorIcons"));
+
 	// Information on 3D viewport
 	Ref<StyleBoxFlat> style_info_3d_viewport = style_default->duplicate();
 	style_info_3d_viewport->set_bg_color(style_info_3d_viewport->get_bg_color() * Color(1, 1, 1, 0.5));
@@ -1323,7 +1339,7 @@ Ref<Theme> create_editor_theme(const Ref<Theme> p_theme) {
 	const Color completion_background_color = dark_theme ? base_color : background_color;
 	const Color completion_selected_color = alpha1;
 	const Color completion_existing_color = alpha2;
-	const Color completion_scroll_color = alpha1;
+	const Color completion_scroll_color = Color(mono_value, mono_value, mono_value, 0.29);
 	const Color completion_font_color = font_color;
 	const Color text_color = font_color;
 	const Color line_number_color = dim_color;

@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2021 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2021 Godot Engine contributors (cf. AUTHORS.md).   */
+/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -98,7 +98,7 @@ void VisibilityNotifier::_refresh_portal_mode() {
 	if (get_portal_mode() == PORTAL_MODE_ROAMING) {
 		if (is_inside_world()) {
 			if (_cull_instance_rid == RID()) {
-				_cull_instance_rid = VisualServer::get_singleton()->ghost_create();
+				_cull_instance_rid = RID_PRIME(VisualServer::get_singleton()->ghost_create());
 			}
 
 			if (is_inside_world() && get_world().is_valid() && get_world()->get_scenario().is_valid() && is_inside_tree()) {

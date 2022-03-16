@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2021 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2021 Godot Engine contributors (cf. AUTHORS.md).   */
+/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -104,6 +104,18 @@ void EditorFileDialog::_notification(int p_what) {
 		fav_down->set_icon(get_icon("MoveDown", "EditorIcons"));
 		// DO NOT CALL UPDATE FILE LIST HERE, ALL HUNDREDS OF HIDDEN DIALOGS WILL RESPOND, CALL INVALIDATE INSTEAD
 		invalidate();
+	} else if (p_what == NOTIFICATION_WM_FOCUS_IN) {
+		// Check if the current directory was removed externally (much less likely to happen while editor window is focused).
+		String previous_dir = get_current_dir();
+		while (!dir_access->dir_exists(get_current_dir())) {
+			_go_up();
+
+			// In case we can't go further up, use some fallback and break.
+			if (get_current_dir() == previous_dir) {
+				_dir_entered(OS::get_singleton()->get_user_data_dir());
+				break;
+			}
+		}
 	}
 }
 
@@ -366,7 +378,8 @@ void EditorFileDialog::_action_pressed() {
 		return;
 	}
 
-	String f = dir_access->get_current_dir().plus_file(file->get_text());
+	String file_text = file->get_text();
+	String f = file_text.is_abs_path() ? file_text : dir_access->get_current_dir().plus_file(file_text);
 
 	if ((mode == MODE_OPEN_ANY || mode == MODE_OPEN_FILE) && dir_access->file_exists(f)) {
 		_save_to_recent();
@@ -944,7 +957,7 @@ void EditorFileDialog::set_current_file(const String &p_file) {
 	file->set_text(p_file);
 	update_dir();
 	invalidate();
-	int lp = p_file.find_last(".");
+	int lp = p_file.rfind(".");
 	if (lp != -1) {
 		file->select(0, lp);
 		file->grab_focus();
@@ -958,7 +971,7 @@ void EditorFileDialog::set_current_path(const String &p_path) {
 	if (!p_path.size()) {
 		return;
 	}
-	int pos = MAX(p_path.find_last("/"), p_path.find_last("\\"));
+	int pos = MAX(p_path.rfind("/"), p_path.rfind("\\"));
 	if (pos == -1) {
 		set_current_file(p_path);
 	} else {
@@ -1269,7 +1282,7 @@ void EditorFileDialog::_recent_selected(int p_idx) {
 }
 
 void EditorFileDialog::_go_up() {
-	dir_access->change_dir("..");
+	dir_access->change_dir(get_current_dir().get_base_dir());
 	update_file_list();
 	update_dir();
 	_push_history();
@@ -1389,9 +1402,9 @@ void EditorFileDialog::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "access", PROPERTY_HINT_ENUM, "Resources,User data,File system"), "set_access", "get_access");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "display_mode", PROPERTY_HINT_ENUM, "Thumbnails,List"), "set_display_mode", "get_display_mode");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "mode", PROPERTY_HINT_ENUM, "Open one,Open many,Open folder,Open any,Save"), "set_mode", "get_mode");
-	ADD_PROPERTY(PropertyInfo(Variant::STRING, "current_dir", PROPERTY_HINT_DIR), "set_current_dir", "get_current_dir");
-	ADD_PROPERTY(PropertyInfo(Variant::STRING, "current_file", PROPERTY_HINT_FILE, "*"), "set_current_file", "get_current_file");
-	ADD_PROPERTY(PropertyInfo(Variant::STRING, "current_path"), "set_current_path", "get_current_path");
+	ADD_PROPERTY(PropertyInfo(Variant::STRING, "current_dir", PROPERTY_HINT_DIR, "", 0), "set_current_dir", "get_current_dir");
+	ADD_PROPERTY(PropertyInfo(Variant::STRING, "current_file", PROPERTY_HINT_FILE, "*", 0), "set_current_file", "get_current_file");
+	ADD_PROPERTY(PropertyInfo(Variant::STRING, "current_path", PROPERTY_HINT_NONE, "", 0), "set_current_path", "get_current_path");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "show_hidden_files"), "set_show_hidden_files", "is_showing_hidden_files");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "disable_overwrite_warning"), "set_disable_overwrite_warning", "is_overwrite_warning_disabled");
 

@@ -132,8 +132,10 @@ opts.Add(BoolVariable("custom_modules_recursive", "Detect custom modules recursi
 
 # Advanced options
 opts.Add(BoolVariable("dev", "If yes, alias for verbose=yes warnings=extra werror=yes", False))
-opts.Add(BoolVariable("progress", "Show a progress indicator during compilation", True))
+opts.Add(BoolVariable("fast_unsafe", "Enable unsafe options for faster rebuilds", False))
+opts.Add(BoolVariable("compiledb", "Generate compilation DB (`compile_commands.json`) for external tools", False))
 opts.Add(BoolVariable("verbose", "Enable verbose output for the compilation", False))
+opts.Add(BoolVariable("progress", "Show a progress indicator during compilation", True))
 opts.Add(EnumVariable("warnings", "Level of compilation warnings", "all", ("extra", "all", "moderate", "no")))
 opts.Add(BoolVariable("werror", "Treat compiler warnings as errors", False))
 opts.Add("extra_suffix", "Custom extra suffix added to the base filename of all generated binary files", "")
@@ -147,9 +149,17 @@ opts.Add(
 )
 opts.Add(BoolVariable("disable_3d", "Disable 3D nodes for a smaller executable", False))
 opts.Add(BoolVariable("disable_advanced_gui", "Disable advanced GUI nodes and behaviors", False))
-opts.Add(BoolVariable("no_editor_splash", "Don't use the custom splash screen for the editor", False))
+opts.Add(BoolVariable("no_editor_splash", "Don't use the custom splash screen for the editor", True))
 opts.Add("system_certs_path", "Use this path as SSL certificates default for editor (for package maintainers)", "")
 opts.Add(BoolVariable("use_precise_math_checks", "Math checks use very precise epsilon (debug option)", False))
+opts.Add(
+    EnumVariable(
+        "rids",
+        "Server object management technique (debug option)",
+        "pointers",
+        ("pointers", "handles", "tracked_handles"),
+    )
+)
 
 # Thirdparty libraries
 opts.Add(BoolVariable("builtin_bullet", "Use the built-in Bullet library", True))
@@ -170,6 +180,7 @@ opts.Add(BoolVariable("builtin_opus", "Use the built-in Opus library", True))
 opts.Add(BoolVariable("builtin_pcre2", "Use the built-in PCRE2 library", True))
 opts.Add(BoolVariable("builtin_pcre2_with_jit", "Use JIT compiler for the built-in PCRE2 library", True))
 opts.Add(BoolVariable("builtin_recast", "Use the built-in Recast library", True))
+opts.Add(BoolVariable("builtin_rvo2", "Use the built-in RVO2 library", True))
 opts.Add(BoolVariable("builtin_squish", "Use the built-in squish library", True))
 opts.Add(BoolVariable("builtin_xatlas", "Use the built-in xatlas library", True))
 opts.Add(BoolVariable("builtin_zlib", "Use the built-in zlib library", True))
@@ -308,14 +319,37 @@ if env_base["target"] == "debug":
     # working on the engine itself.
     env_base.Append(CPPDEFINES=["DEV_ENABLED"])
 
+# SCons speed optimization controlled by the `fast_unsafe` option, which provide
+# more than 10 s speed up for incremental rebuilds.
+# Unsafe as they reduce the certainty of rebuilding all changed files, so it's
+# enabled by default for `debug` builds, and can be overridden from command line.
+# Ref: https://github.com/SCons/scons/wiki/GoFastButton
+if methods.get_cmdline_bool("fast_unsafe", env_base["target"] == "debug"):
+    # Renamed to `content-timestamp` in SCons >= 4.2, keeping MD5 for compat.
+    env_base.Decider("MD5-timestamp")
+    env_base.SetOption("implicit_cache", 1)
+    env_base.SetOption("max_drift", 60)
+
 if env_base["use_precise_math_checks"]:
     env_base.Append(CPPDEFINES=["PRECISE_MATH_CHECKS"])
 
+if not env_base.File("#main/splash_editor.png").exists():
+    # Force disabling editor splash if missing.
+    env_base["no_editor_splash"] = True
 if env_base["no_editor_splash"]:
     env_base.Append(CPPDEFINES=["NO_EDITOR_SPLASH"])
 
 if not env_base["deprecated"]:
     env_base.Append(CPPDEFINES=["DISABLE_DEPRECATED"])
+
+if env_base["rids"] == "handles":
+    env_base.Append(CPPDEFINES=["RID_HANDLES_ENABLED"])
+    print("WARNING: Building with RIDs as handles.")
+
+if env_base["rids"] == "tracked_handles":
+    env_base.Append(CPPDEFINES=["RID_HANDLES_ENABLED"])
+    env_base.Append(CPPDEFINES=["RID_HANDLE_ALLOCATION_TRACKING_ENABLED"])
+    print("WARNING: Building with RIDs as tracked handles.")
 
 if selected_platform in platform_list:
     tmppath = "./platform/" + selected_platform
@@ -327,14 +361,15 @@ if selected_platform in platform_list:
     else:
         env = env_base.Clone()
 
-    # Generating the compilation DB (`compile_commands.json`) requires SCons 4.0.0 or later.
-    from SCons import __version__ as scons_raw_version
+    if env["compiledb"]:
+        # Generating the compilation DB (`compile_commands.json`) requires SCons 4.0.0 or later.
+        from SCons import __version__ as scons_raw_version
 
-    scons_ver = env._get_major_minor_revision(scons_raw_version)
+        scons_ver = env._get_major_minor_revision(scons_raw_version)
 
-    if scons_ver >= (4, 0, 0):
-        env.Tool("compilation_db")
-        env.Alias("compiledb", env.CompilationDatabase())
+        if scons_ver >= (4, 0, 0):
+            env.Tool("compilation_db")
+            env.Alias("compiledb", env.CompilationDatabase())
 
     # 'dev' and 'production' are aliases to set default options if they haven't been set
     # manually by the user.
@@ -477,11 +512,11 @@ if selected_platform in platform_list:
 
     if env["target"] == "release":
         if env["tools"]:
-            print("Tools can only be built with targets 'debug' and 'release_debug'.")
-            sys.exit(255)
+            print("ERROR: The editor can only be built with `target=debug` or `target=release_debug`.")
+            print("       Use `tools=no target=release` to build a release export template.")
+            Exit(255)
         suffix += ".opt"
         env.Append(CPPDEFINES=["NDEBUG"])
-
     elif env["target"] == "release_debug":
         if env["tools"]:
             suffix += ".opt.tools"
@@ -489,8 +524,14 @@ if selected_platform in platform_list:
             suffix += ".opt.debug"
     else:
         if env["tools"]:
+            print(
+                "Note: Building a debug binary (which will run slowly). Use `target=release_debug` to build an optimized release binary."
+            )
             suffix += ".tools"
         else:
+            print(
+                "Note: Building a debug binary (which will run slowly). Use `target=release` to build an optimized release binary."
+            )
             suffix += ".debug"
 
     if env["arch"] != "":
@@ -681,6 +722,7 @@ elif selected_platform != "":
 
 # The following only makes sense when the 'env' is defined, and assumes it is.
 if "env" in locals():
+    # FIXME: This method mixes both cosmetic progress stuff and cache handling...
     methods.show_progress(env)
     # TODO: replace this with `env.Dump(format="json")`
     # once we start requiring SCons 4.0 as min version.

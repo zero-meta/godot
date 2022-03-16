@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2021 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2021 Godot Engine contributors (cf. AUTHORS.md).   */
+/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -35,6 +35,7 @@
 #include "editor_file_system.h"
 #include "editor_log.h"
 #include "editor_node.h"
+#include "editor_property_name_processor.h"
 #include "editor_scale.h"
 #include "editor_settings.h"
 #include "scene/gui/margin_container.h"
@@ -217,8 +218,9 @@ void EditorSettingsDialog::_update_shortcuts() {
 		} else {
 			section = shortcuts->create_item(root);
 
-			String item_name = section_name.capitalize();
+			String item_name = EditorPropertyNameProcessor::get_singleton()->process_name(section_name);
 			section->set_text(0, item_name);
+			section->set_tooltip(0, EditorPropertyNameProcessor::get_singleton()->make_tooltip_for_name(section_name));
 
 			if (collapsed.has(item_name)) {
 				section->set_collapsed(collapsed[item_name]);

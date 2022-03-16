@@ -5,8 +5,8 @@
 /*                           GODOT ENGINE                                */
 /*                      https://godotengine.org                          */
 /*************************************************************************/
-/* Copyright (c) 2007-2021 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2021 Godot Engine contributors (cf. AUTHORS.md).   */
+/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
 /*                                                                       */
 /* Permission is hereby granted, free of charge, to any person obtaining */
 /* a copy of this software and associated documentation files (the       */
@@ -47,7 +47,6 @@
 #include "core/project_settings.h"
 #include "core/translation.h"
 #include "core/version.h"
-#include "core/version_hash.gen.h"
 #include "main/input_default.h"
 #include "main/main.h"
 #include "scene/gui/center_container.h"
@@ -64,6 +63,8 @@
 #include "scene/gui/texture_progress.h"
 #include "scene/gui/tool_button.h"
 #include "scene/resources/packed_scene.h"
+#include "servers/navigation_2d_server.h"
+#include "servers/navigation_server.h"
 #include "servers/physics_2d_server.h"
 
 #include "editor/audio_stream_preview.h"
@@ -79,6 +80,7 @@
 #include "editor/editor_log.h"
 #include "editor/editor_plugin.h"
 #include "editor/editor_properties.h"
+#include "editor/editor_property_name_processor.h"
 #include "editor/editor_resource_picker.h"
 #include "editor/editor_resource_preview.h"
 #include "editor/editor_run_native.h"
@@ -634,9 +636,17 @@ void EditorNode::_update_update_spinner() {
 	update_spinner->set_visible(EditorSettings::get_singleton()->get("interface/editor/show_update_spinner"));
 
 	const bool update_continuously = EditorSettings::get_singleton()->get("interface/editor/update_continuously");
+	const bool vital_only = EditorSettings::get_singleton()->get("interface/editor/update_vital_only");
 	PopupMenu *update_popup = update_spinner->get_popup();
 	update_popup->set_item_checked(update_popup->get_item_index(SETTINGS_UPDATE_CONTINUOUSLY), update_continuously);
-	update_popup->set_item_checked(update_popup->get_item_index(SETTINGS_UPDATE_WHEN_CHANGED), !update_continuously);
+
+	if (update_continuously) {
+		update_popup->set_item_checked(update_popup->get_item_index(SETTINGS_UPDATE_WHEN_CHANGED), false);
+		update_popup->set_item_checked(update_popup->get_item_index(SETTINGS_UPDATE_VITAL_ONLY), false);
+	} else {
+		update_popup->set_item_checked(update_popup->get_item_index(SETTINGS_UPDATE_WHEN_CHANGED), !vital_only);
+		update_popup->set_item_checked(update_popup->get_item_index(SETTINGS_UPDATE_VITAL_ONLY), vital_only);
+	}
 
 	if (update_continuously) {
 		update_spinner->set_tooltip(TTR("Spins when the editor window redraws.\nUpdate Continuously is enabled, which can increase power usage. Click to disable it."));
@@ -654,6 +664,11 @@ void EditorNode::_update_update_spinner() {
 	}
 
 	OS::get_singleton()->set_low_processor_usage_mode(!update_continuously);
+
+	// Only set low priority redraws to false in the editor.
+	// When we run the project in the editor, we don't want it to prevent
+	// rendering any frames.
+	OS::get_singleton()->set_update_vital_only(vital_only && !update_continuously);
 }
 
 void EditorNode::_on_plugin_ready(Object *p_script, const String &p_activate_name) {
@@ -1548,8 +1563,10 @@ void EditorNode::_save_scene(String p_file, int idx) {
 
 	err = ResourceSaver::save(p_file, sdata, flg);
 
-	_save_external_resources();
+	// This needs to be emitted before saving external resources.
+	emit_signal("scene_saved", p_file);
 
+	_save_external_resources();
 	editor_data.save_editor_external_data();
 
 	for (List<Ref<AnimatedValuesBackup>>::Element *E = anim_backups.front(); E; E = E->next()) {
@@ -1621,7 +1638,7 @@ void EditorNode::_save_all_scenes() {
 				} else {
 					_save_scene_with_preview(scene->get_filename());
 				}
-			} else {
+			} else if (scene->get_filename() != "") {
 				all_saved = false;
 			}
 		}
@@ -1973,11 +1990,19 @@ static bool overrides_external_editor(Object *p_object) {
 	return script->get_language()->overrides_external_editor();
 }
 
-void EditorNode::_edit_current() {
+void EditorNode::_edit_current(bool p_skip_foreign) {
 	uint32_t current = editor_history.get_current();
 	Object *current_obj = current > 0 ? ObjectDB::get_instance(current) : nullptr;
-	bool inspector_only = editor_history.is_current_inspector_only();
 
+	RES res = Object::cast_to<Resource>(current_obj);
+	if (p_skip_foreign && res.is_valid()) {
+		if (res->get_path().find("::") > -1 && res->get_path().get_slice("::", 0) != editor_data.get_scene_path(get_current_tab())) {
+			// Trying to edit resource that belongs to another scene; abort.
+			current_obj = nullptr;
+		}
+	}
+
+	bool inspector_only = editor_history.is_current_inspector_only();
 	this->current = current_obj;
 
 	if (!current_obj) {
@@ -2108,7 +2133,8 @@ void EditorNode::_edit_current() {
 
 		if (main_plugin) {
 			// special case if use of external editor is true
-			if (main_plugin->get_name() == "Script" && current_obj->get_class_name() != StringName("VisualScript") && (bool(EditorSettings::get_singleton()->get("text_editor/external/use_external_editor")) || overrides_external_editor(current_obj))) {
+			Resource *current_res = Object::cast_to<Resource>(current_obj);
+			if (main_plugin->get_name() == "Script" && current_obj->get_class_name() != StringName("VisualScript") && current_res && !current_res->get_path().empty() && current_res->get_path().find("::") == -1 && (bool(EditorSettings::get_singleton()->get("text_editor/external/use_external_editor")) || overrides_external_editor(current_obj))) {
 				if (!changing_scene) {
 					main_plugin->edit(current_obj);
 				}
@@ -2419,13 +2445,21 @@ void EditorNode::_menu_option_confirm(int p_option, bool p_confirmed) {
 						file->set_current_path(path.replacen("." + ext, "." + extensions.front()->get()));
 					}
 				}
-			} else {
-				String existing;
-				if (extensions.size()) {
-					String root_name(scene->get_name());
-					existing = root_name + "." + extensions.front()->get().to_lower();
+			} else if (extensions.size()) {
+				String root_name = scene->get_name();
+				// Very similar to node naming logic.
+				switch (ProjectSettings::get_singleton()->get("editor/scene/scene_naming").operator int()) {
+					case SCENE_NAME_CASING_AUTO:
+						// Use casing of the root node.
+						break;
+					case SCENE_NAME_CASING_PASCAL_CASE: {
+						root_name = root_name.capitalize().replace(" ", "");
+					} break;
+					case SCENE_NAME_CASING_SNAKE_CASE:
+						root_name = root_name.capitalize().replace(" ", "").replace("-", "_").camelcase_to_underscore();
+						break;
 				}
-				file->set_current_path(existing);
+				file->set_current_path(root_name + "." + extensions.front()->get().to_lower());
 			}
 			file->popup_centered_ratio();
 			file->set_title(TTR("Save Scene As..."));
@@ -2652,8 +2686,8 @@ void EditorNode::_menu_option_confirm(int p_option, bool p_confirmed) {
 				}
 			}
 		} break;
-		case RUN_PROJECT_DATA_FOLDER: {
-			// ensure_user_data_dir() to prevent the edge case: "Open Project Data Folder" won't work after the project was renamed in ProjectSettingsEditor unless the project is saved
+		case RUN_USER_DATA_FOLDER: {
+			// ensure_user_data_dir() to prevent the edge case: "Open User Data Folder" won't work after the project was renamed in ProjectSettingsEditor unless the project is saved
 			OS::get_singleton()->ensure_user_data_dir();
 			OS::get_singleton()->shell_open(String("file://") + OS::get_singleton()->get_user_data_dir());
 		} break;
@@ -2748,6 +2782,13 @@ void EditorNode::_menu_option_confirm(int p_option, bool p_confirmed) {
 			EditorSettings::get_singleton()->set_project_metadata("debug_options", "run_debug_navigation", !ischecked);
 
 		} break;
+		case RUN_DEBUG_SHADER_FALLBACKS: {
+			bool ischecked = debug_menu->get_popup()->is_item_checked(debug_menu->get_popup()->get_item_index(RUN_DEBUG_SHADER_FALLBACKS));
+			debug_menu->get_popup()->set_item_checked(debug_menu->get_popup()->get_item_index(RUN_DEBUG_SHADER_FALLBACKS), !ischecked);
+			run_native->set_debug_shader_fallbacks(!ischecked);
+			editor_run.set_debug_shader_fallbacks(!ischecked);
+			EditorSettings::get_singleton()->set_project_metadata("debug_options", "run_debug_shader_fallbacks", !ischecked);
+		} break;
 		case RUN_RELOAD_SCRIPTS: {
 			bool ischecked = debug_menu->get_popup()->is_item_checked(debug_menu->get_popup()->get_item_index(RUN_RELOAD_SCRIPTS));
 			debug_menu->get_popup()->set_item_checked(debug_menu->get_popup()->get_item_index(RUN_RELOAD_SCRIPTS), !ischecked);
@@ -2763,6 +2804,12 @@ void EditorNode::_menu_option_confirm(int p_option, bool p_confirmed) {
 		} break;
 		case SETTINGS_UPDATE_WHEN_CHANGED: {
 			EditorSettings::get_singleton()->set("interface/editor/update_continuously", false);
+			EditorSettings::get_singleton()->set("interface/editor/update_vital_only", false);
+			_update_update_spinner();
+		} break;
+		case SETTINGS_UPDATE_VITAL_ONLY: {
+			EditorSettings::get_singleton()->set("interface/editor/update_continuously", false);
+			EditorSettings::get_singleton()->set("interface/editor/update_vital_only", true);
 			_update_update_spinner();
 		} break;
 		case SETTINGS_UPDATE_SPINNER_HIDE: {
@@ -2793,11 +2840,6 @@ void EditorNode::_menu_option_confirm(int p_option, bool p_confirmed) {
 			OS::get_singleton()->set_window_fullscreen(!OS::get_singleton()->is_window_fullscreen());
 
 		} break;
-		case SETTINGS_TOGGLE_CONSOLE: {
-			bool was_visible = OS::get_singleton()->is_console_visible();
-			OS::get_singleton()->set_console_visible(!was_visible);
-			EditorSettings::get_singleton()->set_setting("interface/editor/hide_console_window", was_visible);
-		} break;
 		case EDITOR_SCREENSHOT: {
 			screenshot_timer->start();
 		} break;
@@ -2822,7 +2864,7 @@ void EditorNode::_menu_option_confirm(int p_option, bool p_confirmed) {
 			emit_signal("request_help_search", "");
 		} break;
 		case HELP_DOCS: {
-			OS::get_singleton()->shell_open("https://docs.godotengine.org/");
+			OS::get_singleton()->shell_open(VERSION_DOCS_URL "/");
 		} break;
 		case HELP_QA: {
 			OS::get_singleton()->shell_open("https://godotengine.org/qa/");
@@ -3004,6 +3046,7 @@ void EditorNode::_update_debug_options() {
 	bool check_file_server = EditorSettings::get_singleton()->get_project_metadata("debug_options", "run_file_server", false);
 	bool check_debug_collisons = EditorSettings::get_singleton()->get_project_metadata("debug_options", "run_debug_collisons", false);
 	bool check_debug_navigation = EditorSettings::get_singleton()->get_project_metadata("debug_options", "run_debug_navigation", false);
+	bool check_debug_shader_fallbacks = EditorSettings::get_singleton()->get_project_metadata("debug_options", "run_debug_shader_fallbacks", false);
 	bool check_live_debug = EditorSettings::get_singleton()->get_project_metadata("debug_options", "run_live_debug", true);
 	bool check_reload_scripts = EditorSettings::get_singleton()->get_project_metadata("debug_options", "run_reload_scripts", true);
 
@@ -3018,6 +3061,9 @@ void EditorNode::_update_debug_options() {
 	}
 	if (check_debug_navigation) {
 		_menu_option_confirm(RUN_DEBUG_NAVIGATION, true);
+	}
+	if (check_debug_shader_fallbacks) {
+		_menu_option_confirm(RUN_DEBUG_SHADER_FALLBACKS, true);
 	}
 	if (check_live_debug) {
 		_menu_option_confirm(RUN_LIVE_DEBUG, true);
@@ -3459,7 +3505,7 @@ void EditorNode::set_current_scene(int p_idx) {
 	}
 
 	Dictionary state = editor_data.restore_edited_scene_state(editor_selection, &editor_history);
-	_edit_current();
+	_edit_current(true);
 
 	_update_title();
 
@@ -3588,7 +3634,7 @@ Error EditorNode::load_scene(const String &p_scene, bool p_ignore_broken_deps, b
 		sdata->set_path(lpath, true); //take over path
 	}
 
-	Node *new_scene = sdata->instance(PackedScene::GEN_EDIT_STATE_MAIN);
+	Node *new_scene = sdata->instance(p_set_inherited ? PackedScene::GEN_EDIT_STATE_MAIN_INHERITED : PackedScene::GEN_EDIT_STATE_MAIN);
 
 	if (!new_scene) {
 		sdata.unref();
@@ -5332,7 +5378,7 @@ void EditorNode::_add_dropped_files_recursive(const Vector<String> &p_files, Str
 }
 
 void EditorNode::_file_access_close_error_notify(const String &p_str) {
-	add_io_error("Unable to write to file '" + p_str + "', file in use, locked or lacking permissions.");
+	add_io_error(vformat(TTR("Unable to write to file '%s', file in use, locked or lacking permissions."), p_str));
 }
 
 void EditorNode::reload_scene(const String &p_path) {
@@ -5556,6 +5602,9 @@ void EditorNode::_feature_profile_changed() {
 }
 
 void EditorNode::_bind_methods() {
+	GLOBAL_DEF("editor/scene/scene_naming", SCENE_NAME_CASING_AUTO);
+	ProjectSettings::get_singleton()->set_custom_property_info("editor/scene/scene_naming", PropertyInfo(Variant::INT, "editor/scene/scene_naming", PROPERTY_HINT_ENUM, "Auto,PascalCase,snake_case"));
+
 	ClassDB::bind_method("_menu_option", &EditorNode::_menu_option);
 	ClassDB::bind_method("_tool_menu_option", &EditorNode::_tool_menu_option);
 	ClassDB::bind_method("_menu_confirm_current", &EditorNode::_menu_confirm_current);
@@ -5656,6 +5705,7 @@ void EditorNode::_bind_methods() {
 	ADD_SIGNAL(MethodInfo("request_help_search"));
 	ADD_SIGNAL(MethodInfo("script_add_function_request", PropertyInfo(Variant::OBJECT, "obj"), PropertyInfo(Variant::STRING, "function"), PropertyInfo(Variant::POOL_STRING_ARRAY, "args")));
 	ADD_SIGNAL(MethodInfo("resource_saved", PropertyInfo(Variant::OBJECT, "obj")));
+	ADD_SIGNAL(MethodInfo("scene_saved", PropertyInfo(Variant::STRING, "path")));
 }
 
 static Node *_resource_get_edited_scene() {
@@ -5722,11 +5772,16 @@ int EditorNode::execute_and_show_output(const String &p_title, const String &p_p
 }
 
 EditorNode::EditorNode() {
+	EditorPropertyNameProcessor *epnp = memnew(EditorPropertyNameProcessor);
+	add_child(epnp);
+
 	Input::get_singleton()->set_use_accumulated_input(true);
 	Resource::_get_local_scene_func = _resource_get_edited_scene;
 
 	VisualServer::get_singleton()->textures_keep_original(true);
 	VisualServer::get_singleton()->set_debug_generate_wireframes(true);
+
+	NavigationServer::get_singleton()->set_active(false); // no nav by default if editor
 
 	PhysicsServer::get_singleton()->set_active(false); // no physics by default if editor
 	Physics2DServer::get_singleton()->set_active(false); // no physics by default if editor
@@ -5918,6 +5973,8 @@ EditorNode::EditorNode() {
 	EDITOR_DEF("interface/editor/quit_confirmation", true);
 	EDITOR_DEF("interface/editor/show_update_spinner", false);
 	EDITOR_DEF("interface/editor/update_continuously", false);
+	EDITOR_DEF("interface/editor/update_vital_only", false);
+	EDITOR_DEF("interface/editor/translate_properties", true);
 	EDITOR_DEF_RST("interface/scene_tabs/restore_scenes_on_load", false);
 	EDITOR_DEF_RST("interface/scene_tabs/show_thumbnail_on_hover", true);
 	EDITOR_DEF_RST("interface/inspector/capitalize_properties", true);
@@ -5932,6 +5989,11 @@ EditorNode::EditorNode() {
 	EDITOR_DEF("interface/inspector/default_color_picker_mode", 0);
 	EditorSettings::get_singleton()->add_property_hint(PropertyInfo(Variant::INT, "interface/inspector/default_color_picker_mode", PROPERTY_HINT_ENUM, "RGB,HSV,RAW", PROPERTY_USAGE_DEFAULT));
 	EDITOR_DEF("run/auto_save/save_before_running", true);
+	EDITOR_DEF("version_control/username", "");
+	EDITOR_DEF("version_control/ssh_public_key_path", "");
+	EditorSettings::get_singleton()->add_property_hint(PropertyInfo(Variant::STRING, "version_control/ssh_public_key_path", PROPERTY_HINT_GLOBAL_FILE));
+	EDITOR_DEF("version_control/ssh_private_key_path", "");
+	EditorSettings::get_singleton()->add_property_hint(PropertyInfo(Variant::STRING, "version_control/ssh_private_key_path", PROPERTY_HINT_GLOBAL_FILE));
 
 	theme_base = memnew(Control);
 	add_child(theme_base);
@@ -6240,8 +6302,8 @@ EditorNode::EditorNode() {
 
 	p = file_menu->get_popup();
 	p->set_hide_on_window_lose_focus(true);
-	p->add_shortcut(ED_SHORTCUT("editor/new_scene", TTR("New Scene")), FILE_NEW_SCENE);
-	p->add_shortcut(ED_SHORTCUT("editor/new_inherited_scene", TTR("New Inherited Scene...")), FILE_NEW_INHERITED_SCENE);
+	p->add_shortcut(ED_SHORTCUT("editor/new_scene", TTR("New Scene"), KEY_MASK_CMD + KEY_N), FILE_NEW_SCENE);
+	p->add_shortcut(ED_SHORTCUT("editor/new_inherited_scene", TTR("New Inherited Scene..."), KEY_MASK_CMD + KEY_MASK_SHIFT + KEY_N), FILE_NEW_INHERITED_SCENE);
 	p->add_shortcut(ED_SHORTCUT("editor/open_scene", TTR("Open Scene..."), KEY_MASK_CMD + KEY_O), FILE_OPEN_SCENE);
 	p->add_shortcut(ED_SHORTCUT("editor/reopen_closed_scene", TTR("Reopen Closed Scene"), KEY_MASK_CMD + KEY_MASK_SHIFT + KEY_T), FILE_OPEN_PREV);
 	p->add_submenu_item(TTR("Open Recent"), "RecentScenes", FILE_OPEN_RECENT);
@@ -6306,7 +6368,7 @@ EditorNode::EditorNode() {
 	p->add_separator();
 	p->add_shortcut(ED_SHORTCUT("editor/export", TTR("Export...")), FILE_EXPORT_PROJECT);
 	p->add_item(TTR("Install Android Build Template..."), FILE_INSTALL_ANDROID_SOURCE);
-	p->add_item(TTR("Open Project Data Folder"), RUN_PROJECT_DATA_FOLDER);
+	p->add_item(TTR("Open User Data Folder"), RUN_USER_DATA_FOLDER);
 
 	plugin_config_dialog = memnew(PluginConfigDialog);
 	plugin_config_dialog->connect("plugin_ready", this, "_on_plugin_ready");
@@ -6342,32 +6404,50 @@ EditorNode::EditorNode() {
 	p = debug_menu->get_popup();
 	p->set_hide_on_window_lose_focus(true);
 	p->set_hide_on_checkable_item_selection(false);
+
 	p->add_check_shortcut(ED_SHORTCUT("editor/deploy_with_remote_debug", TTR("Deploy with Remote Debug")), RUN_DEPLOY_REMOTE_DEBUG);
 	p->set_item_tooltip(
 			p->get_item_count() - 1,
 			TTR("When this option is enabled, using one-click deploy will make the executable attempt to connect to this computer's IP so the running project can be debugged.\nThis option is intended to be used for remote debugging (typically with a mobile device).\nYou don't need to enable it to use the GDScript debugger locally."));
+
 	p->add_check_shortcut(ED_SHORTCUT("editor/small_deploy_with_network_fs", TTR("Small Deploy with Network Filesystem")), RUN_FILE_SERVER);
 	p->set_item_tooltip(
 			p->get_item_count() - 1,
 			TTR("When this option is enabled, using one-click deploy for Android will only export an executable without the project data.\nThe filesystem will be provided from the project by the editor over the network.\nOn Android, deploying will use the USB cable for faster performance. This option speeds up testing for projects with large assets."));
+
 	p->add_separator();
+
 	p->add_check_shortcut(ED_SHORTCUT("editor/visible_collision_shapes", TTR("Visible Collision Shapes")), RUN_DEBUG_COLLISONS);
 	p->set_item_tooltip(
 			p->get_item_count() - 1,
 			TTR("When this option is enabled, collision shapes and raycast nodes (for 2D and 3D) will be visible in the running project."));
+
 	p->add_check_shortcut(ED_SHORTCUT("editor/visible_navigation", TTR("Visible Navigation")), RUN_DEBUG_NAVIGATION);
 	p->set_item_tooltip(
 			p->get_item_count() - 1,
 			TTR("When this option is enabled, navigation meshes and polygons will be visible in the running project."));
+
+	if (GLOBAL_GET("rendering/quality/driver/driver_name") == "GLES3") {
+		p->add_separator();
+
+		p->add_check_shortcut(ED_SHORTCUT("editor/use_shader_fallbacks", TTR("Force Shader Fallbacks")), RUN_DEBUG_SHADER_FALLBACKS);
+		p->set_item_tooltip(
+				p->get_item_count() - 1,
+				TTR("When this option is enabled, shaders will be used in their fallback form (either visible via an ubershader or hidden) during all the run time.\nThis is useful for verifying the look and performance of fallbacks, which are normally displayed briefly.\nAsynchronous shader compilation must be enabled in the project settings for this option to make a difference."));
+	}
+
 	p->add_separator();
+
 	p->add_check_shortcut(ED_SHORTCUT("editor/sync_scene_changes", TTR("Synchronize Scene Changes")), RUN_LIVE_DEBUG);
 	p->set_item_tooltip(
 			p->get_item_count() - 1,
 			TTR("When this option is enabled, any changes made to the scene in the editor will be replicated in the running project.\nWhen used remotely on a device, this is more efficient when the network filesystem option is enabled."));
+
 	p->add_check_shortcut(ED_SHORTCUT("editor/sync_script_changes", TTR("Synchronize Script Changes")), RUN_RELOAD_SCRIPTS);
 	p->set_item_tooltip(
 			p->get_item_count() - 1,
 			TTR("When this option is enabled, any script that is saved will be reloaded in the running project.\nWhen used remotely on a device, this is more efficient when the network filesystem option is enabled."));
+
 	p->connect("id_pressed", this, "_menu_option");
 
 	menu_hb->add_spacer();
@@ -6404,9 +6484,6 @@ EditorNode::EditorNode() {
 	p->add_shortcut(ED_SHORTCUT("editor/fullscreen_mode", TTR("Toggle Fullscreen"), KEY_MASK_CMD | KEY_MASK_CTRL | KEY_F), SETTINGS_TOGGLE_FULLSCREEN);
 #else
 	p->add_shortcut(ED_SHORTCUT("editor/fullscreen_mode", TTR("Toggle Fullscreen"), KEY_MASK_SHIFT | KEY_F11), SETTINGS_TOGGLE_FULLSCREEN);
-#endif
-#ifdef WINDOWS_ENABLED
-	p->add_item(TTR("Toggle System Console"), SETTINGS_TOGGLE_CONSOLE);
 #endif
 	p->add_separator();
 
@@ -6569,7 +6646,8 @@ EditorNode::EditorNode() {
 	update_spinner->get_popup()->connect("id_pressed", this, "_menu_option");
 	p = update_spinner->get_popup();
 	p->add_radio_check_item(TTR("Update Continuously"), SETTINGS_UPDATE_CONTINUOUSLY);
-	p->add_radio_check_item(TTR("Update When Changed"), SETTINGS_UPDATE_WHEN_CHANGED);
+	p->add_radio_check_item(TTR("Update All Changes"), SETTINGS_UPDATE_WHEN_CHANGED);
+	p->add_radio_check_item(TTR("Update Vital Changes"), SETTINGS_UPDATE_VITAL_ONLY);
 	p->add_separator();
 	p->add_item(TTR("Hide Update Spinner"), SETTINGS_UPDATE_SPINNER_HIDE);
 	_update_update_spinner();
@@ -6760,10 +6838,12 @@ EditorNode::EditorNode() {
 	file_export_lib->connect("file_selected", this, "_dialog_action");
 	file_export_lib_merge = memnew(CheckBox);
 	file_export_lib_merge->set_text(TTR("Merge With Existing"));
+	file_export_lib_merge->set_h_size_flags(Control::SIZE_SHRINK_CENTER);
 	file_export_lib_merge->set_pressed(true);
 	file_export_lib->get_vbox()->add_child(file_export_lib_merge);
 	file_export_lib_apply_xforms = memnew(CheckBox);
 	file_export_lib_apply_xforms->set_text(TTR("Apply MeshInstance Transforms"));
+	file_export_lib_apply_xforms->set_h_size_flags(Control::SIZE_SHRINK_CENTER);
 	file_export_lib_apply_xforms->set_pressed(false);
 	file_export_lib->get_vbox()->add_child(file_export_lib_apply_xforms);
 	gui_base->add_child(file_export_lib);

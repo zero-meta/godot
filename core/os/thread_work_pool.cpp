@@ -1,5 +1,5 @@
 /*************************************************************************/
-/*  array.h                                                              */
+/*  thread_work_pool.cpp                                                 */
 /*************************************************************************/
 /*                       This file is part of:                           */
 /*                           GODOT ENGINE                                */
@@ -28,84 +28,54 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
 /*************************************************************************/
 
-#ifndef ARRAY_H
-#define ARRAY_H
+#include "thread_work_pool.h"
 
-#include "core/typedefs.h"
+#include "core/os/os.h"
 
-class Variant;
-class ArrayPrivate;
-class Object;
-class StringName;
+void ThreadWorkPool::_thread_function(void *p_user) {
+	ThreadData *thread = static_cast<ThreadData *>(p_user);
+	while (true) {
+		thread->start.wait();
+		if (thread->exit.load()) {
+			break;
+		}
+		thread->work->work();
+		thread->completed.post();
+	}
+}
 
-class Array {
-	mutable ArrayPrivate *_p;
-	void _ref(const Array &p_from) const;
-	void _unref() const;
+void ThreadWorkPool::init(int p_thread_count) {
+	ERR_FAIL_COND(threads != nullptr);
+	if (p_thread_count < 0) {
+		p_thread_count = OS::get_singleton()->get_default_thread_pool_size();
+	}
 
-	inline int _clamp_slice_index(int p_index) const;
+	thread_count = p_thread_count;
+	threads = memnew_arr(ThreadData, thread_count);
 
-public:
-	Variant &operator[](int p_idx);
-	const Variant &operator[](int p_idx) const;
+	for (uint32_t i = 0; i < thread_count; i++) {
+		threads[i].exit.store(false);
+		threads[i].thread.start(&ThreadWorkPool::_thread_function, &threads[i]);
+	}
+}
 
-	void set(int p_idx, const Variant &p_value);
-	const Variant &get(int p_idx) const;
+void ThreadWorkPool::finish() {
+	if (threads == nullptr) {
+		return;
+	}
 
-	int size() const;
-	bool empty() const;
-	void clear();
+	for (uint32_t i = 0; i < thread_count; i++) {
+		threads[i].exit.store(true);
+		threads[i].start.post();
+	}
+	for (uint32_t i = 0; i < thread_count; i++) {
+		threads[i].thread.wait_to_finish();
+	}
 
-	bool deep_equal(const Array &p_array, int p_recursion_count = 0) const;
-	bool operator==(const Array &p_array) const;
+	memdelete_arr(threads);
+	threads = nullptr;
+}
 
-	uint32_t hash() const;
-	void operator=(const Array &p_array);
-
-	void push_back(const Variant &p_value);
-	_FORCE_INLINE_ void append(const Variant &p_value) { push_back(p_value); } //for python compatibility
-	void append_array(const Array &p_array);
-	Error resize(int p_new_size);
-
-	void insert(int p_pos, const Variant &p_value);
-	void remove(int p_pos);
-	void fill(const Variant &p_value);
-
-	Variant front() const;
-	Variant back() const;
-
-	Array &sort();
-	Array &sort_custom(Object *p_obj, const StringName &p_function);
-	void shuffle();
-	int bsearch(const Variant &p_value, bool p_before = true);
-	int bsearch_custom(const Variant &p_value, Object *p_obj, const StringName &p_function, bool p_before = true);
-	Array &invert();
-
-	int find(const Variant &p_value, int p_from = 0) const;
-	int rfind(const Variant &p_value, int p_from = -1) const;
-	int find_last(const Variant &p_value) const;
-	int count(const Variant &p_value) const;
-	bool has(const Variant &p_value) const;
-
-	void erase(const Variant &p_value);
-
-	void push_front(const Variant &p_value);
-	Variant pop_back();
-	Variant pop_front();
-	Variant pop_at(int p_pos);
-
-	Array duplicate(bool p_deep = false) const;
-
-	Array slice(int p_begin, int p_end, int p_step = 1, bool p_deep = false) const;
-
-	Variant min() const;
-	Variant max() const;
-
-	const void *id() const;
-
-	Array(const Array &p_from);
-	Array();
-	~Array();
-};
-
-#endif // ARRAY_H
+ThreadWorkPool::~ThreadWorkPool() {
+	finish();
+}

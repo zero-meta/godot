@@ -126,6 +126,19 @@ public:
 	Sprite3DSpatialGizmoPlugin();
 };
 
+class Label3DSpatialGizmoPlugin : public EditorSpatialGizmoPlugin {
+	GDCLASS(Label3DSpatialGizmoPlugin, EditorSpatialGizmoPlugin);
+
+public:
+	bool has_gizmo(Spatial *p_spatial);
+	String get_name() const;
+	int get_priority() const;
+	bool can_be_hidden() const;
+	void redraw(EditorSpatialGizmo *p_gizmo);
+
+	Label3DSpatialGizmoPlugin();
+};
+
 class Position3DSpatialGizmoPlugin : public EditorSpatialGizmoPlugin {
 	GDCLASS(Position3DSpatialGizmoPlugin, EditorSpatialGizmoPlugin);
 
@@ -175,6 +188,18 @@ public:
 	void redraw(EditorSpatialGizmo *p_gizmo);
 
 	RayCastSpatialGizmoPlugin();
+};
+
+class ShapeCastGizmoPlugin : public EditorSpatialGizmoPlugin {
+	GDCLASS(ShapeCastGizmoPlugin, EditorSpatialGizmoPlugin);
+
+public:
+	bool has_gizmo(Spatial *p_spatial);
+	String get_name() const;
+	int get_priority() const;
+	void redraw(EditorSpatialGizmo *p_gizmo);
+
+	ShapeCastGizmoPlugin();
 };
 
 class SpringArmSpatialGizmoPlugin : public EditorSpatialGizmoPlugin {

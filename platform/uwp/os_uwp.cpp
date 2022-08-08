@@ -588,6 +588,7 @@ uint64_t OS_UWP::get_ticks_usec() const {
 void OS_UWP::process_events() {
 	joypad->process_controllers();
 	process_key_events();
+	input->flush_buffered_events();
 }
 
 void OS_UWP::process_key_events() {
@@ -673,6 +674,10 @@ Error OS_UWP::kill(const ProcessID &p_pid) {
 	return FAILED;
 };
 
+bool OS_UWP::is_process_running(const ProcessID &p_pid) const {
+	return false;
+}
+
 Error OS_UWP::set_cwd(const String &p_cwd) {
 	return FAILED;
 }
@@ -737,7 +742,7 @@ bool OS_UWP::has_virtual_keyboard() const {
 	return UIViewSettings::GetForCurrentView()->UserInteractionMode == UserInteractionMode::Touch;
 }
 
-void OS_UWP::show_virtual_keyboard(const String &p_existing_text, const Rect2 &p_screen_rect, bool p_multiline, int p_max_input_length, int p_cursor_start, int p_cursor_end) {
+void OS_UWP::show_virtual_keyboard(const String &p_existing_text, const Rect2 &p_screen_rect, VirtualKeyboardType p_type, int p_max_input_length, int p_cursor_start, int p_cursor_end) {
 	InputPane ^ pane = InputPane::GetForCurrentView();
 	pane->TryShow();
 }

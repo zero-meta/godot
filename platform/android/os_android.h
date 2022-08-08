@@ -42,9 +42,7 @@ class GodotJavaWrapper;
 class GodotIOJavaWrapper;
 
 class OS_Android : public OS_Unix {
-	bool use_gl2;
 	bool use_apk_expansion;
-
 	bool secondary_gl_available = false;
 
 	VisualServer *visual_server;
@@ -54,16 +52,14 @@ class OS_Android : public OS_Unix {
 
 	AudioDriverOpenSL audio_driver_android;
 
-	const char *gl_extensions;
+	const char *gl_extensions = nullptr;
 
 	InputDefault *input;
 	VideoMode default_videomode;
-	MainLoop *main_loop;
+	MainLoop *main_loop = nullptr;
 
 	GodotJavaWrapper *godot_java;
 	GodotIOJavaWrapper *godot_io_java;
-
-	//PowerAndroid *power_manager_func;
 
 	int video_driver_index;
 
@@ -71,6 +67,15 @@ class OS_Android : public OS_Unix {
 
 public:
 	static const char *ANDROID_EXEC_PATH;
+
+	virtual bool tts_is_speaking() const;
+	virtual bool tts_is_paused() const;
+	virtual Array tts_get_voices() const;
+
+	virtual void tts_speak(const String &p_text, const String &p_voice, int p_volume = 50, float p_pitch = 1.f, float p_rate = 1.f, int p_utterance_id = 0, bool p_interrupt = false);
+	virtual void tts_pause();
+	virtual void tts_resume();
+	virtual void tts_stop();
 
 	// functions used by main to initialize/deinitialize the OS
 	virtual int get_video_driver_count() const;
@@ -116,6 +121,7 @@ public:
 
 	virtual Size2 get_window_size() const;
 	virtual Rect2 get_window_safe_area() const;
+	virtual Array get_display_cutouts() const;
 
 	virtual String get_name() const;
 	virtual MainLoop *get_main_loop() const;
@@ -131,7 +137,7 @@ public:
 	virtual bool has_touchscreen_ui_hint() const;
 
 	virtual bool has_virtual_keyboard() const;
-	virtual void show_virtual_keyboard(const String &p_existing_text, const Rect2 &p_screen_rect = Rect2(), bool p_multiline = false, int p_max_input_length = -1, int p_cursor_start = -1, int p_cursor_end = -1);
+	virtual void show_virtual_keyboard(const String &p_existing_text, const Rect2 &p_screen_rect = Rect2(), VirtualKeyboardType p_type = KEYBOARD_TYPE_DEFAULT, int p_max_input_length = -1, int p_cursor_start = -1, int p_cursor_end = -1);
 	virtual void hide_virtual_keyboard();
 	virtual int get_virtual_keyboard_height() const;
 
@@ -168,11 +174,12 @@ public:
 
 	virtual String get_system_dir(SystemDir p_dir, bool p_shared_storage = true) const;
 
+	virtual Error move_to_trash(const String &p_path);
+
 	void process_accelerometer(const Vector3 &p_accelerometer);
 	void process_gravity(const Vector3 &p_gravity);
 	void process_magnetometer(const Vector3 &p_magnetometer);
 	void process_gyroscope(const Vector3 &p_gyroscope);
-	void init_video_mode(int p_video_width, int p_video_height);
 
 	virtual bool is_joy_known(int p_device);
 	virtual String get_joy_guid(int p_device) const;
@@ -190,4 +197,4 @@ private:
 	Error create_instance(const List<String> &p_arguments, ProcessID *r_child_id);
 };
 
-#endif
+#endif // OS_ANDROID_H

@@ -51,7 +51,6 @@ class VisualServerWrapMT : public VisualServer {
 	SafeFlag draw_thread_up;
 	bool create_thread;
 
-	SafeNumeric<uint64_t> draw_pending;
 	void thread_draw(bool p_swap_buffers, double frame_step);
 	void thread_flush();
 
@@ -732,4 +731,4 @@ public:
 #endif
 #undef SYNC_DEBUG
 
-#endif
+#endif // VISUAL_SERVER_WRAP_MT_H

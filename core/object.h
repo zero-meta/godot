@@ -67,8 +67,10 @@ enum PropertyHint {
 	PROPERTY_HINT_FLAGS, ///< hint_text= "flag1,flag2,etc" (as bit flags)
 	PROPERTY_HINT_LAYERS_2D_RENDER,
 	PROPERTY_HINT_LAYERS_2D_PHYSICS,
+	PROPERTY_HINT_LAYERS_2D_NAVIGATION,
 	PROPERTY_HINT_LAYERS_3D_RENDER,
 	PROPERTY_HINT_LAYERS_3D_PHYSICS,
+	PROPERTY_HINT_LAYERS_3D_NAVIGATION,
 	PROPERTY_HINT_FILE, ///< a file path must be passed, hint_text (optionally) is a filter "*.png,*.wav,*.doc,"
 	PROPERTY_HINT_DIR, ///< a directory path must be passed
 	PROPERTY_HINT_GLOBAL_FILE, ///< a file path must be passed, hint_text (optionally) is a filter "*.png,*.wav,*.doc,"
@@ -94,6 +96,7 @@ enum PropertyHint {
 	PROPERTY_HINT_NODE_PATH_VALID_TYPES,
 	PROPERTY_HINT_SAVE_FILE, ///< a file path must be passed, hint_text (optionally) is a filter "*.png,*.wav,*.doc,". This opens a save dialog
 	PROPERTY_HINT_ENUM_SUGGESTION, ///< hint_text= "val1,val2,val3,etc"
+	PROPERTY_HINT_LOCALE_ID,
 	PROPERTY_HINT_MAX,
 	// When updating PropertyHint, also sync the hardcoded list in VisualScriptEditorVariableEdit
 };
@@ -806,4 +809,4 @@ public:
 //needed by macros
 #include "core/class_db.h"
 
-#endif
+#endif // OBJECT_H

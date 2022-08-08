@@ -818,6 +818,7 @@ Error GLTFDocument::_parse_buffers(Ref<GLTFState> state, const String &p_base_pa
 					}
 					buffer_data = _parse_base64_uri(uri);
 				} else { // Relative path to an external image file.
+					uri = uri.http_unescape();
 					uri = p_base_path.plus_file(uri).replace("\\", "/"); // Fix for Windows.
 					buffer_data = FileAccess::get_file_as_array(uri);
 					ERR_FAIL_COND_V_MSG(buffer.size() == 0, ERR_PARSE_ERROR, "glTF: Couldn't load binary file as an array: " + uri);
@@ -2620,6 +2621,7 @@ Error GLTFDocument::_parse_meshes(Ref<GLTFState> state) {
 		return OK;
 	}
 
+	bool has_warned = false;
 	Array meshes = state->json["meshes"];
 	for (GLTFMeshIndex i = 0; i < meshes.size(); i++) {
 		print_verbose("glTF: Parsing mesh: " + itos(i));
@@ -2692,11 +2694,16 @@ Error GLTFDocument::_parse_meshes(Ref<GLTFState> state) {
 				array[Mesh::ARRAY_COLOR] = _decode_accessor_as_color(state, a["COLOR_0"], true);
 				has_vertex_color = true;
 			}
-			if (a.has("JOINTS_0") && !a.has("JOINTS_1")) {
+			if (a.has("JOINTS_0")) {
 				array[Mesh::ARRAY_BONES] = _decode_accessor_as_ints(state, a["JOINTS_0"], true);
 			}
-			ERR_CONTINUE(a.has("JOINTS_0") && a.has("JOINTS_1"));
-			if (a.has("WEIGHTS_0") && !a.has("WEIGHTS_1")) {
+			if (a.has("WEIGHTS_1") && a.has("JOINTS_1")) {
+				if (!has_warned) {
+					WARN_PRINT("glTF: Meshes use more than 4 bone joints");
+					has_warned = true;
+				}
+			}
+			if (a.has("WEIGHTS_0")) {
 				Vector<float> weights = _decode_accessor_as_floats(state, a["WEIGHTS_0"], true);
 				{ //gltf does not seem to normalize the weights for some reason..
 					int wc = weights.size();
@@ -2718,7 +2725,6 @@ Error GLTFDocument::_parse_meshes(Ref<GLTFState> state) {
 				}
 				array[Mesh::ARRAY_WEIGHTS] = weights;
 			}
-			ERR_CONTINUE(a.has("WEIGHTS_0") && a.has("WEIGHTS_1"));
 
 			if (p.has("indices")) {
 				Vector<int> indices = _decode_accessor_as_ints(state, p["indices"], false);
@@ -3023,9 +3029,9 @@ Error GLTFDocument::_parse_images(Ref<GLTFState> state, const String &p_base_pat
 
 		// We'll assume that we use either URI or bufferView, so let's warn the user
 		// if their image somehow uses both. And fail if it has neither.
-		ERR_CONTINUE_MSG(!d.has("uri") && !d.has("bufferView"), "Invalid image definition in glTF file, it should specific an 'uri' or 'bufferView'.");
+		ERR_CONTINUE_MSG(!d.has("uri") && !d.has("bufferView"), "Invalid image definition in glTF file, it should specify an 'uri' or 'bufferView'.");
 		if (d.has("uri") && d.has("bufferView")) {
-			WARN_PRINT("Invalid image definition in glTF file using both 'uri' and 'bufferView'. 'bufferView' will take precedence.");
+			WARN_PRINT("Invalid image definition in glTF file using both 'uri' and 'bufferView'. 'uri' will take precedence.");
 		}
 
 		String mimetype;
@@ -3063,6 +3069,7 @@ Error GLTFDocument::_parse_images(Ref<GLTFState> state, const String &p_base_pat
 					}
 				}
 			} else { // Relative path to an external image file.
+				uri = uri.http_unescape();
 				uri = p_base_path.plus_file(uri).replace("\\", "/"); // Fix for Windows.
 				// ResourceLoader will rely on the file extension to use the relevant loader.
 				// The spec says that if mimeType is defined, it should take precedence (e.g.
@@ -5170,19 +5177,16 @@ Spatial *GLTFDocument::_generate_light(Ref<GLTFState> state, Node *scene_parent,
 	}
 
 	const float range = CLAMP(l->range, 0, 4096);
-	// Doubling the range will double the effective brightness, so we need double attenuation (half brightness).
-	// We want to have double intensity give double brightness, so we need half the attenuation.
-	const float attenuation = range / intensity;
 	if (l->type == "point") {
 		OmniLight *light = memnew(OmniLight);
-		light->set_param(OmniLight::PARAM_ATTENUATION, attenuation);
+		light->set_param(OmniLight::PARAM_ENERGY, intensity);
 		light->set_param(OmniLight::PARAM_RANGE, range);
 		light->set_color(l->color);
 		return light;
 	}
 	if (l->type == "spot") {
 		SpotLight *light = memnew(SpotLight);
-		light->set_param(SpotLight::PARAM_ATTENUATION, attenuation);
+		light->set_param(SpotLight::PARAM_ENERGY, intensity);
 		light->set_param(SpotLight::PARAM_RANGE, range);
 		light->set_param(SpotLight::PARAM_SPOT_ANGLE, Math::rad2deg(l->outer_cone_angle));
 		light->set_color(l->color);
@@ -5251,14 +5255,12 @@ GLTFLightIndex GLTFDocument::_convert_light(Ref<GLTFState> state, Light *p_light
 		l->type = "point";
 		OmniLight *light = cast_to<OmniLight>(p_light);
 		l->range = light->get_param(OmniLight::PARAM_RANGE);
-		float attenuation = p_light->get_param(OmniLight::PARAM_ATTENUATION);
-		l->intensity = l->range / attenuation;
+		l->intensity = light->get_param(OmniLight::PARAM_ENERGY);
 	} else if (cast_to<SpotLight>(p_light)) {
 		l->type = "spot";
 		SpotLight *light = cast_to<SpotLight>(p_light);
 		l->range = light->get_param(SpotLight::PARAM_RANGE);
-		float attenuation = light->get_param(SpotLight::PARAM_ATTENUATION);
-		l->intensity = l->range / attenuation;
+		l->intensity = light->get_param(SpotLight::PARAM_ENERGY);
 		l->outer_cone_angle = Math::deg2rad(light->get_param(SpotLight::PARAM_SPOT_ANGLE));
 
 		// This equation is the inverse of the import equation (which has a desmos link).

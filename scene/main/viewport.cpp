@@ -184,6 +184,7 @@ public:
 Viewport::GUI::GUI() {
 	dragging = false;
 	drag_successful = false;
+	mouse_in_window = true;
 	mouse_focus = nullptr;
 	mouse_click_grabber = nullptr;
 	mouse_focus_mask = 0;
@@ -398,21 +399,26 @@ void Viewport::_notification(int p_what) {
 				_process_picking(false);
 			}
 		} break;
-		case SceneTree::NOTIFICATION_WM_MOUSE_EXIT: {
-			_drop_physics_mouseover();
-
-			// Unlike on loss of focus (NOTIFICATION_WM_WINDOW_FOCUS_OUT), do not
-			// drop the gui mouseover here, as a scrollbar may be dragged while the
-			// mouse is outside the window (without the window having lost focus).
-			// See bug #39634
+		case NOTIFICATION_WM_MOUSE_ENTER: {
+			gui.mouse_in_window = true;
 		} break;
-		case SceneTree::NOTIFICATION_WM_FOCUS_OUT: {
+		case NOTIFICATION_WM_MOUSE_EXIT: {
+			gui.mouse_in_window = false;
 			_drop_physics_mouseover();
-
+			_drop_mouse_over();
+			// When the mouse exits the window, we want to end mouse_over, but
+			// not mouse_focus, because, for example, we want to continue
+			// dragging a scrollbar even if the mouse has left the window.
+		} break;
+		case NOTIFICATION_WM_FOCUS_OUT: {
+			_drop_physics_mouseover();
 			if (gui.mouse_focus) {
-				//if mouse is being pressed, send a release event
 				_drop_mouse_focus();
 			}
+			// When the window focus changes, we want to end mouse_focus, but
+			// not the mouse_over. Note: The OS will trigger a separate mouse
+			// exit event if the change in focus results in the mouse exiting
+			// the window.
 		} break;
 	}
 }
@@ -1861,9 +1867,6 @@ void Viewport::_gui_input_event(Ref<InputEvent> p_event) {
 
 	if (mb.is_valid()) {
 		gui.key_event_accepted = false;
-
-		Control *over = nullptr;
-
 		Point2 mpos = mb->get_position();
 		if (mb->is_pressed()) {
 			Size2 pos = mpos;
@@ -2057,6 +2060,8 @@ void Viewport::_gui_input_event(Ref<InputEvent> p_event) {
 			// it is different, rather than wait for it to be updated the next time the
 			// mouse is moved, notify the control so that it can e.g. drop the highlight.
 			// This code is duplicated from the mm.is_valid()-case further below.
+
+			Control *over = nullptr;
 			if (gui.mouse_focus) {
 				over = gui.mouse_focus;
 			} else {
@@ -2086,8 +2091,6 @@ void Viewport::_gui_input_event(Ref<InputEvent> p_event) {
 		Point2 mpos = mm->get_position();
 
 		gui.last_mouse_pos = mpos;
-
-		Control *over = nullptr;
 
 		// D&D
 		if (!gui.drag_attempted && gui.mouse_focus && mm->get_button_mask() & BUTTON_MASK_LEFT) {
@@ -2135,12 +2138,10 @@ void Viewport::_gui_input_event(Ref<InputEvent> p_event) {
 			}
 		}
 
-		// These sections of code are reused in the mb.is_valid() case further up
-		// for the purpose of notifying controls about potential changes in focus
-		// when the mousebutton is released.
+		Control *over = nullptr;
 		if (gui.mouse_focus) {
 			over = gui.mouse_focus;
-		} else {
+		} else if (gui.mouse_in_window) {
 			over = _gui_find_control(mpos);
 		}
 
@@ -2187,10 +2188,9 @@ void Viewport::_gui_input_event(Ref<InputEvent> p_event) {
 
 			if (over) {
 				_gui_call_notification(over, Control::NOTIFICATION_MOUSE_ENTER);
+				gui.mouse_over = over;
 			}
 		}
-
-		gui.mouse_over = over;
 
 		Control *drag_preview = _gui_get_drag_preview();
 		if (drag_preview) {
@@ -2895,8 +2895,8 @@ void Viewport::unhandled_input(const Ref<InputEvent> &p_event) {
 	}
 }
 
-void Viewport::set_use_own_world(bool p_world) {
-	if (p_world == own_world.is_valid()) {
+void Viewport::set_use_own_world(bool p_use_own_world) {
+	if (p_use_own_world == own_world.is_valid()) {
 		return;
 	}
 
@@ -2904,17 +2904,17 @@ void Viewport::set_use_own_world(bool p_world) {
 		_propagate_exit_world(this);
 	}
 
-	if (!p_world) {
-		own_world = Ref<World>();
-		if (world.is_valid()) {
-			world->disconnect(CoreStringNames::get_singleton()->changed, this, "_own_world_changed");
-		}
-	} else {
+	if (p_use_own_world) {
 		if (world.is_valid()) {
 			own_world = world->duplicate();
 			world->connect(CoreStringNames::get_singleton()->changed, this, "_own_world_changed");
 		} else {
 			own_world = Ref<World>(memnew(World));
+		}
+	} else {
+		own_world = Ref<World>();
+		if (world.is_valid()) {
+			world->disconnect(CoreStringNames::get_singleton()->changed, this, "_own_world_changed");
 		}
 	}
 
@@ -3022,11 +3022,6 @@ Control *Viewport::get_modal_stack_top() const {
 }
 
 String Viewport::get_configuration_warning() const {
-	/*if (get_parent() && !Object::cast_to<Control>(get_parent()) && !render_target) {
-
-		return TTR("This viewport is not set as render target. If you intend for it to display its contents directly to the screen, make it a child of a Control so it can obtain a size. Otherwise, make it a RenderTarget and assign its internal texture to some node for display.");
-	}*/
-
 	String warning = Node::get_configuration_warning();
 
 	if (size.x <= 1 || size.y <= 1) {
@@ -3035,6 +3030,14 @@ String Viewport::get_configuration_warning() const {
 		}
 		warning += TTR("The Viewport size must be greater than or equal to 2 pixels on both dimensions to render anything.");
 	}
+
+	if (hdr && (usage == USAGE_2D || usage == USAGE_2D_NO_SAMPLING)) {
+		if (warning != String()) {
+			warning += "\n\n";
+		}
+		warning += TTR("This Viewport has HDR enabled, but its Usage is set to 2D or 2D No-Sampling.\nHDR is only supported in Viewports that have their Usage set to 3D or 3D No-Effects.\nHDR will be disabled for this Viewport.");
+	}
+
 	return warning;
 }
 
@@ -3101,6 +3104,7 @@ void Viewport::set_hdr(bool p_hdr) {
 
 	hdr = p_hdr;
 	VS::get_singleton()->viewport_set_hdr(viewport, p_hdr);
+	update_configuration_warning();
 }
 
 bool Viewport::get_hdr() const {
@@ -3121,8 +3125,13 @@ bool Viewport::is_using_32_bpc_depth() const {
 }
 
 void Viewport::set_usage(Usage p_usage) {
+	if (usage == p_usage) {
+		return;
+	}
+
 	usage = p_usage;
 	VS::get_singleton()->viewport_set_usage(viewport, VS::ViewportUsage(p_usage));
+	update_configuration_warning();
 }
 
 Viewport::Usage Viewport::get_usage() const {
@@ -3369,7 +3378,7 @@ void Viewport::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "gui_disable_input"), "set_disable_input", "is_input_disabled");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "gui_snap_controls_to_pixels"), "set_snap_controls_to_pixels", "is_snap_controls_to_pixels_enabled");
 	ADD_GROUP("Shadow Atlas", "shadow_atlas_");
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "shadow_atlas_size"), "set_shadow_atlas_size", "get_shadow_atlas_size");
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "shadow_atlas_size", PROPERTY_HINT_RANGE, "0,16384,256"), "set_shadow_atlas_size", "get_shadow_atlas_size");
 	ADD_PROPERTYI(PropertyInfo(Variant::INT, "shadow_atlas_quad_0", PROPERTY_HINT_ENUM, "Disabled,1 Shadow,4 Shadows,16 Shadows,64 Shadows,256 Shadows,1024 Shadows"), "set_shadow_atlas_quadrant_subdiv", "get_shadow_atlas_quadrant_subdiv", 0);
 	ADD_PROPERTYI(PropertyInfo(Variant::INT, "shadow_atlas_quad_1", PROPERTY_HINT_ENUM, "Disabled,1 Shadow,4 Shadows,16 Shadows,64 Shadows,256 Shadows,1024 Shadows"), "set_shadow_atlas_quadrant_subdiv", "get_shadow_atlas_quadrant_subdiv", 1);
 	ADD_PROPERTYI(PropertyInfo(Variant::INT, "shadow_atlas_quad_2", PROPERTY_HINT_ENUM, "Disabled,1 Shadow,4 Shadows,16 Shadows,64 Shadows,256 Shadows,1024 Shadows"), "set_shadow_atlas_quadrant_subdiv", "get_shadow_atlas_quadrant_subdiv", 2);

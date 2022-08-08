@@ -48,6 +48,7 @@
 #ifdef XAUDIO2_ENABLED
 #include "drivers/xaudio2/audio_driver_xaudio2.h"
 #endif
+#include "tts_windows.h"
 
 #include <dwmapi.h>
 #include <fcntl.h>
@@ -71,9 +72,12 @@
 #define DVC_ROTATION 18
 
 #define CXO_MESSAGES 0x0004
+#define PK_STATUS 0x0002
 #define PK_NORMAL_PRESSURE 0x0400
 #define PK_TANGENT_PRESSURE 0x0800
 #define PK_ORIENTATION 0x1000
+
+#define TPS_INVERT 0x0010 /* 1.1 */
 
 typedef struct tagLOGCONTEXTW {
 	WCHAR lcName[40];
@@ -126,6 +130,7 @@ typedef struct tagORIENTATION {
 } ORIENTATION;
 
 typedef struct tagPACKET {
+	int pkStatus;
 	int pkNormalPressure;
 	int pkTangentPressure;
 	ORIENTATION pkOrientation;
@@ -146,6 +151,14 @@ typedef DWORD POINTER_INPUT_TYPE;
 typedef UINT32 POINTER_FLAGS;
 typedef UINT32 PEN_FLAGS;
 typedef UINT32 PEN_MASK;
+
+#ifndef PEN_FLAG_INVERTED
+#define PEN_FLAG_INVERTED 0x00000002
+#endif
+
+#ifndef PEN_FLAG_ERASER
+#define PEN_FLAG_ERASER 0x00000004
+#endif
 
 #ifndef PEN_MASK_PRESSURE
 #define PEN_MASK_PRESSURE 0x00000001
@@ -272,11 +285,13 @@ class OS_Windows : public OS {
 	int min_pressure;
 	int max_pressure;
 	bool tilt_supported;
+	bool pen_inverted = false;
 	bool block_mm = false;
 
 	int last_pressure_update;
 	float last_pressure;
 	Vector2 last_tilt;
+	bool last_pen_inverted = false;
 
 	enum {
 		KEY_EVENT_BUFFER_SIZE = 512
@@ -299,6 +314,8 @@ class OS_Windows : public OS {
 	uint64_t ticks_start;
 	uint64_t ticks_per_second;
 
+	TTS_Windows *tts = nullptr;
+
 	bool old_invalid;
 	bool outside;
 	int old_x, old_y;
@@ -317,6 +334,8 @@ class OS_Windows : public OS {
 	bool layered_window;
 
 	uint32_t move_timer_id;
+
+	Ref<Image> icon;
 
 	HCURSOR hCursor;
 
@@ -423,6 +442,15 @@ public:
 	void set_mouse_mode(MouseMode p_mode);
 	MouseMode get_mouse_mode() const;
 
+	virtual bool tts_is_speaking() const;
+	virtual bool tts_is_paused() const;
+	virtual Array tts_get_voices() const;
+
+	virtual void tts_speak(const String &p_text, const String &p_voice, int p_volume = 50, float p_pitch = 1.f, float p_rate = 1.f, int p_utterance_id = 0, bool p_interrupt = false);
+	virtual void tts_pause();
+	virtual void tts_resume();
+	virtual void tts_stop();
+
 	virtual void warp_mouse_position(const Point2 &p_to);
 	virtual Point2 get_mouse_position() const;
 	void update_real_mouse_position();
@@ -482,6 +510,8 @@ public:
 
 	virtual MainLoop *get_main_loop() const;
 
+	virtual uint64_t get_embedded_pck_offset() const;
+
 	virtual String get_name() const;
 
 	virtual Date get_date(bool utc) const;
@@ -500,6 +530,7 @@ public:
 	virtual Error execute(const String &p_path, const List<String> &p_arguments, bool p_blocking = true, ProcessID *r_child_id = NULL, String *r_pipe = NULL, int *r_exitcode = NULL, bool read_stderr = false, Mutex *p_pipe_mutex = NULL, bool p_open_console = false);
 	virtual Error kill(const ProcessID &p_pid);
 	virtual int get_process_id() const;
+	virtual bool is_process_running(const ProcessID &p_pid) const;
 
 	virtual bool has_environment(const String &p_var) const;
 	virtual String get_environment(const String &p_var) const;
@@ -583,4 +614,4 @@ public:
 	~OS_Windows();
 };
 
-#endif
+#endif // OS_WINDOWS_H

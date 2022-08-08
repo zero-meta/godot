@@ -1161,7 +1161,7 @@ bool RasterizerSceneGLES3::_setup_material(RasterizerStorageGLES3::Material *p_m
 
 		if (t) {
 			if (t->redraw_if_visible) { //must check before proxy because this is often used with proxies
-				VisualServerRaster::redraw_request();
+				VisualServerRaster::redraw_request(false);
 			}
 
 			t = t->get_ptr(); //resolve for proxies
@@ -1194,6 +1194,9 @@ bool RasterizerSceneGLES3::_setup_material(RasterizerStorageGLES3::Material *p_m
 						case ShaderLanguage::ShaderNode::Uniform::HINT_BLACK_ALBEDO:
 						case ShaderLanguage::ShaderNode::Uniform::HINT_BLACK: {
 							tex = storage->resources.black_tex;
+						} break;
+						case ShaderLanguage::ShaderNode::Uniform::HINT_TRANSPARENT: {
+							tex = storage->resources.transparent_tex;
 						} break;
 						case ShaderLanguage::ShaderNode::Uniform::HINT_ANISO: {
 							tex = storage->resources.aniso_tex;
@@ -1569,7 +1572,7 @@ void RasterizerSceneGLES3::_render_geometry(RenderList::Element *e) {
 					RasterizerStorageGLES3::Texture *t = storage->texture_owner.get(c.texture);
 
 					if (t->redraw_if_visible) {
-						VisualServerRaster::redraw_request();
+						VisualServerRaster::redraw_request(false);
 					}
 					t = t->get_ptr(); //resolve for proxies
 
@@ -2102,7 +2105,7 @@ void RasterizerSceneGLES3::_render_list(RenderList::Element **p_elements, int p_
 							if (storage->frame.current_rt && storage->frame.current_rt->flags[RasterizerStorage::RENDER_TARGET_TRANSPARENT]) {
 								glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 							} else {
-								glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+								glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ZERO, GL_ONE);
 							}
 
 						} break;
@@ -2325,7 +2328,7 @@ void RasterizerSceneGLES3::_add_geometry_with_material(RasterizerStorageGLES3::G
 		if (has_blend_alpha || p_material->shader->spatial.uses_depth_texture || ((has_base_alpha || p_instance->cast_shadows == VS::SHADOW_CASTING_SETTING_OFF) && p_material->shader->spatial.depth_draw_mode != RasterizerStorageGLES3::Shader::Spatial::DEPTH_DRAW_ALPHA_PREPASS) || p_material->shader->spatial.depth_draw_mode == RasterizerStorageGLES3::Shader::Spatial::DEPTH_DRAW_NEVER || p_material->shader->spatial.no_depth_test) {
 			return; //bye
 		}
-		if (!p_material->shader->shader->is_custom_code_ready_for_render(p_material->shader->custom_code_id)) {
+		if (!p_shadow_pass && !p_material->shader->shader->is_custom_code_ready_for_render(p_material->shader->custom_code_id)) {
 			// The shader is not guaranteed to be able to render (i.e., a not yet ready async hidden one);
 			// skip depth rendering because otherwise we risk masking out pixels that won't get written to at the actual render pass
 			return;
@@ -3593,7 +3596,7 @@ void RasterizerSceneGLES3::_post_process(Environment *env, const CameraMatrix &p
 		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 	}
 
-	if ((!env || storage->frame.current_rt->flags[RasterizerStorage::RENDER_TARGET_TRANSPARENT] || storage->frame.current_rt->width < 4 || storage->frame.current_rt->height < 4) && !storage->frame.current_rt->use_fxaa && !storage->frame.current_rt->use_debanding && storage->frame.current_rt->sharpen_intensity < 0.001) { //no post process on small render targets
+	if ((!env || storage->frame.current_rt->width < 4 || storage->frame.current_rt->height < 4) && !storage->frame.current_rt->use_fxaa && !storage->frame.current_rt->use_debanding && storage->frame.current_rt->sharpen_intensity < 0.001) { //no post process on small render targets
 		//no environment or transparent render, simply return and convert to SRGB
 		if (storage->frame.current_rt->external.fbo != 0) {
 			glBindFramebuffer(GL_FRAMEBUFFER, storage->frame.current_rt->external.fbo);
@@ -3742,7 +3745,8 @@ void RasterizerSceneGLES3::_post_process(Environment *env, const CameraMatrix &p
 		if (composite_from != storage->frame.current_rt->buffers.diffuse) {
 			glEnable(GL_BLEND);
 			glBlendEquation(GL_FUNC_ADD);
-			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+			// Alpha was used by the horizontal pass, it should not carry over.
+			glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ZERO, GL_ONE);
 
 		} else {
 			glActiveTexture(GL_TEXTURE2);
@@ -4000,6 +4004,7 @@ void RasterizerSceneGLES3::_post_process(Environment *env, const CameraMatrix &p
 		}
 	}
 
+	state.tonemap_shader.set_conditional(TonemapShaderGLES3::DISABLE_ALPHA, !storage->frame.current_rt->flags[RasterizerStorage::RENDER_TARGET_TRANSPARENT]);
 	state.tonemap_shader.set_conditional(TonemapShaderGLES3::V_FLIP, storage->frame.current_rt->flags[RasterizerStorage::RENDER_TARGET_VFLIP]);
 	state.tonemap_shader.bind();
 
@@ -4063,6 +4068,7 @@ void RasterizerSceneGLES3::_post_process(Environment *env, const CameraMatrix &p
 	state.tonemap_shader.set_conditional(TonemapShaderGLES3::USE_BCS, false);
 	state.tonemap_shader.set_conditional(TonemapShaderGLES3::USE_COLOR_CORRECTION, false);
 	state.tonemap_shader.set_conditional(TonemapShaderGLES3::V_FLIP, false);
+	state.tonemap_shader.set_conditional(TonemapShaderGLES3::DISABLE_ALPHA, false);
 }
 
 bool RasterizerSceneGLES3::_element_needs_directional_add(RenderList::Element *e) {
@@ -4460,7 +4466,7 @@ void RasterizerSceneGLES3::render_scene(const Transform &p_cam_transform, const 
 		glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 		glEnable(GL_BLEND);
 	} else {
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ZERO, GL_ONE);
 		glDisable(GL_BLEND);
 	}
 
@@ -5294,7 +5300,7 @@ void RasterizerSceneGLES3::initialize() {
 	glFrontFace(GL_CW);
 
 	if (storage->config.async_compilation_enabled) {
-		state.scene_shader.init_async_compilation();
+		state.scene_shader.init_async_compilation(storage->resources.depth_tex);
 	}
 }
 

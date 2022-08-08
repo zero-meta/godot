@@ -301,21 +301,21 @@ Vector3 Basis::rotref_posscale_decomposition(Basis &rotref) const {
 // The main use of Basis is as Transform.basis, which is used a the transformation matrix
 // of 3D object. Rotate here refers to rotation of the object (which is R * (*this)),
 // not the matrix itself (which is R * (*this) * R.transposed()).
-Basis Basis::rotated(const Vector3 &p_axis, real_t p_phi) const {
-	return Basis(p_axis, p_phi) * (*this);
+Basis Basis::rotated(const Vector3 &p_axis, real_t p_angle) const {
+	return Basis(p_axis, p_angle) * (*this);
 }
 
-void Basis::rotate(const Vector3 &p_axis, real_t p_phi) {
-	*this = rotated(p_axis, p_phi);
+void Basis::rotate(const Vector3 &p_axis, real_t p_angle) {
+	*this = rotated(p_axis, p_angle);
 }
 
-void Basis::rotate_local(const Vector3 &p_axis, real_t p_phi) {
+void Basis::rotate_local(const Vector3 &p_axis, real_t p_angle) {
 	// performs a rotation in object-local coordinate system:
 	// M -> (M.R.Minv).M = M.R.
-	*this = rotated_local(p_axis, p_phi);
+	*this = rotated_local(p_axis, p_angle);
 }
-Basis Basis::rotated_local(const Vector3 &p_axis, real_t p_phi) const {
-	return (*this) * Basis(p_axis, p_phi);
+Basis Basis::rotated_local(const Vector3 &p_axis, real_t p_angle) const {
+	return (*this) * Basis(p_axis, p_angle);
 }
 
 Basis Basis::rotated(const Vector3 &p_euler) const {
@@ -867,14 +867,13 @@ void Basis::get_axis_angle(Vector3 &r_axis, real_t &r_angle) const {
 #endif
 */
 	real_t angle, x, y, z; // variables for result
-	real_t epsilon = 0.01; // margin to allow for rounding errors
-	real_t epsilon2 = 0.1; // margin to distinguish between 0 and 180 degrees
+	real_t angle_epsilon = 0.1; // margin to distinguish between 0 and 180 degrees
 
-	if ((Math::abs(elements[1][0] - elements[0][1]) < epsilon) && (Math::abs(elements[2][0] - elements[0][2]) < epsilon) && (Math::abs(elements[2][1] - elements[1][2]) < epsilon)) {
+	if ((Math::abs(elements[1][0] - elements[0][1]) < CMP_EPSILON) && (Math::abs(elements[2][0] - elements[0][2]) < CMP_EPSILON) && (Math::abs(elements[2][1] - elements[1][2]) < CMP_EPSILON)) {
 		// singularity found
 		// first check for identity matrix which must have +1 for all terms
 		//  in leading diagonaland zero in other terms
-		if ((Math::abs(elements[1][0] + elements[0][1]) < epsilon2) && (Math::abs(elements[2][0] + elements[0][2]) < epsilon2) && (Math::abs(elements[2][1] + elements[1][2]) < epsilon2) && (Math::abs(elements[0][0] + elements[1][1] + elements[2][2] - 3) < epsilon2)) {
+		if ((Math::abs(elements[1][0] + elements[0][1]) < angle_epsilon) && (Math::abs(elements[2][0] + elements[0][2]) < angle_epsilon) && (Math::abs(elements[2][1] + elements[1][2]) < angle_epsilon) && (Math::abs(elements[0][0] + elements[1][1] + elements[2][2] - 3) < angle_epsilon)) {
 			// this singularity is identity matrix so angle = 0
 			r_axis = Vector3(0, 1, 0);
 			r_angle = 0;
@@ -889,7 +888,7 @@ void Basis::get_axis_angle(Vector3 &r_axis, real_t &r_angle) const {
 		real_t xz = (elements[2][0] + elements[0][2]) / 4;
 		real_t yz = (elements[2][1] + elements[1][2]) / 4;
 		if ((xx > yy) && (xx > zz)) { // elements[0][0] is the largest diagonal term
-			if (xx < epsilon) {
+			if (xx < CMP_EPSILON) {
 				x = 0;
 				y = Math_SQRT12;
 				z = Math_SQRT12;
@@ -899,7 +898,7 @@ void Basis::get_axis_angle(Vector3 &r_axis, real_t &r_angle) const {
 				z = xz / x;
 			}
 		} else if (yy > zz) { // elements[1][1] is the largest diagonal term
-			if (yy < epsilon) {
+			if (yy < CMP_EPSILON) {
 				x = Math_SQRT12;
 				y = 0;
 				z = Math_SQRT12;
@@ -909,7 +908,7 @@ void Basis::get_axis_angle(Vector3 &r_axis, real_t &r_angle) const {
 				z = yz / y;
 			}
 		} else { // elements[2][2] is the largest diagonal term so base result on this
-			if (zz < epsilon) {
+			if (zz < CMP_EPSILON) {
 				x = Math_SQRT12;
 				y = Math_SQRT12;
 				z = 0;
@@ -950,18 +949,18 @@ void Basis::set_quat(const Quat &p_quat) {
 			xz - wy, yz + wx, 1 - (xx + yy));
 }
 
-void Basis::set_axis_angle(const Vector3 &p_axis, real_t p_phi) {
+void Basis::set_axis_angle(const Vector3 &p_axis, real_t p_angle) {
 // Rotation matrix from axis and angle, see https://en.wikipedia.org/wiki/Rotation_matrix#Rotation_matrix_from_axis_angle
 #ifdef MATH_CHECKS
 	ERR_FAIL_COND_MSG(!p_axis.is_normalized(), "The axis Vector3 must be normalized.");
 #endif
 	Vector3 axis_sq(p_axis.x * p_axis.x, p_axis.y * p_axis.y, p_axis.z * p_axis.z);
-	real_t cosine = Math::cos(p_phi);
+	real_t cosine = Math::cos(p_angle);
 	elements[0][0] = axis_sq.x + cosine * (1 - axis_sq.x);
 	elements[1][1] = axis_sq.y + cosine * (1 - axis_sq.y);
 	elements[2][2] = axis_sq.z + cosine * (1 - axis_sq.z);
 
-	real_t sine = Math::sin(p_phi);
+	real_t sine = Math::sin(p_angle);
 	real_t t = 1 - cosine;
 
 	real_t xyzt = p_axis.x * p_axis.y * t;
@@ -980,9 +979,9 @@ void Basis::set_axis_angle(const Vector3 &p_axis, real_t p_phi) {
 	elements[2][1] = xyzt + zyxs;
 }
 
-void Basis::set_axis_angle_scale(const Vector3 &p_axis, real_t p_phi, const Vector3 &p_scale) {
+void Basis::set_axis_angle_scale(const Vector3 &p_axis, real_t p_angle, const Vector3 &p_scale) {
 	set_diagonal(p_scale);
-	rotate(p_axis, p_phi);
+	rotate(p_axis, p_angle);
 }
 
 void Basis::set_euler_scale(const Vector3 &p_euler, const Vector3 &p_scale) {

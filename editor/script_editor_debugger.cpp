@@ -175,7 +175,7 @@ public:
 
 	String get_title() {
 		if (remote_object_id) {
-			return TTR("Remote ") + String(type_name) + ": " + itos(remote_object_id);
+			return vformat(TTR("Remote %s:"), String(type_name)) + " " + itos(remote_object_id);
 		} else {
 			return "<null>";
 		}
@@ -595,25 +595,25 @@ void ScriptEditorDebugger::_parse_message(const String &p_msg, const Array &p_da
 		le_clear->set_disabled(false);
 		le_set->set_disabled(false);
 	} else if (p_msg == "message:inspect_object") {
-		ScriptEditorDebuggerInspectedObject *debugObj = nullptr;
+		ScriptEditorDebuggerInspectedObject *debug_obj = nullptr;
 
 		ObjectID id = p_data[0];
 		String type = p_data[1];
 		Array properties = p_data[2];
 
 		if (remote_objects.has(id)) {
-			debugObj = remote_objects[id];
+			debug_obj = remote_objects[id];
 		} else {
-			debugObj = memnew(ScriptEditorDebuggerInspectedObject);
-			debugObj->remote_object_id = id;
-			debugObj->type_name = type;
-			remote_objects[id] = debugObj;
-			debugObj->connect("value_edited", this, "_scene_tree_property_value_edited");
+			debug_obj = memnew(ScriptEditorDebuggerInspectedObject);
+			debug_obj->remote_object_id = id;
+			debug_obj->type_name = type;
+			remote_objects[id] = debug_obj;
+			debug_obj->connect("value_edited", this, "_scene_tree_property_value_edited");
 		}
 
-		int old_prop_size = debugObj->prop_list.size();
+		int old_prop_size = debug_obj->prop_list.size();
 
-		debugObj->prop_list.clear();
+		debug_obj->prop_list.clear();
 		int new_props_added = 0;
 		Set<String> changed;
 		for (int i = 0; i < properties.size(); i++) {
@@ -646,12 +646,14 @@ void ScriptEditorDebugger::_parse_message(const String &p_msg, const Array &p_da
 					var = ResourceLoader::load(path);
 
 					if (pinfo.hint_string == "Script") {
-						if (debugObj->get_script() != var) {
-							debugObj->set_script(RefPtr());
+						if (debug_obj->get_script() != var) {
+							debug_obj->set_script(RefPtr());
 							Ref<Script> script(var);
 							if (!script.is_null()) {
-								ScriptInstance *script_instance = script->placeholder_instance_create(debugObj);
-								debugObj->set_script_and_instance(var, script_instance);
+								ScriptInstance *script_instance = script->placeholder_instance_create(debug_obj);
+								if (script_instance) {
+									debug_obj->set_script_and_instance(var, script_instance);
+								}
 							}
 						}
 					}
@@ -666,30 +668,31 @@ void ScriptEditorDebugger::_parse_message(const String &p_msg, const Array &p_da
 			}
 
 			//always add the property, since props may have been added or removed
-			debugObj->prop_list.push_back(pinfo);
+			debug_obj->prop_list.push_back(pinfo);
 
-			if (!debugObj->prop_values.has(pinfo.name)) {
+			if (!debug_obj->prop_values.has(pinfo.name)) {
 				new_props_added++;
-				debugObj->prop_values[pinfo.name] = var;
+				debug_obj->prop_values[pinfo.name] = var;
 			} else {
-				if (bool(Variant::evaluate(Variant::OP_NOT_EQUAL, debugObj->prop_values[pinfo.name], var))) {
-					debugObj->prop_values[pinfo.name] = var;
+				// Compare using `deep_equal` so dictionaries/arrays will be compared by value.
+				if (!debug_obj->prop_values[pinfo.name].deep_equal(var)) {
+					debug_obj->prop_values[pinfo.name] = var;
 					changed.insert(pinfo.name);
 				}
 			}
 		}
 
-		if (editor->get_editor_history()->get_current() != debugObj->get_instance_id()) {
-			editor->push_item(debugObj, "");
+		if (editor->get_editor_history()->get_current() != debug_obj->get_instance_id()) {
+			editor->push_item(debug_obj, "");
 		} else {
-			if (old_prop_size == debugObj->prop_list.size() && new_props_added == 0) {
+			if (old_prop_size == debug_obj->prop_list.size() && new_props_added == 0) {
 				//only some may have changed, if so, then update those, if exist
 				for (Set<String>::Element *E = changed.front(); E; E = E->next()) {
 					EditorNode::get_singleton()->get_inspector()->update_property(E->get());
 				}
 			} else {
 				//full update, because props were added or removed
-				debugObj->update();
+				debug_obj->update();
 			}
 		}
 	} else if (p_msg == "message:video_mem") {
@@ -715,7 +718,6 @@ void ScriptEditorDebugger::_parse_message(const String &p_msg, const Array &p_da
 
 		vmem_total->set_tooltip(TTR("Bytes:") + " " + itos(total));
 		vmem_total->set_text(String::humanize_size(total));
-
 	} else if (p_msg == "stack_dump") {
 		stack_dump->clear();
 		TreeItem *r = stack_dump->create_item();
@@ -801,7 +803,6 @@ void ScriptEditorDebugger::_parse_message(const String &p_msg, const Array &p_da
 
 		variables->update();
 		inspector->edit(variables);
-
 	} else if (p_msg == "output") {
 		//OUT
 		for (int i = 0; i < p_data.size(); i++) {
@@ -837,7 +838,6 @@ void ScriptEditorDebugger::_parse_message(const String &p_msg, const Array &p_da
 
 			EditorNode::get_log()->add_message(str, msg_type);
 		}
-
 	} else if (p_msg == "performance") {
 		Array arr = p_data[0];
 		Vector<float> p;
@@ -871,7 +871,6 @@ void ScriptEditorDebugger::_parse_message(const String &p_msg, const Array &p_da
 		}
 		perf_history.push_front(p);
 		perf_draw->update();
-
 	} else if (p_msg == "error") {
 		// Should have at least two elements, error array and stack items count.
 		ERR_FAIL_COND_MSG(p_data.size() < 2, "Malformed error message from script debugger.");
@@ -999,17 +998,15 @@ void ScriptEditorDebugger::_parse_message(const String &p_msg, const Array &p_da
 		} else {
 			error_count++;
 		}
-
 	} else if (p_msg == "profile_sig") {
 		//cache a signature
 		profiler_signature[p_data[1]] = p_data[0];
-
 	} else if (p_msg == "profile_frame" || p_msg == "profile_total") {
 		EditorProfiler::Metric metric;
 		metric.valid = true;
 		metric.frame_number = p_data[0];
 		metric.frame_time = p_data[1];
-		metric.idle_time = p_data[2];
+		metric.process_time = p_data[2];
 		metric.physics_time = p_data[3];
 		metric.physics_frame_time = p_data[4];
 		int frame_data_amount = p_data[6];
@@ -1032,10 +1029,10 @@ void ScriptEditorDebugger::_parse_message(const String &p_msg, const Array &p_da
 
 			frame_time.items.push_back(item);
 
-			item.name = "Idle Time";
-			item.total = metric.idle_time;
+			item.name = "Process Time";
+			item.total = metric.process_time;
 			item.self = item.total;
-			item.signature = "idle_time";
+			item.signature = "process_time";
 
 			frame_time.items.push_back(item);
 
@@ -1565,8 +1562,10 @@ void ScriptEditorDebugger::_clear_execution() {
 	stack_script.unref();
 }
 
-void ScriptEditorDebugger::start() {
-	stop();
+void ScriptEditorDebugger::start(int p_port, const IP_Address &p_bind_address) {
+	if (is_inside_tree()) {
+		stop();
+	}
 
 	if (is_visible_in_tree()) {
 		EditorNode::get_singleton()->make_bottom_panel_item_visible(this);
@@ -1578,7 +1577,11 @@ void ScriptEditorDebugger::start() {
 	}
 
 	const int max_tries = 6;
-	remote_port = (int)EditorSettings::get_singleton()->get("network/debug/remote_port");
+	if (p_port < 0) {
+		remote_port = (int)EditorSettings::get_singleton()->get("network/debug/remote_port");
+	} else {
+		remote_port = p_port;
+	}
 	int current_try = 0;
 	// Find first available port.
 	Error err = server->listen(remote_port);
@@ -1587,7 +1590,7 @@ void ScriptEditorDebugger::start() {
 		current_try++;
 		remote_port++;
 		OS::get_singleton()->delay_usec(1000);
-		err = server->listen(remote_port);
+		err = server->listen(remote_port, p_bind_address);
 	}
 	// No suitable port found.
 	if (err != OK) {
@@ -1597,7 +1600,7 @@ void ScriptEditorDebugger::start() {
 	EditorNode::get_singleton()->get_scene_tree_dock()->show_tab_buttons();
 
 	auto_switch_remote_scene_tree = (bool)EditorSettings::get_singleton()->get("debugger/auto_switch_to_remote_scene_tree");
-	if (auto_switch_remote_scene_tree) {
+	if (is_inside_tree() && auto_switch_remote_scene_tree) {
 		EditorNode::get_singleton()->get_scene_tree_dock()->show_remote_tree();
 	}
 
@@ -2210,7 +2213,7 @@ void ScriptEditorDebugger::_error_tree_item_rmb_selected(const Vector2 &p_pos) {
 
 	if (error_tree->is_anything_selected()) {
 		item_menu->add_icon_item(get_icon("ActionCopy", "EditorIcons"), TTR("Copy Error"), ITEM_MENU_COPY_ERROR);
-		item_menu->add_icon_item(get_icon("Instance", "EditorIcons"), TTR("Open C++ Source on GitHub"), ITEM_MENU_OPEN_SOURCE);
+		item_menu->add_icon_item(get_icon("ExternalLink", "EditorIcons"), TTR("Open C++ Source on GitHub"), ITEM_MENU_OPEN_SOURCE);
 	}
 
 	if (item_menu->get_item_count() > 0) {

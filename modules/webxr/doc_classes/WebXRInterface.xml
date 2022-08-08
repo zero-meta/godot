@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<class name="WebXRInterface" inherits="ARVRInterface" version="3.5" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../doc/class.xsd">
+<class name="WebXRInterface" inherits="ARVRInterface" version="3.6" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../doc/class.xsd">
 	<brief_description>
 		AR/VR interface using WebXR.
 	</brief_description>
@@ -256,7 +256,7 @@
 	</signals>
 	<constants>
 		<constant name="TARGET_RAY_MODE_UNKNOWN" value="0" enum="TargetRayMode">
-			We don't know the the target ray mode.
+			We don't know the target ray mode.
 		</constant>
 		<constant name="TARGET_RAY_MODE_GAZE" value="1" enum="TargetRayMode">
 			Target ray originates at the viewer's eyes and points in the direction they are looking.

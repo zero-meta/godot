@@ -33,6 +33,7 @@
 
 #include "editor/create_dialog.h"
 #include "editor/editor_inspector.h"
+#include "editor/editor_locale_dialog.h"
 #include "editor/editor_resource_picker.h"
 #include "editor/editor_spin_slider.h"
 #include "editor/property_selector.h"
@@ -234,9 +235,9 @@ class EditorPropertyFlags : public EditorProperty {
 	GDCLASS(EditorPropertyFlags, EditorProperty);
 	VBoxContainer *vbox;
 	Vector<CheckBox *> flags;
-	Vector<int> flag_indices;
+	Vector<uint32_t> flag_values;
 
-	void _flag_toggled();
+	void _flag_toggled(int p_index);
 
 protected:
 	static void _bind_methods();
@@ -256,8 +257,10 @@ public:
 	enum LayerType {
 		LAYER_PHYSICS_2D,
 		LAYER_RENDER_2D,
+		LAYER_NAVIGATION_2D,
 		LAYER_PHYSICS_3D,
 		LAYER_RENDER_3D,
+		LAYER_NAVIGATION_3D,
 	};
 
 private:
@@ -554,6 +557,26 @@ public:
 	virtual void update_property();
 	void setup(const NodePath &p_base_hint, Vector<StringName> p_valid_types, bool p_use_path_from_scene_root = true);
 	EditorPropertyNodePath();
+};
+
+class EditorPropertyLocale : public EditorProperty {
+	GDCLASS(EditorPropertyLocale, EditorProperty);
+	EditorLocaleDialog *dialog;
+	LineEdit *locale;
+	Button *locale_edit;
+
+	void _locale_selected(const String &p_locale);
+	void _locale_pressed();
+	void _locale_focus_exited();
+
+protected:
+	static void _bind_methods();
+	void _notification(int p_what);
+
+public:
+	void setup(const String &p_hit_string);
+	virtual void update_property();
+	EditorPropertyLocale();
 };
 
 class EditorPropertyRID : public EditorProperty {

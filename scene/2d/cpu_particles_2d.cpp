@@ -925,9 +925,8 @@ void CPUParticles2D::_particles_process(float p_delta) {
 
 		//scale by scale
 		float base_scale = tex_scale * Math::lerp(parameters[PARAM_SCALE], 1.0f, p.scale_rand * randomness[PARAM_SCALE]);
-		if (base_scale < 0.000001) {
-			base_scale = 0.000001;
-		}
+		// Prevent zero scale (which can cause rendering issues).
+		base_scale = SGN(base_scale) * MAX(Math::abs(base_scale), 0.000001);
 
 		p.transform.elements[0] *= base_scale;
 		p.transform.elements[1] *= base_scale;
@@ -1302,7 +1301,7 @@ void CPUParticles2D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("_texture_changed"), &CPUParticles2D::_texture_changed);
 
 	ADD_GROUP("Emission Shape", "emission_");
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "emission_shape", PROPERTY_HINT_ENUM, "Point,Sphere,Box,Points,Directed Points", PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_UPDATE_ALL_IF_MODIFIED), "set_emission_shape", "get_emission_shape");
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "emission_shape", PROPERTY_HINT_ENUM, "Point,Sphere,Rectangle,Points,Directed Points", PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_UPDATE_ALL_IF_MODIFIED), "set_emission_shape", "get_emission_shape");
 	ADD_PROPERTY(PropertyInfo(Variant::REAL, "emission_sphere_radius", PROPERTY_HINT_RANGE, "0.01,128,0.01,or_greater"), "set_emission_sphere_radius", "get_emission_sphere_radius");
 	ADD_PROPERTY(PropertyInfo(Variant::VECTOR2, "emission_rect_extents"), "set_emission_rect_extents", "get_emission_rect_extents");
 	ADD_PROPERTY(PropertyInfo(Variant::POOL_VECTOR2_ARRAY, "emission_points"), "set_emission_points", "get_emission_points");
@@ -1347,7 +1346,7 @@ void CPUParticles2D::_bind_methods() {
 	ADD_PROPERTYI(PropertyInfo(Variant::REAL, "angle_random", PROPERTY_HINT_RANGE, "0,1,0.01"), "set_param_randomness", "get_param_randomness", PARAM_ANGLE);
 	ADD_PROPERTYI(PropertyInfo(Variant::OBJECT, "angle_curve", PROPERTY_HINT_RESOURCE_TYPE, "Curve"), "set_param_curve", "get_param_curve", PARAM_ANGLE);
 	ADD_GROUP("Scale", "");
-	ADD_PROPERTYI(PropertyInfo(Variant::REAL, "scale_amount", PROPERTY_HINT_RANGE, "0,1000,0.01,or_greater"), "set_param", "get_param", PARAM_SCALE);
+	ADD_PROPERTYI(PropertyInfo(Variant::REAL, "scale_amount", PROPERTY_HINT_RANGE, "-1000,1000,0.01,or_greater"), "set_param", "get_param", PARAM_SCALE);
 	ADD_PROPERTYI(PropertyInfo(Variant::REAL, "scale_amount_random", PROPERTY_HINT_RANGE, "0,1,0.01"), "set_param_randomness", "get_param_randomness", PARAM_SCALE);
 	ADD_PROPERTYI(PropertyInfo(Variant::OBJECT, "scale_amount_curve", PROPERTY_HINT_RESOURCE_TYPE, "Curve"), "set_param_curve", "get_param_curve", PARAM_SCALE);
 	ADD_GROUP("Color", "");

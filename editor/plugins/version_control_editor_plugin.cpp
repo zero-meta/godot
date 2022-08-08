@@ -59,6 +59,7 @@ void VersionControlEditorPlugin::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("_update_commit_button"), &VersionControlEditorPlugin::_update_commit_button);
 	ClassDB::bind_method(D_METHOD("_refresh_branch_list"), &VersionControlEditorPlugin::_refresh_branch_list);
 	ClassDB::bind_method(D_METHOD("_refresh_commit_list"), &VersionControlEditorPlugin::_refresh_commit_list);
+	ClassDB::bind_method(D_METHOD("_set_commit_list_size"), &VersionControlEditorPlugin::_set_commit_list_size);
 	ClassDB::bind_method(D_METHOD("_refresh_remote_list"), &VersionControlEditorPlugin::_refresh_remote_list);
 	ClassDB::bind_method(D_METHOD("_ssh_public_key_selected"), &VersionControlEditorPlugin::_ssh_public_key_selected);
 	ClassDB::bind_method(D_METHOD("_ssh_private_key_selected"), &VersionControlEditorPlugin::_ssh_private_key_selected);
@@ -84,8 +85,8 @@ void VersionControlEditorPlugin::_bind_methods() {
 
 void VersionControlEditorPlugin::_notification(int p_what) {
 	if (p_what == NOTIFICATION_READY) {
-		String installed_plugin = GLOBAL_GET("editor/version_control/plugin_name");
-		bool has_autoload_enable = GLOBAL_GET("editor/version_control/autoload_on_startup");
+		String installed_plugin = GLOBAL_GET("editor/version_control_plugin_name");
+		bool has_autoload_enable = GLOBAL_GET("editor/version_control_autoload_on_startup");
 
 		if (installed_plugin != "" && has_autoload_enable) {
 			if (_load_plugin(installed_plugin)) {
@@ -139,8 +140,8 @@ void VersionControlEditorPlugin::_initialize_vcs() {
 	if (_load_plugin(selected_plugin)) {
 		_set_up();
 
-		ProjectSettings::get_singleton()->set("editor/version_control/autoload_on_startup", true);
-		ProjectSettings::get_singleton()->set("editor/version_control/plugin_name", selected_plugin);
+		ProjectSettings::get_singleton()->set("editor/version_control_autoload_on_startup", true);
+		ProjectSettings::get_singleton()->set("editor/version_control_plugin_name", selected_plugin);
 		ProjectSettings::get_singleton()->save();
 	}
 }
@@ -269,6 +270,10 @@ void VersionControlEditorPlugin::_refresh_commit_list() {
 		item->set_text(2, commit.author.strip_edges());
 		item->set_metadata(0, meta_data);
 	}
+}
+
+void VersionControlEditorPlugin::_set_commit_list_size(int p_index) {
+	_refresh_commit_list();
 }
 
 void VersionControlEditorPlugin::_refresh_remote_list() {
@@ -410,7 +415,10 @@ void VersionControlEditorPlugin::_refresh_stage_area() {
 
 	int total_changes = status_files.size();
 	String commit_tab_title = TTR("Commit") + (total_changes > 0 ? " (" + itos(total_changes) + ")" : "");
-	dock_vbc->set_tab_title(version_commit_dock->get_index(), commit_tab_title);
+	TabContainer *dock_vbc = Object::cast_to<TabContainer>(version_commit_dock->get_parent_control());
+	if (dock_vbc) {
+		dock_vbc->set_tab_title(version_commit_dock->get_index(), commit_tab_title);
+	}
 }
 
 void VersionControlEditorPlugin::_discard_file(String p_file_path, EditorVCSInterface::ChangeType p_change) {
@@ -932,7 +940,7 @@ void VersionControlEditorPlugin::_commit_message_gui_input(const Ref<InputEvent>
 
 void VersionControlEditorPlugin::register_editor() {
 	EditorNode::get_singleton()->add_control_to_dock(EditorNode::DOCK_SLOT_RIGHT_UL, version_commit_dock);
-	dock_vbc = (TabContainer *)version_commit_dock->get_parent_control();
+	TabContainer *dock_vbc = Object::cast_to<TabContainer>(version_commit_dock->get_parent_control());
 	dock_vbc->set_tab_title(version_commit_dock->get_index(), TTR("Commit"));
 
 	ToolButton *vc = EditorNode::get_singleton()->add_bottom_panel_item(TTR("Version Control"), version_control_dock);
@@ -1277,10 +1285,10 @@ VersionControlEditorPlugin::VersionControlEditorPlugin() {
 	commit_list_size_button->add_item("10");
 	commit_list_size_button->set_item_metadata(0, 10);
 	commit_list_size_button->add_item("20");
-	commit_list_size_button->set_item_metadata(0, 20);
+	commit_list_size_button->set_item_metadata(1, 20);
 	commit_list_size_button->add_item("30");
-	commit_list_size_button->set_item_metadata(0, 30);
-	commit_list_size_button->connect("pressed", this, "_refresh_commit_list");
+	commit_list_size_button->set_item_metadata(2, 30);
+	commit_list_size_button->connect("item_selected", this, "_set_commit_list_size");
 	commit_list_hbc->add_child(commit_list_size_button);
 
 	commit_list = memnew(Tree);

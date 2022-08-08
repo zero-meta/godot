@@ -255,6 +255,41 @@ void OS_Windows::_touch_event(bool p_pressed, float p_x, float p_y, int idx) {
 	}
 };
 
+bool OS_Windows::tts_is_speaking() const {
+	ERR_FAIL_COND_V(!tts, false);
+	return tts->is_speaking();
+}
+
+bool OS_Windows::tts_is_paused() const {
+	ERR_FAIL_COND_V(!tts, false);
+	return tts->is_paused();
+}
+
+Array OS_Windows::tts_get_voices() const {
+	ERR_FAIL_COND_V(!tts, Array());
+	return tts->get_voices();
+}
+
+void OS_Windows::tts_speak(const String &p_text, const String &p_voice, int p_volume, float p_pitch, float p_rate, int p_utterance_id, bool p_interrupt) {
+	ERR_FAIL_COND(!tts);
+	tts->speak(p_text, p_voice, p_volume, p_pitch, p_rate, p_utterance_id, p_interrupt);
+}
+
+void OS_Windows::tts_pause() {
+	ERR_FAIL_COND(!tts);
+	tts->pause();
+}
+
+void OS_Windows::tts_resume() {
+	ERR_FAIL_COND(!tts);
+	tts->resume();
+}
+
+void OS_Windows::tts_stop() {
+	ERR_FAIL_COND(!tts);
+	tts->stop();
+}
+
 void OS_Windows::_drag_event(float p_x, float p_y, int idx) {
 	Map<int, Vector2>::Element *curr = touch_state.find(idx);
 	// Defensive
@@ -490,6 +525,8 @@ LRESULT OS_Windows::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
 						last_tilt = Vector2();
 					}
 
+					last_pen_inverted = packet.pkStatus & TPS_INVERT;
+
 					POINT coords;
 					GetCursorPos(&coords);
 					ScreenToClient(hWnd, &coords);
@@ -504,6 +541,7 @@ LRESULT OS_Windows::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
 					mm->set_shift(GetKeyState(VK_SHIFT) < 0);
 					mm->set_alt(alt_mem);
 
+					mm->set_pen_inverted(last_pen_inverted);
 					mm->set_pressure(last_pressure);
 					mm->set_tilt(last_tilt);
 
@@ -631,6 +669,8 @@ LRESULT OS_Windows::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
 			Ref<InputEventMouseMotion> mm;
 			mm.instance();
 
+			mm->set_pen_inverted(pen_info.penFlags & (PEN_FLAG_INVERTED | PEN_FLAG_ERASER));
+
 			if (pen_info.penMask & PEN_MASK_PRESSURE) {
 				mm->set_pressure((float)pen_info.pressure / 1024);
 			} else {
@@ -742,14 +782,17 @@ LRESULT OS_Windows::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
 				} else {
 					last_tilt = Vector2();
 					last_pressure = (wParam & MK_LBUTTON) ? 1.0f : 0.0f;
+					last_pen_inverted = false;
 				}
 			} else {
 				last_tilt = Vector2();
 				last_pressure = (wParam & MK_LBUTTON) ? 1.0f : 0.0f;
+				last_pen_inverted = false;
 			}
 
 			mm->set_pressure(last_pressure);
 			mm->set_tilt(last_tilt);
+			mm->set_pen_inverted(last_pen_inverted);
 
 			mm->set_button_mask(last_button_state);
 
@@ -1344,6 +1387,9 @@ Error OS_Windows::initialize(const VideoMode &p_desired, int p_video_driver, int
 		return ERR_UNAVAILABLE;
 	}
 
+	// Init TTS
+	tts = memnew(TTS_Windows);
+
 	use_raw_input = true;
 
 	RAWINPUTDEVICE Rid[1];
@@ -1478,8 +1524,8 @@ Error OS_Windows::initialize(const VideoMode &p_desired, int p_video_driver, int
 	if ((get_current_tablet_driver() == "wintab") && wintab_available) {
 		wintab_WTInfo(WTI_DEFSYSCTX, 0, &wtlc);
 		wtlc.lcOptions |= CXO_MESSAGES;
-		wtlc.lcPktData = PK_NORMAL_PRESSURE | PK_TANGENT_PRESSURE | PK_ORIENTATION;
-		wtlc.lcMoveMask = PK_NORMAL_PRESSURE | PK_TANGENT_PRESSURE;
+		wtlc.lcPktData = PK_STATUS | PK_NORMAL_PRESSURE | PK_TANGENT_PRESSURE | PK_ORIENTATION;
+		wtlc.lcMoveMask = PK_STATUS | PK_NORMAL_PRESSURE | PK_TANGENT_PRESSURE;
 		wtlc.lcPktMode = 0;
 		wtlc.lcOutOrgX = 0;
 		wtlc.lcOutExtX = wtlc.lcInExtX;
@@ -1507,6 +1553,7 @@ Error OS_Windows::initialize(const VideoMode &p_desired, int p_video_driver, int
 	last_pressure = 0;
 	last_pressure_update = 0;
 	last_tilt = Vector2();
+	last_pen_inverted = false;
 
 #if defined(OPENGL_ENABLED)
 
@@ -1757,6 +1804,7 @@ void OS_Windows::finalize() {
 	memdelete(input);
 	touch_state.clear();
 
+	icon.unref();
 	cursors_cache.clear();
 	visual_server->finish();
 	memdelete(visual_server);
@@ -1772,6 +1820,11 @@ void OS_Windows::finalize() {
 	if (restore_mouse_trails > 1) {
 		SystemParametersInfoA(SPI_SETMOUSETRAILS, restore_mouse_trails, 0, 0);
 	}
+
+	if (tts) {
+		memdelete(tts);
+	}
+	CoUninitialize();
 }
 
 void OS_Windows::finalize_core() {
@@ -1930,8 +1983,19 @@ int OS_Windows::get_current_screen() const {
 }
 
 void OS_Windows::set_current_screen(int p_screen) {
-	Vector2 ofs = get_window_position() - get_screen_position(get_current_screen());
-	set_window_position(ofs + get_screen_position(p_screen));
+	if (video_mode.fullscreen) {
+		int cs = get_current_screen();
+		if (cs == p_screen) {
+			return;
+		}
+		Point2 pos = get_screen_position(p_screen);
+		Size2 size = get_screen_size(p_screen);
+
+		MoveWindow(hWnd, pos.x, pos.y, size.width, size.height, TRUE);
+	} else {
+		Vector2 ofs = get_window_position() - get_screen_position(get_current_screen());
+		set_window_position(ofs + get_screen_position(p_screen));
+	}
 }
 
 static BOOL CALLBACK _MonitorEnumProcPos(HMONITOR hMonitor, HDC hdcMonitor, LPRECT lprcMonitor, LPARAM dwData) {
@@ -2310,6 +2374,10 @@ void OS_Windows::_update_window_style(bool p_repaint, bool p_maximized) {
 		} else {
 			SetWindowLongPtr(hWnd, GWL_STYLE, WS_CAPTION | WS_MINIMIZEBOX | WS_POPUPWINDOW | WS_VISIBLE);
 		}
+	}
+
+	if (icon.is_valid()) {
+		set_icon(icon);
 	}
 
 	SetWindowPos(hWnd, video_mode.always_on_top ? HWND_TOPMOST : HWND_NOTOPMOST, 0, 0, 0, 0, SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE);
@@ -2799,6 +2867,31 @@ String OS_Windows::_quote_command_line_argument(const String &p_text) const {
 	return p_text;
 }
 
+static void _append_to_pipe(char *p_bytes, int p_size, String *r_pipe, Mutex *p_pipe_mutex) {
+	// Try to convert from default ANSI code page to Unicode.
+	LocalVector<wchar_t> wchars;
+	int total_wchars = MultiByteToWideChar(CP_ACP, 0, p_bytes, p_size, nullptr, 0);
+	if (total_wchars > 0) {
+		wchars.resize(total_wchars);
+		if (MultiByteToWideChar(CP_ACP, 0, p_bytes, p_size, wchars.ptr(), total_wchars) == 0) {
+			wchars.clear();
+		}
+	}
+
+	if (p_pipe_mutex) {
+		p_pipe_mutex->lock();
+	}
+	if (wchars.empty()) {
+		// Let's hope it's compatible with UTF-8.
+		(*r_pipe) += String::utf8(p_bytes, p_size);
+	} else {
+		(*r_pipe) += String(wchars.ptr(), total_wchars);
+	}
+	if (p_pipe_mutex) {
+		p_pipe_mutex->unlock();
+	}
+}
+
 Error OS_Windows::execute(const String &p_path, const List<String> &p_arguments, bool p_blocking, ProcessID *r_child_id, String *r_pipe, int *r_exitcode, bool read_stderr, Mutex *p_pipe_mutex, bool p_open_console) {
 	String path = p_path.replace("/", "\\");
 
@@ -2857,21 +2950,44 @@ Error OS_Windows::execute(const String &p_path, const List<String> &p_arguments,
 	if (p_blocking) {
 		if (r_pipe) {
 			CloseHandle(pipe[1]); // Close pipe write handle (only child process is writing).
-			char buf[4096];
+
+			LocalVector<char> bytes;
+			int bytes_in_buffer = 0;
+
+			const int CHUNK_SIZE = 4096;
 			DWORD read = 0;
 			for (;;) { // Read StdOut and StdErr from pipe.
-				bool success = ReadFile(pipe[0], buf, 4096, &read, NULL);
+				bytes.resize(bytes_in_buffer + CHUNK_SIZE);
+				const bool success = ReadFile(pipe[0], bytes.ptr() + bytes_in_buffer, CHUNK_SIZE, &read, NULL);
 				if (!success || read == 0) {
 					break;
 				}
-				if (p_pipe_mutex) {
-					p_pipe_mutex->lock();
+				// Assume that all possible encodings are ASCII-compatible.
+				// Break at newline to allow receiving long output in portions.
+				int newline_index = -1;
+				for (int i = read - 1; i >= 0; i--) {
+					if (bytes[bytes_in_buffer + i] == '\n') {
+						newline_index = i;
+						break;
+					}
 				}
-				(*r_pipe) += String::utf8(buf, read);
-				if (p_pipe_mutex) {
-					p_pipe_mutex->unlock();
+
+				if (newline_index == -1) {
+					bytes_in_buffer += read;
+					continue;
 				}
-			};
+
+				const int bytes_to_convert = bytes_in_buffer + (newline_index + 1);
+				_append_to_pipe(bytes.ptr(), bytes_to_convert, r_pipe, p_pipe_mutex);
+
+				bytes_in_buffer = read - (newline_index + 1);
+				memmove(bytes.ptr(), bytes.ptr() + bytes_to_convert, bytes_in_buffer);
+			}
+
+			if (bytes_in_buffer > 0) {
+				_append_to_pipe(bytes.ptr(), bytes_in_buffer, r_pipe, p_pipe_mutex);
+			}
+
 			CloseHandle(pipe[0]); // Close pipe read handle.
 		} else {
 			WaitForSingleObject(pi.pi.hProcess, INFINITE);
@@ -2893,7 +3009,7 @@ Error OS_Windows::execute(const String &p_path, const List<String> &p_arguments,
 		process_map->insert(pid, pi);
 	}
 	return OK;
-};
+}
 
 Error OS_Windows::kill(const ProcessID &p_pid) {
 	ERR_FAIL_COND_V(!process_map->has(p_pid), FAILED);
@@ -2911,6 +3027,25 @@ Error OS_Windows::kill(const ProcessID &p_pid) {
 
 int OS_Windows::get_process_id() const {
 	return _getpid();
+}
+
+bool OS_Windows::is_process_running(const ProcessID &p_pid) const {
+	if (!process_map->has(p_pid)) {
+		return false;
+	}
+
+	const PROCESS_INFORMATION &pi = (*process_map)[p_pid].pi;
+
+	DWORD dw_exit_code = 0;
+	if (!GetExitCodeProcess(pi.hProcess, &dw_exit_code)) {
+		return false;
+	}
+
+	if (dw_exit_code != STILL_ACTIVE) {
+		return false;
+	}
+
+	return true;
 }
 
 Error OS_Windows::set_cwd(const String &p_cwd) {
@@ -3021,9 +3156,12 @@ void OS_Windows::set_native_icon(const String &p_filename) {
 
 void OS_Windows::set_icon(const Ref<Image> &p_icon) {
 	ERR_FAIL_COND(!p_icon.is_valid());
-	Ref<Image> icon = p_icon->duplicate();
-	if (icon->get_format() != Image::FORMAT_RGBA8)
-		icon->convert(Image::FORMAT_RGBA8);
+	if (icon != p_icon) {
+		icon = p_icon->duplicate();
+		if (icon->get_format() != Image::FORMAT_RGBA8) {
+			icon->convert(Image::FORMAT_RGBA8);
+		}
+	}
 	int w = icon->get_width();
 	int h = icon->get_height();
 
@@ -3439,6 +3577,58 @@ MainLoop *OS_Windows::get_main_loop() const {
 	return main_loop;
 }
 
+uint64_t OS_Windows::get_embedded_pck_offset() const {
+	FileAccessRef f = FileAccess::open(get_executable_path(), FileAccess::READ);
+	if (!f) {
+		return 0;
+	}
+
+	// Process header.
+	{
+		f->seek(0x3c);
+		uint32_t pe_pos = f->get_32();
+
+		f->seek(pe_pos);
+		uint32_t magic = f->get_32();
+		if (magic != 0x00004550) {
+			return 0;
+		}
+	}
+
+	int num_sections;
+	{
+		int64_t header_pos = f->get_position();
+
+		f->seek(header_pos + 2);
+		num_sections = f->get_16();
+		f->seek(header_pos + 16);
+		uint16_t opt_header_size = f->get_16();
+
+		// Skip rest of header + optional header to go to the section headers.
+		f->seek(f->get_position() + 2 + opt_header_size);
+	}
+	int64_t section_table_pos = f->get_position();
+
+	// Search for the "pck" section.
+	int64_t off = 0;
+	for (int i = 0; i < num_sections; ++i) {
+		int64_t section_header_pos = section_table_pos + i * 40;
+		f->seek(section_header_pos);
+
+		uint8_t section_name[9];
+		f->get_buffer(section_name, 8);
+		section_name[8] = '\0';
+
+		if (strcmp((char *)section_name, "pck") == 0) {
+			f->seek(section_header_pos + 20);
+			off = f->get_32();
+			break;
+		}
+	}
+
+	return off;
+}
+
 String OS_Windows::get_config_path() const {
 	// The XDG Base Directory specification technically only applies on Linux/*BSD, but it doesn't hurt to support it on Windows as well.
 	if (has_environment("XDG_CONFIG_HOME")) {
@@ -3696,8 +3886,8 @@ void OS_Windows::set_current_tablet_driver(const String &p_driver) {
 			if ((p_driver == "wintab") && wintab_available) {
 				wintab_WTInfo(WTI_DEFSYSCTX, 0, &wtlc);
 				wtlc.lcOptions |= CXO_MESSAGES;
-				wtlc.lcPktData = PK_NORMAL_PRESSURE | PK_TANGENT_PRESSURE | PK_ORIENTATION;
-				wtlc.lcMoveMask = PK_NORMAL_PRESSURE | PK_TANGENT_PRESSURE;
+				wtlc.lcPktData = PK_STATUS | PK_NORMAL_PRESSURE | PK_TANGENT_PRESSURE | PK_ORIENTATION;
+				wtlc.lcMoveMask = PK_STATUS | PK_NORMAL_PRESSURE | PK_TANGENT_PRESSURE;
 				wtlc.lcPktMode = 0;
 				wtlc.lcOutOrgX = 0;
 				wtlc.lcOutExtX = wtlc.lcInExtX;

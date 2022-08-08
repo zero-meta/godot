@@ -107,7 +107,7 @@ public:
 	virtual void vibrate_handheld(int p_duration_ms = 500) = 0;
 
 	virtual Point2 get_mouse_position() const = 0;
-	virtual Point2 get_last_mouse_speed() const = 0;
+	virtual Point2 get_last_mouse_speed() = 0;
 	virtual int get_mouse_button_mask() const = 0;
 
 	virtual void warp_mouse_position(const Vector2 &p_to) = 0;
@@ -144,6 +144,7 @@ public:
 	virtual void flush_buffered_events() = 0;
 	virtual bool is_using_input_buffering() = 0;
 	virtual void set_use_input_buffering(bool p_enable) = 0;
+	virtual bool is_using_accumulated_input() = 0;
 	virtual void set_use_accumulated_input(bool p_enable) = 0;
 
 	Input();

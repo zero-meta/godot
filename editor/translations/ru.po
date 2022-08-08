@@ -85,7 +85,7 @@
 # kyanukovich <ianu0001@algonquinlive.com>, 2020.
 # Ron788 <ustinov200511@gmail.com>, 2020.
 # Daniel <dan.ef1999@gmail.com>, 2020.
-# NeoLan Qu <it.bulla@mail.ru>, 2020.
+# NeoLan Qu <it.bulla@mail.ru>, 2020, 2022.
 # Nikita Epifanov <nikgreens@protonmail.com>, 2020.
 # Cube Show <griiv.06@gmail.com>, 2020.
 # Roman Tolkachyov <roman@tolkachyov.name>, 2020.
@@ -111,13 +111,21 @@
 # Rish Alternative <ii4526668@gmail.com>, 2022.
 # MRSEEO <mr.seeo@mail.ru>, 2022.
 # Ortje <pappinenart@gmail.com>, 2022.
+# Павел <Humani.apparatus.1960@gmail.com>, 2022.
+# Deleted User <noreply+44465@weblate.org>, 2022.
+# Bozhko Artyom Dmitrievich <jek_sun@mail.ru>, 2022.
+# FuzzMix <fmwolfiechad@gmail.com>, 2022.
+# Jasuse <jasusemaele@gmail.com>, 2022.
+# Vadim Mitroshkin <Vadim7540@yandex.ru>, 2022.
+# Maksim Marchukov <mar.maksim63@gmail.com>, 2022.
+# Slava Beloglazov <slavathedeveloper@gmail.com>, 2022.
 msgid ""
 msgstr ""
 "Project-Id-Version: Godot Engine editor\n"
 "Report-Msgid-Bugs-To: https://github.com/godotengine/godot\n"
 "POT-Creation-Date: \n"
-"PO-Revision-Date: 2022-04-25 15:02+0000\n"
-"Last-Translator: Danil Alexeev <danil@alexeev.xyz>\n"
+"PO-Revision-Date: 2022-07-26 01:55+0000\n"
+"Last-Translator: NeoLan Qu <it.bulla@mail.ru>\n"
 "Language-Team: Russian <https://hosted.weblate.org/projects/godot-engine/"
 "godot/ru/>\n"
 "Language: ru\n"
@@ -126,7 +134,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
 "n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2;\n"
-"X-Generator: Weblate 4.12.1-dev\n"
+"X-Generator: Weblate 4.14-dev\n"
 
 #: core/bind/core_bind.cpp main/main.cpp
 msgid "Tablet Driver"
@@ -180,11 +188,12 @@ msgstr "Максимальный размер окна"
 msgid "Screen Orientation"
 msgstr "Ориентация экрана"
 
-#: core/bind/core_bind.cpp main/main.cpp platform/uwp/os_uwp.cpp
+#: core/bind/core_bind.cpp core/project_settings.cpp main/main.cpp
+#: platform/uwp/os_uwp.cpp
 msgid "Window"
 msgstr "Окно"
 
-#: core/bind/core_bind.cpp main/main.cpp
+#: core/bind/core_bind.cpp core/project_settings.cpp
 msgid "Borderless"
 msgstr "Без границ"
 
@@ -192,7 +201,7 @@ msgstr "Без границ"
 msgid "Per Pixel Transparency Enabled"
 msgstr "Попиксельная прозрачность включена"
 
-#: core/bind/core_bind.cpp main/main.cpp
+#: core/bind/core_bind.cpp core/project_settings.cpp
 msgid "Fullscreen"
 msgstr "Полноэкранный режим"
 
@@ -204,7 +213,7 @@ msgstr "Максимизировано"
 msgid "Minimized"
 msgstr "Свёрнуто"
 
-#: core/bind/core_bind.cpp main/main.cpp scene/gui/dialogs.cpp
+#: core/bind/core_bind.cpp core/project_settings.cpp scene/gui/dialogs.cpp
 #: scene/gui/graph_node.cpp
 msgid "Resizable"
 msgstr "Изменяемый размер"
@@ -217,11 +226,11 @@ msgstr "Изменяемый размер"
 msgid "Position"
 msgstr "Позиция"
 
-#: core/bind/core_bind.cpp editor/editor_settings.cpp main/main.cpp
-#: modules/gdscript/gdscript_editor.cpp modules/gridmap/grid_map.cpp
-#: modules/mono/csharp_script.cpp modules/visual_script/visual_script_nodes.cpp
-#: scene/2d/tile_map.cpp scene/3d/camera.cpp scene/3d/light.cpp
-#: scene/gui/control.cpp scene/gui/graph_edit.cpp scene/main/viewport.cpp
+#: core/bind/core_bind.cpp core/project_settings.cpp editor/editor_settings.cpp
+#: main/main.cpp modules/gridmap/grid_map.cpp
+#: modules/visual_script/visual_script_nodes.cpp scene/2d/tile_map.cpp
+#: scene/3d/camera.cpp scene/3d/light.cpp scene/gui/control.cpp
+#: scene/gui/graph_edit.cpp scene/main/viewport.cpp
 #: scene/resources/dynamic_font.cpp scene/resources/navigation_mesh.cpp
 #: scene/resources/primitive_meshes.cpp scene/resources/sky.cpp
 #: scene/resources/style_box.cpp scene/resources/texture.cpp
@@ -303,21 +312,16 @@ msgstr "Размер многопоточной очереди (КБ)"
 msgid "Function"
 msgstr "Функция"
 
-#: core/image.cpp core/packed_data_container.cpp
-#: modules/minimp3/audio_stream_mp3.cpp
-#: modules/stb_vorbis/audio_stream_ogg_vorbis.cpp
-#: modules/visual_script/visual_script.cpp scene/2d/polygon_2d.cpp
+#: core/image.cpp core/packed_data_container.cpp scene/2d/polygon_2d.cpp
 #: scene/3d/baked_lightmap.cpp scene/3d/gi_probe.cpp
-#: scene/resources/audio_stream_sample.cpp scene/resources/bit_map.cpp
-#: scene/resources/concave_polygon_shape.cpp scene/resources/curve.cpp
-#: scene/resources/polygon_path_finder.cpp scene/resources/texture.cpp
 msgid "Data"
 msgstr "Данные"
 
 #: core/io/file_access_network.cpp core/register_core_types.cpp
-#: editor/editor_settings.cpp main/main.cpp
+#: editor/editor_file_dialog.cpp editor/editor_settings.cpp main/main.cpp
 #: modules/gdscript/language_server/gdscript_language_server.cpp
 #: modules/webrtc/webrtc_data_channel.h modules/websocket/websocket_macros.h
+#: scene/gui/file_dialog.cpp
 msgid "Network"
 msgstr "Сеть"
 
@@ -330,7 +334,6 @@ msgid "Page Size"
 msgstr "Размер страницы"
 
 #: core/io/file_access_network.cpp
-#, fuzzy
 msgid "Page Read Ahead"
 msgstr "Кэширование страниц"
 
@@ -400,7 +403,7 @@ msgstr "Массив данных"
 
 #: core/io/stream_peer_ssl.cpp
 msgid "Blocking Handshake"
-msgstr "Блокировка Handshake"
+msgstr "Блокировать Handshake"
 
 #: core/io/udp_server.cpp
 msgid "Max Pending Connections"
@@ -424,8 +427,8 @@ msgid "Not enough bytes for decoding bytes, or invalid format."
 msgstr "Недостаточно байтов для декодирования байтов или неверный формат."
 
 #: core/math/expression.cpp
-msgid "Invalid input %i (not passed) in expression"
-msgstr "Некорректный ввод %i (не подходит) в выражении"
+msgid "Invalid input %d (not passed) in expression"
+msgstr "Некорректный ввод %d (не подходит) в выражении"
 
 #: core/math/expression.cpp
 msgid "self can't be used because instance is null (not passed)"
@@ -469,36 +472,13 @@ msgstr "Очередь сообщений"
 msgid "Max Size (KB)"
 msgstr "Максимальный размер (КБ)"
 
-#: core/os/input.cpp editor/editor_help.cpp editor/editor_settings.cpp
-#: editor/plugins/script_editor_plugin.cpp
-#: editor/plugins/script_text_editor.cpp
-#: editor/plugins/shader_editor_plugin.cpp editor/plugins/text_editor.cpp
-#: modules/gdscript/editor/gdscript_highlighter.cpp
-#: modules/gdscript/gdscript_editor.cpp
-#: modules/gdscript/language_server/gdscript_text_document.cpp
-#: modules/mono/csharp_script.cpp scene/animation/animation_player.cpp
-#: scene/gui/control.cpp scene/gui/line_edit.cpp scene/main/node.cpp
-#: scene/resources/material.cpp
-msgid "Text Editor"
-msgstr "Текстовый редактор"
+#: core/os/input.cpp
+msgid "Mouse Mode"
+msgstr "Режим мыши"
 
-#: core/os/input.cpp editor/editor_settings.cpp
-#: editor/plugins/script_text_editor.cpp modules/gdscript/gdscript.cpp
-#: modules/gdscript/gdscript_editor.cpp
-#: modules/gdscript/language_server/gdscript_text_document.cpp
-#: scene/animation/animation_player.cpp scene/gui/control.cpp
-#: scene/main/node.cpp scene/resources/default_theme/default_theme.cpp
-#: scene/resources/material.cpp
-msgid "Completion"
-msgstr "Завершение"
-
-#: core/os/input.cpp editor/editor_settings.cpp
-#: editor/plugins/script_text_editor.cpp modules/gdscript/gdscript_editor.cpp
-#: modules/gdscript/language_server/gdscript_text_document.cpp
-#: scene/animation/animation_player.cpp scene/gui/control.cpp
-#: scene/main/node.cpp scene/resources/material.cpp
-msgid "Use Single Quotes"
-msgstr "Использовать одинарные кавычки"
+#: core/os/input.cpp
+msgid "Use Accumulated Input"
+msgstr "Использовать накопленный ввод"
 
 #: core/os/input_event.cpp editor/project_settings_editor.cpp
 #: servers/audio_server.cpp
@@ -524,6 +504,11 @@ msgstr "Meta"
 #: core/os/input_event.cpp
 msgid "Command"
 msgstr "Command"
+
+#: core/os/input_event.cpp
+#, fuzzy
+msgid "Physical"
+msgstr "(Физическая)"
 
 #: core/os/input_event.cpp scene/2d/touch_screen_button.cpp
 #: scene/gui/base_button.cpp scene/gui/texture_button.cpp
@@ -574,6 +559,10 @@ msgstr "Наклон"
 #: core/os/input_event.cpp
 msgid "Pressure"
 msgstr "Давление"
+
+#: core/os/input_event.cpp
+msgid "Pen Inverted"
+msgstr "Перо Инвертировано"
 
 #: core/os/input_event.cpp
 msgid "Relative"
@@ -659,13 +648,15 @@ msgid "Project Settings Override"
 msgstr "Переопределение Настроек проекта"
 
 #: core/project_settings.cpp core/resource.cpp
-#: editor/editor_autoload_settings.cpp editor/editor_help_search.cpp
-#: editor/editor_plugin_settings.cpp editor/editor_profiler.cpp
+#: editor/animation_track_editor.cpp editor/editor_autoload_settings.cpp
+#: editor/editor_help_search.cpp editor/editor_plugin_settings.cpp
+#: editor/editor_profiler.cpp editor/plugins/tile_set_editor_plugin.cpp
 #: editor/project_manager.cpp editor/settings_config_dialog.cpp
 #: modules/gdnative/nativescript/nativescript.cpp
 #: platform/android/export/export_plugin.cpp platform/iphone/export/export.cpp
 #: platform/osx/export/export.cpp scene/2d/area_2d.cpp scene/3d/area.cpp
-#: scene/main/node.cpp
+#: scene/3d/skeleton.cpp scene/main/node.cpp scene/resources/mesh_library.cpp
+#: scene/resources/skin.cpp
 msgid "Name"
 msgstr "Название"
 
@@ -677,7 +668,8 @@ msgstr "Описание"
 
 #: core/project_settings.cpp editor/editor_node.cpp editor/editor_settings.cpp
 #: editor/plugins/script_editor_plugin.cpp editor/project_manager.cpp
-#: main/main.cpp
+#: main/main.cpp platform/android/export/export_plugin.cpp
+#: platform/javascript/export/export.cpp
 msgid "Run"
 msgstr "Запустить"
 
@@ -706,6 +698,39 @@ msgstr "Использовать собственную директорию д�
 msgid "Custom User Dir Name"
 msgstr "Имя собственной директории данных пользователя"
 
+#: core/project_settings.cpp main/main.cpp
+#: platform/javascript/export/export.cpp platform/osx/export/export.cpp
+#: platform/uwp/os_uwp.cpp
+msgid "Display"
+msgstr "Дисплей"
+
+#: core/project_settings.cpp main/main.cpp modules/csg/csg_shape.cpp
+#: modules/opensimplex/noise_texture.cpp scene/2d/line_2d.cpp
+#: scene/3d/label_3d.cpp scene/gui/text_edit.cpp scene/resources/texture.cpp
+msgid "Width"
+msgstr "Ширина"
+
+#: core/project_settings.cpp main/main.cpp modules/csg/csg_shape.cpp
+#: modules/gltf/gltf_node.cpp modules/opensimplex/noise_texture.cpp
+#: scene/2d/light_2d.cpp scene/resources/capsule_shape.cpp
+#: scene/resources/capsule_shape_2d.cpp scene/resources/cylinder_shape.cpp
+#: scene/resources/font.cpp scene/resources/navigation_mesh.cpp
+#: scene/resources/primitive_meshes.cpp scene/resources/texture.cpp
+msgid "Height"
+msgstr "Высота"
+
+#: core/project_settings.cpp
+msgid "Always On Top"
+msgstr "Всегда сверху"
+
+#: core/project_settings.cpp
+msgid "Test Width"
+msgstr "Тестовая ширина"
+
+#: core/project_settings.cpp
+msgid "Test Height"
+msgstr "Тестовая высота"
+
 #: core/project_settings.cpp editor/animation_track_editor.cpp
 #: editor/editor_audio_buses.cpp main/main.cpp servers/audio_server.cpp
 msgid "Audio"
@@ -727,6 +752,10 @@ msgid "Main Run Args"
 msgstr "Основные аргументы запуска"
 
 #: core/project_settings.cpp
+msgid "Scene Naming"
+msgstr "Именование сцен"
+
+#: core/project_settings.cpp
 msgid "Search In File Extensions"
 msgstr "Искать в расширениях файлов"
 
@@ -734,18 +763,15 @@ msgstr "Искать в расширениях файлов"
 msgid "Script Templates Search Path"
 msgstr "Путь поиска шаблонов скриптов"
 
-#: core/project_settings.cpp editor/editor_node.cpp
-#: editor/plugins/version_control_editor_plugin.cpp
-msgid "Version Control"
-msgstr "Контроль версий"
-
 #: core/project_settings.cpp
-msgid "Autoload On Startup"
+#, fuzzy
+msgid "Version Control Autoload On Startup"
 msgstr "Автозагрузка при запуске"
 
 #: core/project_settings.cpp
-msgid "Plugin Name"
-msgstr "Название плагина"
+#, fuzzy
+msgid "Version Control Plugin Name"
+msgstr "Контроль версий"
 
 #: core/project_settings.cpp scene/2d/collision_object_2d.cpp
 #: scene/3d/collision_object.cpp scene/gui/control.cpp
@@ -810,22 +836,24 @@ msgstr "UI В конец"
 #: scene/resources/world.cpp scene/resources/world_2d.cpp
 #: servers/physics/space_sw.cpp servers/physics_2d/physics_2d_server_sw.cpp
 #: servers/physics_2d/physics_2d_server_wrap_mt.h
-#: servers/physics_2d/space_2d_sw.cpp
+#: servers/physics_2d/space_2d_sw.cpp servers/physics_2d_server.cpp
+#: servers/physics_server.cpp
 msgid "Physics"
 msgstr "Физика"
 
 #: core/project_settings.cpp editor/editor_settings.cpp
+#: editor/import/resource_importer_layered_texture.cpp
+#: editor/import/resource_importer_texture.cpp
 #: editor/plugins/spatial_editor_plugin.cpp main/main.cpp
 #: modules/bullet/register_types.cpp modules/bullet/space_bullet.cpp
 #: scene/3d/physics_body.cpp scene/resources/world.cpp
-#: servers/physics/space_sw.cpp
+#: servers/physics/space_sw.cpp servers/physics_server.cpp
 msgid "3D"
 msgstr "3D"
 
 #: core/project_settings.cpp
-#, fuzzy
 msgid "Smooth Trimesh Collision"
-msgstr "Создать вогнутую область столкновения"
+msgstr "Плавная коллизия треугольной сетки"
 
 #: core/project_settings.cpp drivers/gles2/rasterizer_canvas_base_gles2.cpp
 #: drivers/gles2/rasterizer_scene_gles2.cpp
@@ -849,8 +877,8 @@ msgstr "Рендеринг"
 msgid "Quality"
 msgstr "Качество"
 
-#: core/project_settings.cpp scene/animation/animation_tree.cpp
-#: scene/gui/file_dialog.cpp scene/main/scene_tree.cpp
+#: core/project_settings.cpp scene/gui/file_dialog.cpp
+#: scene/main/scene_tree.cpp scene/resources/navigation_mesh.cpp
 #: servers/visual_server.cpp
 msgid "Filters"
 msgstr "Фильтры"
@@ -898,7 +926,6 @@ msgid "Zstd"
 msgstr "Zstd"
 
 #: core/project_settings.cpp
-#, fuzzy
 msgid "Long Distance Matching"
 msgstr "Сопоставление на большом расстоянии"
 
@@ -912,7 +939,7 @@ msgstr "Размер журнала окна"
 
 #: core/project_settings.cpp
 msgid "Zlib"
-msgstr "Zlib"
+msgstr "Зlib"
 
 #: core/project_settings.cpp
 msgid "Gzip"
@@ -970,10 +997,6 @@ msgstr "Путь"
 #: core/script_language.cpp
 msgid "Source Code"
 msgstr "Исходный код"
-
-#: core/translation.cpp
-msgid "Messages"
-msgstr "Сообщения"
 
 #: core/translation.cpp editor/project_settings_editor.cpp
 msgid "Locale"
@@ -1035,10 +1058,13 @@ msgstr "Размер буфера индекса полигонов холста
 
 #: drivers/gles2/rasterizer_canvas_base_gles2.cpp
 #: drivers/gles3/rasterizer_canvas_base_gles3.cpp editor/editor_settings.cpp
-#: main/main.cpp scene/2d/physics_body_2d.cpp scene/resources/world_2d.cpp
+#: editor/import/resource_importer_layered_texture.cpp
+#: editor/import/resource_importer_texture.cpp main/main.cpp
+#: scene/2d/physics_body_2d.cpp scene/resources/world_2d.cpp
 #: servers/physics_2d/physics_2d_server_sw.cpp
 #: servers/physics_2d/physics_2d_server_wrap_mt.h
-#: servers/physics_2d/space_2d_sw.cpp servers/visual_server.cpp
+#: servers/physics_2d/space_2d_sw.cpp servers/physics_2d_server.cpp
+#: servers/visual_server.cpp
 msgid "2D"
 msgstr "2D"
 
@@ -1064,7 +1090,6 @@ msgstr "Карты освещения"
 
 #: drivers/gles2/rasterizer_storage_gles2.cpp
 #: drivers/gles3/rasterizer_storage_gles3.cpp
-#, fuzzy
 msgid "Use Bicubic Sampling"
 msgstr "Использование бикубической выборки"
 
@@ -1088,13 +1113,14 @@ msgstr "Максимум источников света на объект"
 msgid "Subsurface Scattering"
 msgstr "Подповерхностное рассеяние"
 
-#: drivers/gles3/rasterizer_scene_gles3.cpp
+#: drivers/gles3/rasterizer_scene_gles3.cpp editor/animation_track_editor.cpp
 #: editor/import/resource_importer_texture.cpp
 #: editor/plugins/spatial_editor_plugin.cpp modules/gltf/gltf_node.cpp
 #: modules/gridmap/grid_map.cpp scene/2d/cpu_particles_2d.cpp
 #: scene/2d/node_2d.cpp scene/2d/parallax_layer.cpp scene/2d/polygon_2d.cpp
 #: scene/2d/remote_transform_2d.cpp scene/3d/cpu_particles.cpp
-#: scene/3d/remote_transform.cpp scene/3d/spatial.cpp scene/gui/control.cpp
+#: scene/3d/remote_transform.cpp scene/3d/spatial.cpp
+#: scene/animation/animation_blend_tree.cpp scene/gui/control.cpp
 #: scene/main/canvas_layer.cpp scene/resources/environment.cpp
 #: scene/resources/material.cpp scene/resources/particles_material.cpp
 msgid "Scale"
@@ -1117,10 +1143,10 @@ msgid "High Quality"
 msgstr "Высокое качество"
 
 #: drivers/gles3/rasterizer_storage_gles3.cpp
-#, fuzzy
 msgid "Blend Shape Max Buffer Size (KB)"
 msgstr "Максимальный размер буфера смешивания форм (KB)"
 
+#. TRANSLATORS: Adjective, refers to the mode for Bezier handles (Free, Balanced, Mirror).
 #: editor/animation_bezier_editor.cpp
 msgid "Free"
 msgstr "Освободить"
@@ -1137,7 +1163,7 @@ msgstr "Отразить"
 msgid "Time:"
 msgstr "Время:"
 
-#: editor/animation_bezier_editor.cpp
+#: editor/animation_bezier_editor.cpp editor/animation_track_editor.cpp
 msgid "Value:"
 msgstr "Значение:"
 
@@ -1188,6 +1214,91 @@ msgstr "Измененить значение ключевого кадра"
 #: editor/animation_track_editor.cpp
 msgid "Anim Change Call"
 msgstr "Изменить вызов анимации"
+
+#: editor/animation_track_editor.cpp scene/2d/animated_sprite.cpp
+#: scene/2d/sprite.cpp scene/3d/sprite_3d.cpp
+#: scene/resources/default_theme/default_theme.cpp
+msgid "Frame"
+msgstr "Кадр"
+
+#: editor/animation_track_editor.cpp editor/editor_profiler.cpp
+#: scene/2d/cpu_particles_2d.cpp scene/2d/particles_2d.cpp
+#: scene/3d/cpu_particles.cpp scene/3d/particles.cpp
+#: scene/resources/particles_material.cpp servers/visual_server.cpp
+msgid "Time"
+msgstr "Время"
+
+#: editor/animation_track_editor.cpp editor/import/resource_importer_scene.cpp
+#: platform/osx/export/export.cpp
+msgid "Location"
+msgstr "Расположение"
+
+#: editor/animation_track_editor.cpp modules/gltf/gltf_node.cpp
+#: scene/2d/polygon_2d.cpp scene/2d/remote_transform_2d.cpp
+#: scene/3d/remote_transform.cpp scene/3d/spatial.cpp scene/gui/control.cpp
+msgid "Rotation"
+msgstr "Поворот"
+
+#: editor/animation_track_editor.cpp editor/script_editor_debugger.cpp
+#: modules/visual_script/visual_script_nodes.cpp scene/gui/range.cpp
+msgid "Value"
+msgstr "Значение"
+
+#: editor/animation_track_editor.cpp
+msgid "Arg Count"
+msgstr "Количество Аргументов"
+
+#: editor/animation_track_editor.cpp main/main.cpp
+#: modules/mono/mono_gd/gd_mono.cpp
+msgid "Args"
+msgstr "Аргументы"
+
+#: editor/animation_track_editor.cpp editor/editor_settings.cpp
+#: editor/script_editor_debugger.cpp modules/gltf/gltf_accessor.cpp
+#: modules/gltf/gltf_light.cpp modules/visual_script/visual_script_nodes.cpp
+#: scene/3d/physics_body.cpp scene/resources/visual_shader_nodes.cpp
+msgid "Type"
+msgstr "Тип"
+
+#: editor/animation_track_editor.cpp
+#, fuzzy
+msgid "In Handle"
+msgstr "Задать обработчик"
+
+#: editor/animation_track_editor.cpp
+#, fuzzy
+msgid "Out Handle"
+msgstr "Задать обработчик"
+
+#: editor/animation_track_editor.cpp
+#: editor/import/resource_importer_texture.cpp
+#: scene/2d/audio_stream_player_2d.cpp scene/3d/audio_stream_player_3d.cpp
+#: scene/audio/audio_stream_player.cpp scene/gui/video_player.cpp
+msgid "Stream"
+msgstr "Поток"
+
+#: editor/animation_track_editor.cpp
+msgid "Start Offset"
+msgstr "Начальное смещение"
+
+#: editor/animation_track_editor.cpp
+msgid "End Offset"
+msgstr "Конечное смещение"
+
+#: editor/animation_track_editor.cpp editor/editor_settings.cpp
+#: editor/import/resource_importer_scene.cpp
+#: editor/plugins/animation_player_editor_plugin.cpp editor/scene_tree_dock.cpp
+#: scene/2d/animated_sprite.cpp scene/2d/cpu_particles_2d.cpp
+#: scene/2d/sprite.cpp scene/3d/cpu_particles.cpp scene/3d/sprite_3d.cpp
+#: scene/animation/animation_blend_tree.cpp
+#: scene/resources/particles_material.cpp
+msgid "Animation"
+msgstr "Анимация"
+
+#: editor/animation_track_editor.cpp
+#, fuzzy
+msgid "Easing"
+msgstr "Переход В-ИЗ"
 
 #: editor/animation_track_editor.cpp
 msgid "Anim Multi Change Keyframe Time"
@@ -1283,7 +1394,7 @@ msgstr "Включить/выключить этот трек."
 msgid "Update Mode (How this property is set)"
 msgstr "Режим обновления (как это свойство устанавливается)"
 
-#: editor/animation_track_editor.cpp
+#: editor/animation_track_editor.cpp scene/resources/gradient.cpp
 msgid "Interpolation Mode"
 msgstr "Режим интерполяции"
 
@@ -1296,8 +1407,64 @@ msgid "Remove this track."
 msgstr "Удалить эту дорожку."
 
 #: editor/animation_track_editor.cpp
-msgid "Time (s): "
-msgstr "Время (сек.): "
+msgid "Time (s):"
+msgstr "Время (сек.):"
+
+#: editor/animation_track_editor.cpp
+msgid "Position:"
+msgstr "Позиция:"
+
+#: editor/animation_track_editor.cpp
+msgid "Rotation:"
+msgstr "Поворот:"
+
+#: editor/animation_track_editor.cpp
+#: editor/plugins/animation_tree_player_editor_plugin.cpp
+#: editor/plugins/multimesh_editor_plugin.cpp
+msgid "Scale:"
+msgstr "Масштаб:"
+
+#: editor/animation_track_editor.cpp
+#: editor/plugins/resource_preloader_editor_plugin.cpp
+#: editor/plugins/theme_editor_plugin.cpp editor/project_settings_editor.cpp
+#: editor/scene_tree_editor.cpp editor/script_editor_debugger.cpp
+#: modules/visual_script/visual_script_editor.cpp
+msgid "Type:"
+msgstr "Тип:"
+
+#: editor/animation_track_editor.cpp
+msgid "(Invalid, expected type: %s)"
+msgstr "(Неверный, ожидаемый тип: %s)"
+
+#: editor/animation_track_editor.cpp
+msgid "Easing:"
+msgstr "Переход В-ИЗ:"
+
+#: editor/animation_track_editor.cpp
+#, fuzzy
+msgid "In-Handle:"
+msgstr "Обработчик Ввода:"
+
+#: editor/animation_track_editor.cpp
+#, fuzzy
+msgid "Out-Handle:"
+msgstr "Обработчик Вывода:"
+
+#: editor/animation_track_editor.cpp
+msgid "Stream:"
+msgstr "Поток:"
+
+#: editor/animation_track_editor.cpp
+msgid "Start (s):"
+msgstr "Начало (сек.):"
+
+#: editor/animation_track_editor.cpp
+msgid "End (s):"
+msgstr "Конец (сек.):"
+
+#: editor/animation_track_editor.cpp
+msgid "Animation Clip:"
+msgstr "Клип Анимации:"
 
 #: editor/animation_track_editor.cpp
 msgid "Toggle Track Enabled"
@@ -1375,7 +1542,6 @@ msgid "Remove Anim Track"
 msgstr "Удалить дорожку"
 
 #: editor/animation_track_editor.cpp editor/editor_settings.cpp
-#: editor/plugins/mesh_library_editor_plugin.cpp
 #: editor/plugins/path_editor_plugin.cpp
 #: editor/plugins/polygon_2d_editor_plugin.cpp
 #: editor/plugins/spatial_editor_plugin.cpp
@@ -1384,16 +1550,6 @@ msgstr "Удалить дорожку"
 #: modules/gridmap/grid_map_editor_plugin.cpp
 msgid "Editors"
 msgstr "Редакторы"
-
-#: editor/animation_track_editor.cpp editor/editor_settings.cpp
-#: editor/import/resource_importer_scene.cpp
-#: editor/plugins/animation_player_editor_plugin.cpp editor/scene_tree_dock.cpp
-#: scene/2d/animated_sprite.cpp scene/2d/cpu_particles_2d.cpp
-#: scene/2d/sprite.cpp scene/3d/cpu_particles.cpp scene/3d/sprite_3d.cpp
-#: scene/animation/animation_blend_tree.cpp
-#: scene/resources/particles_material.cpp
-msgid "Animation"
-msgstr "Анимация"
 
 #: editor/animation_track_editor.cpp editor/editor_settings.cpp
 msgid "Confirm Insert Track"
@@ -1522,8 +1678,8 @@ msgid "Add Method Track Key"
 msgstr "Добавить ключ дорожки для метода"
 
 #: editor/animation_track_editor.cpp
-msgid "Method not found in object: "
-msgstr "В объекте нет такого метода: "
+msgid "Method not found in object:"
+msgstr "В объекте нет такого метода:"
 
 #: editor/animation_track_editor.cpp
 msgid "Anim Move Keys"
@@ -2057,14 +2213,15 @@ msgstr "Избранное:"
 msgid "Recent:"
 msgstr "Недавнее:"
 
-#: editor/create_dialog.cpp editor/plugins/script_editor_plugin.cpp
-#: editor/property_selector.cpp editor/quick_open.cpp editor/rename_dialog.cpp
+#: editor/create_dialog.cpp editor/editor_quick_open.cpp
+#: editor/plugins/script_editor_plugin.cpp editor/property_selector.cpp
+#: editor/rename_dialog.cpp
 #: modules/visual_script/visual_script_property_selector.cpp
 msgid "Search:"
 msgstr "Поиск:"
 
-#: editor/create_dialog.cpp editor/plugins/script_editor_plugin.cpp
-#: editor/property_selector.cpp editor/quick_open.cpp
+#: editor/create_dialog.cpp editor/editor_quick_open.cpp
+#: editor/plugins/script_editor_plugin.cpp editor/property_selector.cpp
 #: modules/visual_script/visual_script_property_selector.cpp
 msgid "Matches:"
 msgstr "Совпадения:"
@@ -2124,8 +2281,8 @@ msgstr "Найти заменяемый ресурс:"
 
 #: editor/dependency_editor.cpp editor/editor_file_dialog.cpp
 #: editor/editor_help_search.cpp editor/editor_node.cpp
-#: editor/filesystem_dock.cpp editor/plugins/script_editor_plugin.cpp
-#: editor/property_selector.cpp editor/quick_open.cpp
+#: editor/editor_quick_open.cpp editor/filesystem_dock.cpp
+#: editor/plugins/script_editor_plugin.cpp editor/property_selector.cpp
 #: editor/script_create_dialog.cpp
 #: modules/visual_script/visual_script_property_selector.cpp
 #: scene/gui/file_dialog.cpp
@@ -2133,8 +2290,8 @@ msgid "Open"
 msgstr "Открыть"
 
 #: editor/dependency_editor.cpp
-msgid "Owners Of:"
-msgstr "Владельцы:"
+msgid "Owners of: %s (Total: %d)"
+msgstr "Владельцы: %s (Всего: %d)"
 
 #: editor/dependency_editor.cpp
 msgid ""
@@ -2185,7 +2342,7 @@ msgstr "Исправить зависимости"
 
 #: editor/dependency_editor.cpp
 msgid "Errors loading!"
-msgstr "Ошибки загрузки!"
+msgstr "Ошибки при загрузке!"
 
 #: editor/dependency_editor.cpp
 msgid "Permanently delete %d item(s)? (No undo!)"
@@ -2435,7 +2592,7 @@ msgid "Bus Options"
 msgstr "Параметры шины"
 
 #: editor/editor_audio_buses.cpp editor/filesystem_dock.cpp
-#: editor/scene_tree_dock.cpp
+#: editor/project_export.cpp editor/scene_tree_dock.cpp
 msgid "Duplicate"
 msgstr "Дублировать"
 
@@ -2487,9 +2644,9 @@ msgstr "Открыть раскладку звуковой шины"
 msgid "There is no '%s' file."
 msgstr "Файла «%s» не существует."
 
-#: editor/editor_audio_buses.cpp editor/plugins/canvas_item_editor_plugin.cpp
-msgid "Layout"
-msgstr "Макет"
+#: editor/editor_audio_buses.cpp
+msgid "Layout:"
+msgstr "Макет:"
 
 #: editor/editor_audio_buses.cpp
 msgid "Invalid file, not an audio bus layout."
@@ -2691,6 +2848,24 @@ msgid "Choose"
 msgstr "Выбрать"
 
 #: editor/editor_export.cpp
+msgid "Project export for platform:"
+msgstr "Экспорт проекта для платформы:"
+
+#: editor/editor_export.cpp
+#, fuzzy
+msgid "Completed with warnings."
+msgstr "Завершено с ошибками."
+
+#: editor/editor_export.cpp
+msgid "Completed successfully."
+msgstr "Завершено без ошибок."
+
+#: editor/editor_export.cpp
+#, fuzzy
+msgid "Failed."
+msgstr "Не удалось:"
+
+#: editor/editor_export.cpp
 msgid "Storing File:"
 msgstr "Сохранение файла:"
 
@@ -2703,20 +2878,44 @@ msgid "Packing"
 msgstr "Упаковывание"
 
 #: editor/editor_export.cpp
+msgid "Save PCK"
+msgstr "Сохранить PCK"
+
+#: editor/editor_export.cpp
+#, fuzzy
+msgid "Cannot create file \"%s\"."
+msgstr "Невозможно создать папку."
+
+#: editor/editor_export.cpp
+#, fuzzy
+msgid "Failed to export project files."
+msgstr "Не удалось экспортировать файлы проекта"
+
+#: editor/editor_export.cpp
+#, fuzzy
+msgid "Can't open file to read from path \"%s\"."
+msgstr "Невозможно открыть файл для записи:"
+
+#: editor/editor_export.cpp
+#, fuzzy
+msgid "Save ZIP"
+msgstr "Сохранить как"
+
+#: editor/editor_export.cpp
 msgid ""
 "Target platform requires 'ETC' texture compression for GLES2. Enable 'Import "
 "Etc' in Project Settings."
 msgstr ""
-"Целевая платформа требует сжатие текстур «ETC» для GLES2. Включите «Import "
-"Etc» в Настройках проекта."
+"Целевая платформа требует сжатие текстур «ETC» для GLES2. Включите "
+"«Импортировать Etc» в Настройках Проекта."
 
 #: editor/editor_export.cpp
 msgid ""
 "Target platform requires 'ETC2' texture compression for GLES3. Enable "
 "'Import Etc 2' in Project Settings."
 msgstr ""
-"Целевая платформа требует компрессию текстур «ETC2» для GLES2. Включите "
-"«Import Etc 2» в Настройках проекта."
+"Целевая платформа требует компрессию текстур «ETC2» для GLES3. Включите "
+"«Импортировать Etc 2» в Настройках Проекта."
 
 #: editor/editor_export.cpp
 msgid ""
@@ -2726,8 +2925,8 @@ msgid ""
 "Enabled'."
 msgstr ""
 "Целевая платформа требует сжатия текстур «ETC» для отката драйвера к GLES2.\n"
-"Включите «Import Etc» в Настройках проекта или отключите «Driver Fallback "
-"Enabled»."
+"Включите «Импортировать Etc» в Настройках проекта или отключите «Driver "
+"Fallback Enabled»."
 
 #: editor/editor_export.cpp
 msgid ""
@@ -2743,7 +2942,8 @@ msgid ""
 "Enable 'Import Etc 2' or 'Import Pvrtc' in Project Settings."
 msgstr ""
 "Целевая платформа требует компрессию текстур «ETC2» или «PVRTC» для GLES3. "
-"Включите «Import Etc 2» или «Import Pvrtc» в Настройках проекта."
+"Включите «Импортировать Etc 2» или «Импортировать Pvrtc» в Настройках "
+"Проекта."
 
 #: editor/editor_export.cpp
 msgid ""
@@ -2771,7 +2971,6 @@ msgid "Release"
 msgstr "Релиз"
 
 #: editor/editor_export.cpp
-#, fuzzy
 msgid "Binary Format"
 msgstr "Бинарный формат"
 
@@ -2789,24 +2988,23 @@ msgstr "Формат текстур"
 
 #: editor/editor_export.cpp
 msgid "BPTC"
-msgstr ""
+msgstr "BPTC"
 
 #: editor/editor_export.cpp platform/osx/export/export.cpp
 msgid "S3TC"
-msgstr ""
+msgstr "S3TC"
 
 #: editor/editor_export.cpp platform/osx/export/export.cpp
 msgid "ETC"
-msgstr ""
+msgstr "ETC"
 
 #: editor/editor_export.cpp platform/osx/export/export.cpp
 msgid "ETC2"
-msgstr ""
+msgstr "ETC2"
 
 #: editor/editor_export.cpp
-#, fuzzy
 msgid "No BPTC Fallbacks"
-msgstr "Запасной вариант"
+msgstr "Запасной вариант BPTC"
 
 #: editor/editor_export.cpp platform/android/export/export_plugin.cpp
 #: platform/iphone/export/export.cpp platform/javascript/export/export.cpp
@@ -2820,9 +3018,31 @@ msgstr "Пользовательский отладочный шаблон не 
 msgid "Custom release template not found."
 msgstr "Пользовательский релизный шаблон не найден."
 
+#: editor/editor_export.cpp
+#, fuzzy
+msgid "Prepare Template"
+msgstr "Управление шаблонами"
+
+#: editor/editor_export.cpp platform/osx/export/export.cpp
+#, fuzzy
+msgid "The given export path doesn't exist."
+msgstr "Данный путь экспорта не существует:"
+
 #: editor/editor_export.cpp platform/javascript/export/export.cpp
-msgid "Template file not found:"
+#, fuzzy
+msgid "Template file not found: \"%s\"."
 msgstr "Файл шаблона не найден:"
+
+#: editor/editor_export.cpp
+#, fuzzy
+msgid "Failed to copy export template."
+msgstr "Неверный шаблон экспорта:"
+
+#: editor/editor_export.cpp platform/windows/export/export.cpp
+#: platform/x11/export/export.cpp
+#, fuzzy
+msgid "PCK Embedding"
+msgstr "Отступ"
 
 #: editor/editor_export.cpp
 msgid "On 32-bit exports the embedded PCK cannot be bigger than 4 GiB."
@@ -2842,7 +3062,7 @@ msgid "Script Editor"
 msgstr "Редактор скриптов"
 
 #: editor/editor_feature_profile.cpp
-#: editor/plugins/asset_library_editor_plugin.cpp
+#: editor/plugins/asset_library_editor_plugin.cpp editor/project_manager.cpp
 msgid "Asset Library"
 msgstr "Библиотека ресурсов"
 
@@ -3000,9 +3220,9 @@ msgid "Import"
 msgstr "Импорт"
 
 #: editor/editor_feature_profile.cpp editor/project_export.cpp
-#: platform/android/export/export.cpp platform/javascript/export/export.cpp
-#: platform/osx/export/export.cpp platform/uwp/export/export.cpp
-#: platform/windows/export/export.cpp
+#: platform/android/export/export.cpp platform/android/export/export_plugin.cpp
+#: platform/javascript/export/export.cpp platform/osx/export/export.cpp
+#: platform/uwp/export/export.cpp platform/windows/export/export.cpp
 msgid "Export"
 msgstr "Экспорт"
 
@@ -3126,11 +3346,11 @@ msgstr "Режим отображения"
 #: editor/import/resource_importer_texture.cpp
 #: editor/import/resource_importer_wav.cpp main/main.cpp
 #: modules/csg/csg_shape.cpp modules/visual_script/visual_script_nodes.cpp
-#: modules/visual_script/visual_script_yield_nodes.cpp scene/2d/light_2d.cpp
-#: scene/2d/physics_body_2d.cpp scene/2d/tile_map.cpp
+#: scene/2d/light_2d.cpp scene/2d/physics_body_2d.cpp scene/2d/tile_map.cpp
 #: scene/3d/baked_lightmap.cpp scene/3d/light.cpp scene/3d/physics_body.cpp
 #: scene/gui/control.cpp scene/gui/file_dialog.cpp
 #: scene/resources/environment.cpp scene/resources/material.cpp
+#: scene/resources/visual_shader.cpp
 #: servers/audio/effects/audio_effect_distortion.cpp
 msgid "Mode"
 msgstr "Режим"
@@ -3261,7 +3481,7 @@ msgstr "Реимпорт недостающих импортированных �
 
 #: editor/editor_help.cpp scene/2d/camera_2d.cpp scene/gui/control.cpp
 #: scene/gui/nine_patch_rect.cpp scene/resources/dynamic_font.cpp
-#: scene/resources/style_box.cpp
+#: scene/resources/style_box.cpp scene/resources/texture.cpp
 msgid "Top"
 msgstr "Верх"
 
@@ -3352,6 +3572,14 @@ msgid ""
 msgstr ""
 "В настоящее время отсутствует описание этого метода. Пожалуйста "
 "[color=$color][url=$url]помогите нам[/url][/color]!"
+
+#: editor/editor_help.cpp editor/editor_settings.cpp
+#: editor/plugins/script_editor_plugin.cpp
+#: editor/plugins/script_text_editor.cpp
+#: modules/gdscript/editor/gdscript_highlighter.cpp
+#: modules/gdscript/gdscript_editor.cpp
+msgid "Text Editor"
+msgstr "Текстовый редактор"
 
 #: editor/editor_help.cpp editor/editor_node.cpp editor/editor_settings.cpp
 #: editor/plugins/shader_editor_plugin.cpp
@@ -3448,11 +3676,12 @@ msgstr "Надпись"
 msgid "Read Only"
 msgstr "Только чтение"
 
-#: editor/editor_inspector.cpp
+#: editor/editor_inspector.cpp editor/plugins/item_list_editor_plugin.cpp
 msgid "Checkable"
 msgstr "Отмечаемый"
 
-#: editor/editor_inspector.cpp scene/resources/default_theme/default_theme.cpp
+#: editor/editor_inspector.cpp editor/plugins/item_list_editor_plugin.cpp
+#: scene/resources/default_theme/default_theme.cpp
 msgid "Checked"
 msgstr "Отмеченный"
 
@@ -4144,14 +4373,6 @@ msgstr ""
 "Невозможно записать в файл «%s», файл используется, заблокирован или "
 "отсутствуют разрешения."
 
-#: editor/editor_node.cpp editor/plugins/theme_editor_plugin.cpp
-msgid "Scene"
-msgstr "Сцена"
-
-#: editor/editor_node.cpp
-msgid "Scene Naming"
-msgstr "Именование сцен"
-
 #: editor/editor_node.cpp editor/editor_settings.cpp editor/scene_tree_dock.cpp
 #: servers/arvr/arvr_interface.cpp
 msgid "Interface"
@@ -4189,14 +4410,6 @@ msgstr "Всегда открывать вывод при запуске"
 msgid "Always Close Output On Stop"
 msgstr "Всегда закрывать вывод при остановке"
 
-#: editor/editor_node.cpp editor/editor_settings.cpp
-msgid "Auto Save"
-msgstr "Автосохранение"
-
-#: editor/editor_node.cpp editor/editor_settings.cpp
-msgid "Save Before Running"
-msgstr "Сохранять перед запуском"
-
 #: editor/editor_node.cpp
 msgid "Save On Focus Loss"
 msgstr "Сохранять при потери фокуса"
@@ -4222,7 +4435,6 @@ msgid "Update Vital Only"
 msgstr "Обновлять только важное"
 
 #: editor/editor_node.cpp
-#, fuzzy
 msgid "Localize Settings"
 msgstr "Локализация"
 
@@ -4239,9 +4451,8 @@ msgid "Inspector"
 msgstr "Инспектор"
 
 #: editor/editor_node.cpp
-#, fuzzy
 msgid "Default Property Name Style"
-msgstr "Путь проекта по умолчанию"
+msgstr "Стиль имени свойства по умолчанию"
 
 #: editor/editor_node.cpp
 msgid "Default Float Step"
@@ -4276,6 +4487,10 @@ msgid "Default Color Picker Mode"
 msgstr "Режим выбора цвета по умолчанию"
 
 #: editor/editor_node.cpp editor/plugins/version_control_editor_plugin.cpp
+msgid "Version Control"
+msgstr "Контроль версий"
+
+#: editor/editor_node.cpp editor/plugins/version_control_editor_plugin.cpp
 msgid "Username"
 msgstr "Имя пользователя"
 
@@ -4302,6 +4517,10 @@ msgstr "Переключить режим без отвлечения."
 #: editor/editor_node.cpp
 msgid "Add a new scene."
 msgstr "Добавить новую сцену."
+
+#: editor/editor_node.cpp editor/plugins/theme_editor_plugin.cpp
+msgid "Scene"
+msgstr "Сцена"
 
 #: editor/editor_node.cpp
 msgid "Go to previously opened scene."
@@ -4664,7 +4883,9 @@ msgstr "Обновлять при важных изменениях"
 msgid "Hide Update Spinner"
 msgstr "Скрыть индикатор обновлений"
 
-#: editor/editor_node.cpp
+#: editor/editor_node.cpp editor/editor_settings.cpp
+#: editor/fileserver/editor_file_server.cpp
+#: modules/fbx/editor_scene_importer_fbx.cpp
 msgid "FileSystem"
 msgstr "Файловая система"
 
@@ -4908,12 +5129,6 @@ msgstr ""
 msgid "Frame #:"
 msgstr "Кадр #:"
 
-#: editor/editor_profiler.cpp scene/2d/cpu_particles_2d.cpp
-#: scene/2d/particles_2d.cpp scene/3d/cpu_particles.cpp scene/3d/particles.cpp
-#: scene/resources/particles_material.cpp servers/visual_server.cpp
-msgid "Time"
-msgstr "Время"
-
 #: editor/editor_profiler.cpp
 msgid "Calls"
 msgstr "Вызовы"
@@ -4992,12 +5207,14 @@ msgid "Selected node is not a Viewport!"
 msgstr "Выбранный узел не Viewport!"
 
 #: editor/editor_properties_array_dict.cpp
-msgid "Size: "
-msgstr "Размер: "
+#: editor/plugins/spatial_editor_plugin.cpp
+#: editor/plugins/sprite_frames_editor_plugin.cpp
+msgid "Size:"
+msgstr "Размер:"
 
 #: editor/editor_properties_array_dict.cpp
-msgid "Page: "
-msgstr "Страница: "
+msgid "Page:"
+msgstr "Страница:"
 
 #: editor/editor_properties_array_dict.cpp
 #: editor/plugins/theme_editor_plugin.cpp
@@ -5093,6 +5310,11 @@ msgstr ""
 "Пожалуйста, добавьте активный пресет в меню экспорта или пометьте "
 "существующий пресет как активный."
 
+#: editor/editor_run_native.cpp
+#, fuzzy
+msgid "Project Run"
+msgstr "Проект"
+
 #: editor/editor_run_script.cpp
 msgid "Write your logic in the _run() method."
 msgstr "Пишите ваш код в методе _run()."
@@ -5182,7 +5404,6 @@ msgid "Max Array Dictionary Items Per Page"
 msgstr "Максимальное количество элементов словаря массива на странице"
 
 #: editor/editor_settings.cpp editor/plugins/script_editor_plugin.cpp
-#: editor/plugins/script_text_editor.cpp editor/plugins/text_editor.cpp
 #: editor/plugins/theme_editor_plugin.cpp scene/gui/control.cpp
 #: scene/register_scene_types.cpp
 msgid "Theme"
@@ -5235,11 +5456,6 @@ msgstr "Пользовательская тема"
 #: editor/editor_settings.cpp
 msgid "Show Script Button"
 msgstr "Показать кнопку скрипта"
-
-#: editor/editor_settings.cpp editor/fileserver/editor_file_server.cpp
-#: modules/fbx/editor_scene_importer_fbx.cpp
-msgid "Filesystem"
-msgstr "Файловая система"
 
 #: editor/editor_settings.cpp
 msgid "Directories"
@@ -5306,8 +5522,7 @@ msgstr "Менять оттенок подресурсов"
 msgid "Color Theme"
 msgstr "Цветовая тема"
 
-#: editor/editor_settings.cpp editor/plugins/script_text_editor.cpp
-#: editor/plugins/text_editor.cpp
+#: editor/editor_settings.cpp scene/3d/label_3d.cpp
 #: scene/resources/default_theme/default_theme.cpp
 msgid "Line Spacing"
 msgstr "Межстрочный интервал"
@@ -5333,18 +5548,9 @@ msgstr "Подсвечивать текущую строку"
 msgid "Highlight Type Safe Lines"
 msgstr "Подсвечивать типобезопасные строки"
 
-#: editor/editor_settings.cpp modules/gdscript/gdscript_editor.cpp
-#: modules/mono/csharp_script.cpp
+#: editor/editor_settings.cpp
 msgid "Indent"
 msgstr "Отступ"
-
-#: editor/editor_settings.cpp editor/script_editor_debugger.cpp
-#: modules/gdscript/gdscript_editor.cpp modules/gltf/gltf_accessor.cpp
-#: modules/gltf/gltf_light.cpp modules/mono/csharp_script.cpp
-#: modules/visual_script/visual_script_nodes.cpp scene/3d/physics_body.cpp
-#: scene/resources/visual_shader_nodes.cpp
-msgid "Type"
-msgstr "Тип"
 
 #: editor/editor_settings.cpp editor/plugins/script_text_editor.cpp
 msgid "Auto Indent"
@@ -5363,7 +5569,9 @@ msgid "Draw Spaces"
 msgstr "Рисовать пробелы"
 
 #: editor/editor_settings.cpp editor/plugins/spatial_editor_plugin.cpp
-#: editor/plugins/tile_set_editor_plugin.cpp scene/main/scene_tree.cpp
+#: editor/plugins/tile_set_editor_plugin.cpp scene/2d/tile_map.cpp
+#: scene/main/scene_tree.cpp scene/resources/world.cpp
+#: scene/resources/world_2d.cpp
 msgid "Navigation"
 msgstr "Навигация"
 
@@ -5386,6 +5594,15 @@ msgstr "Ширина миникарты"
 #: editor/editor_settings.cpp
 msgid "Mouse Extra Buttons Navigate History"
 msgstr "Навигация по истории дополнительными кнопками мыши"
+
+#: editor/editor_settings.cpp
+#, fuzzy
+msgid "Drag And Drop Selection"
+msgstr "Выделение сетки"
+
+#: editor/editor_settings.cpp
+msgid "Stay In Script Editor On Node Selected"
+msgstr ""
 
 #: editor/editor_settings.cpp
 msgid "Appearance"
@@ -5440,7 +5657,6 @@ msgid "Show Members Overview"
 msgstr "Показывать обзор членов класса"
 
 #: editor/editor_settings.cpp editor/plugins/script_editor_plugin.cpp
-#: editor/plugins/shader_editor_plugin.cpp
 msgid "Files"
 msgstr "Файлы"
 
@@ -5457,6 +5673,14 @@ msgid "Restore Scripts On Load"
 msgstr "Восстанавливать скрипты при загрузке"
 
 #: editor/editor_settings.cpp
+msgid "Auto Reload And Parse Scripts On Save"
+msgstr "Автоматически перезагружать и разбирать скрипты при сохранении"
+
+#: editor/editor_settings.cpp
+msgid "Auto Reload Scripts On External Change"
+msgstr "Автоматически перезагружать скрипты при внешнем изменении"
+
+#: editor/editor_settings.cpp
 msgid "Create Signal Callbacks"
 msgstr "Создавать обратные вызовы сигналов"
 
@@ -5464,8 +5688,7 @@ msgstr "Создавать обратные вызовы сигналов"
 msgid "Sort Members Outline Alphabetically"
 msgstr "Сортировать список членов класса по алфавиту"
 
-#: editor/editor_settings.cpp scene/gui/line_edit.cpp
-#: scene/resources/default_theme/default_theme.cpp
+#: editor/editor_settings.cpp scene/resources/default_theme/default_theme.cpp
 msgid "Cursor"
 msgstr "Курсор"
 
@@ -5477,17 +5700,23 @@ msgstr "Прокрутить до конца файла"
 msgid "Block Caret"
 msgstr "Блок"
 
-#: editor/editor_settings.cpp scene/gui/line_edit.cpp
+#: editor/editor_settings.cpp
 msgid "Caret Blink"
 msgstr "Мигающий курсор"
 
-#: editor/editor_settings.cpp scene/gui/line_edit.cpp
+#: editor/editor_settings.cpp
 msgid "Caret Blink Speed"
 msgstr "Скорость мигания курсора"
 
 #: editor/editor_settings.cpp
 msgid "Right Click Moves Caret"
 msgstr "Щелчок правой кнопкой мыши перемещает курсор"
+
+#: editor/editor_settings.cpp modules/gdscript/gdscript.cpp
+#: modules/gdscript/gdscript_editor.cpp
+#: scene/resources/default_theme/default_theme.cpp
+msgid "Completion"
+msgstr "Завершение"
 
 #: editor/editor_settings.cpp
 msgid "Idle Parse Delay"
@@ -5518,6 +5747,10 @@ msgid "Add Type Hints"
 msgstr "Добавлять подсказки типов"
 
 #: editor/editor_settings.cpp
+msgid "Use Single Quotes"
+msgstr "Использовать одинарные кавычки"
+
+#: editor/editor_settings.cpp
 msgid "Show Help Index"
 msgstr "Показывать справочный указатель"
 
@@ -5533,14 +5766,17 @@ msgstr "Размер шрифта исходного кода в справке"
 msgid "Help Title Font Size"
 msgstr "Размер шрифта заголовков справки"
 
-#: editor/editor_settings.cpp editor/plugins/mesh_library_editor_plugin.cpp
-#: modules/gridmap/grid_map_editor_plugin.cpp
+#: editor/editor_settings.cpp modules/gridmap/grid_map_editor_plugin.cpp
 msgid "Grid Map"
 msgstr "Сеточная карта"
 
 #: editor/editor_settings.cpp modules/gridmap/grid_map_editor_plugin.cpp
 msgid "Pick Distance"
 msgstr "Выбрать расстояние"
+
+#: editor/editor_settings.cpp editor/plugins/tile_map_editor_plugin.cpp
+msgid "Preview Size"
+msgstr "Размер превью"
 
 #: editor/editor_settings.cpp
 msgid "Primary Grid Color"
@@ -5553,6 +5789,34 @@ msgstr "Вторичный цвет сетки"
 #: editor/editor_settings.cpp
 msgid "Selection Box Color"
 msgstr "Цвет полосы выделения"
+
+#: editor/editor_settings.cpp editor/plugins/path_editor_plugin.cpp
+#: editor/spatial_editor_gizmos.cpp modules/csg/csg_gizmos.cpp
+msgid "3D Gizmos"
+msgstr "3D-гизмо"
+
+#: editor/editor_settings.cpp editor/plugins/path_editor_plugin.cpp
+#: editor/spatial_editor_gizmos.cpp modules/csg/csg_gizmos.cpp
+msgid "Gizmo Colors"
+msgstr "Цвета гизмо"
+
+#: editor/editor_settings.cpp
+msgid "Instanced"
+msgstr "Инстанцирован"
+
+#: editor/editor_settings.cpp modules/gltf/gltf_node.cpp
+#: scene/3d/physics_body.cpp
+msgid "Joint"
+msgstr "Сустав"
+
+#: editor/editor_settings.cpp scene/2d/collision_shape_2d.cpp
+#: scene/2d/cpu_particles_2d.cpp scene/2d/touch_screen_button.cpp
+#: scene/3d/collision_shape.cpp scene/3d/cpu_particles.cpp
+#: scene/3d/occluder.cpp scene/3d/spring_arm.cpp
+#: scene/resources/particles_material.cpp servers/physics_2d_server.cpp
+#: servers/physics_server.cpp
+msgid "Shape"
+msgstr "Форма"
 
 #: editor/editor_settings.cpp
 msgid "Primary Grid Steps"
@@ -5586,15 +5850,15 @@ msgstr "Плоскость XY сетки"
 msgid "Grid YZ Plane"
 msgstr "Плоскость YZ сетки"
 
-#: editor/editor_settings.cpp editor/plugins/spatial_editor_plugin.cpp
+#: editor/editor_settings.cpp
 msgid "Default FOV"
 msgstr "Поле зрения по умолчанию"
 
-#: editor/editor_settings.cpp editor/plugins/spatial_editor_plugin.cpp
+#: editor/editor_settings.cpp
 msgid "Default Z Near"
 msgstr "Z Near по умолчанию"
 
-#: editor/editor_settings.cpp editor/plugins/spatial_editor_plugin.cpp
+#: editor/editor_settings.cpp
 msgid "Default Z Far"
 msgstr "Z Far по умолчанию"
 
@@ -5643,7 +5907,6 @@ msgid "Warped Mouse Panning"
 msgstr "Зацикленное панорамирование мышью"
 
 #: editor/editor_settings.cpp
-#, fuzzy
 msgid "Navigation Feel"
 msgstr "Чувствительность навигации"
 
@@ -5802,13 +6065,20 @@ msgid "Rect"
 msgstr "Прямоугольник"
 
 #: editor/editor_settings.cpp
-#, fuzzy
 msgid "Rect Custom Position"
-msgstr "Установить позицию выхода кривой"
+msgstr "Пользовательская позиция прямоугольника"
 
 #: editor/editor_settings.cpp platform/android/export/export_plugin.cpp
 msgid "Screen"
 msgstr "Экран"
+
+#: editor/editor_settings.cpp
+msgid "Auto Save"
+msgstr "Автосохранение"
+
+#: editor/editor_settings.cpp
+msgid "Save Before Running"
+msgstr "Сохранять перед запуском"
 
 #: editor/editor_settings.cpp
 msgid "Font Size"
@@ -5842,10 +6112,12 @@ msgstr "Хост"
 msgid "Port"
 msgstr "Порт"
 
+#. TRANSLATORS: Project Manager here refers to the tool used to create/manage Godot projects.
 #: editor/editor_settings.cpp
 msgid "Project Manager"
 msgstr "Менеджер проектов"
 
+#. TRANSLATORS: Project Manager here refers to the tool used to create/manage Godot projects.
 #: editor/editor_settings.cpp
 msgid "Sorting Order"
 msgstr "Порядок сортировки"
@@ -5889,27 +6161,22 @@ msgid "Background Color"
 msgstr "Цвет фона"
 
 #: editor/editor_settings.cpp scene/resources/default_theme/default_theme.cpp
-#, fuzzy
 msgid "Completion Background Color"
 msgstr "Цвет фона завершения"
 
 #: editor/editor_settings.cpp scene/resources/default_theme/default_theme.cpp
-#, fuzzy
 msgid "Completion Selected Color"
 msgstr "Цвет фона выделенного завершения"
 
 #: editor/editor_settings.cpp scene/resources/default_theme/default_theme.cpp
-#, fuzzy
 msgid "Completion Existing Color"
 msgstr "Цвет существующего завершения"
 
 #: editor/editor_settings.cpp scene/resources/default_theme/default_theme.cpp
-#, fuzzy
 msgid "Completion Scroll Color"
 msgstr "Цвет прокрутки завершения"
 
 #: editor/editor_settings.cpp scene/resources/default_theme/default_theme.cpp
-#, fuzzy
 msgid "Completion Font Color"
 msgstr "Цвет шрифта завершения"
 
@@ -6006,6 +6273,10 @@ msgstr ""
 #: editor/editor_spin_slider.cpp scene/gui/button.cpp
 msgid "Flat"
 msgstr "Плоская"
+
+#: editor/editor_spin_slider.cpp
+msgid "Hide Slider"
+msgstr "Скрыть Slider"
 
 #: editor/editor_sub_scene.cpp
 msgid "Select Node(s) to Import"
@@ -6596,14 +6867,6 @@ msgid "Replace in Files"
 msgstr "Заменить в файлах"
 
 #: editor/find_in_files.cpp
-msgid "Find: "
-msgstr "Найти: "
-
-#: editor/find_in_files.cpp
-msgid "Replace: "
-msgstr "Заменить: "
-
-#: editor/find_in_files.cpp
 msgid "Replace All (NO UNDO)"
 msgstr "Заменить всё (НЕЛЬЗЯ ОТМЕНИТЬ)"
 
@@ -6678,16 +6941,15 @@ msgstr "Управление группами"
 
 #: editor/import/editor_import_collada.cpp
 msgid "Collada"
-msgstr "Collada"
+msgstr "ColladA"
 
 #: editor/import/editor_import_collada.cpp
 msgid "Use Ambient"
 msgstr "Использовать Ambient"
 
 #: editor/import/resource_importer_bitmask.cpp
-#, fuzzy
 msgid "Create From"
-msgstr "Создать папку"
+msgstr "Сотворить из"
 
 #: editor/import/resource_importer_bitmask.cpp
 #: servers/audio/effects/audio_effect_compressor.cpp
@@ -6699,13 +6961,16 @@ msgstr "Порог"
 #: editor/import/resource_importer_scene.cpp
 #: editor/import/resource_importer_texture.cpp
 #: editor/import/resource_importer_wav.cpp scene/3d/gi_probe.cpp
-#, fuzzy
 msgid "Compress"
-msgstr "Компоненты"
+msgstr "Сжатие"
 
 #: editor/import/resource_importer_csv_translation.cpp
 msgid "Delimiter"
 msgstr "Разделитель"
+
+#: editor/import/resource_importer_layered_texture.cpp
+msgid "ColorCorrect"
+msgstr "Цветокоррекция"
 
 #: editor/import/resource_importer_layered_texture.cpp
 msgid "No BPTC If RGB"
@@ -6713,9 +6978,9 @@ msgstr "Без BPTC если RGB"
 
 #: editor/import/resource_importer_layered_texture.cpp
 #: editor/import/resource_importer_texture.cpp scene/2d/cpu_particles_2d.cpp
-#: scene/3d/cpu_particles.cpp scene/3d/sprite_3d.cpp
+#: scene/3d/cpu_particles.cpp scene/3d/label_3d.cpp scene/3d/sprite_3d.cpp
 #: scene/resources/material.cpp scene/resources/particles_material.cpp
-#: scene/resources/texture.cpp
+#: scene/resources/texture.cpp scene/resources/visual_shader.cpp
 msgid "Flags"
 msgstr "Флаги"
 
@@ -6727,15 +6992,14 @@ msgstr "Повторить"
 
 #: editor/import/resource_importer_layered_texture.cpp
 #: editor/import/resource_importer_texture.cpp scene/2d/light_2d.cpp
-#: scene/gui/control.cpp scene/resources/navigation_mesh.cpp
+#: scene/gui/control.cpp
 msgid "Filter"
 msgstr "Фильтр"
 
 #: editor/import/resource_importer_layered_texture.cpp
 #: editor/import/resource_importer_texture.cpp
-#, fuzzy
 msgid "Mipmaps"
-msgstr "Сигналы"
+msgstr "Мип-карты"
 
 #: editor/import/resource_importer_layered_texture.cpp
 #: editor/import/resource_importer_texture.cpp
@@ -6745,52 +7009,46 @@ msgstr "Анизотропный"
 #: editor/import/resource_importer_layered_texture.cpp
 #: editor/import/resource_importer_texture.cpp
 msgid "sRGB"
-msgstr ""
+msgstr "sRGВ"
 
 #: editor/import/resource_importer_layered_texture.cpp
-#, fuzzy
 msgid "Slices"
-msgstr "Автоматически"
+msgstr "Нарезчик"
 
 #: editor/import/resource_importer_layered_texture.cpp
 #: scene/gui/aspect_ratio_container.cpp scene/gui/control.cpp
 #: scene/gui/nine_patch_rect.cpp scene/gui/scroll_container.cpp
 #: scene/resources/style_box.cpp
 msgid "Horizontal"
-msgstr "Горизонтальный"
+msgstr "Горизонталь"
 
 #: editor/import/resource_importer_layered_texture.cpp
 #: scene/gui/aspect_ratio_container.cpp scene/gui/control.cpp
 #: scene/gui/nine_patch_rect.cpp scene/gui/scroll_container.cpp
 #: scene/resources/style_box.cpp
 msgid "Vertical"
-msgstr "Вертикальный"
+msgstr "Вертикаль"
 
 #: editor/import/resource_importer_obj.cpp
-#, fuzzy
 msgid "Generate Tangents"
-msgstr "Генерировать точки"
+msgstr "Генерация касательной"
 
 #: editor/import/resource_importer_obj.cpp
-#, fuzzy
 msgid "Scale Mesh"
-msgstr "Режим масштабирования"
+msgstr "Масштаб сетки"
 
 #: editor/import/resource_importer_obj.cpp
-#, fuzzy
 msgid "Offset Mesh"
-msgstr "Отступы"
+msgstr "Смещение сетки"
 
 #: editor/import/resource_importer_obj.cpp
 #: editor/import/resource_importer_scene.cpp
-#, fuzzy
 msgid "Octahedral Compression"
-msgstr "Сжатие"
+msgstr "Октаэдральный сжатие"
 
 #: editor/import/resource_importer_obj.cpp
-#, fuzzy
 msgid "Optimize Mesh Flags"
-msgstr "Флаги размера"
+msgstr "Наилучший флаг сетки"
 
 #: editor/import/resource_importer_scene.cpp
 msgid "Import as Single Scene"
@@ -6838,32 +7096,26 @@ msgid "Nodes"
 msgstr "Узлы"
 
 #: editor/import/resource_importer_scene.cpp
-#, fuzzy
 msgid "Root Type"
-msgstr "Тип возвращаемого значения"
+msgstr "Тип ветви"
 
 #: editor/import/resource_importer_scene.cpp
-#, fuzzy
 msgid "Root Name"
-msgstr "Название внешнего репозитория"
+msgstr "Имя ветви"
 
 #: editor/import/resource_importer_scene.cpp
-#, fuzzy
 msgid "Root Scale"
-msgstr "Масштабировать"
+msgstr "Расширение ветки"
 
 #: editor/import/resource_importer_scene.cpp
-#, fuzzy
 msgid "Custom Script"
-msgstr "Пользовательский узел"
+msgstr "Пользовательский Скрипт"
 
 #: editor/import/resource_importer_scene.cpp scene/resources/texture.cpp
-#, fuzzy
 msgid "Storage"
 msgstr "Хранилище"
 
 #: editor/import/resource_importer_scene.cpp
-#, fuzzy
 msgid "Use Legacy Names"
 msgstr "Использовать унаследованные имена"
 
@@ -6871,80 +7123,66 @@ msgstr "Использовать унаследованные имена"
 msgid "Materials"
 msgstr "Материалы"
 
-#: editor/import/resource_importer_scene.cpp platform/osx/export/export.cpp
-#, fuzzy
-msgid "Location"
-msgstr "Локализация"
-
 #: editor/import/resource_importer_scene.cpp
-#, fuzzy
 msgid "Keep On Reimport"
-msgstr "Переимпортировать"
+msgstr "Продолжить пересылку"
 
 #: editor/import/resource_importer_scene.cpp modules/gltf/gltf_state.cpp
 msgid "Meshes"
-msgstr "Меши"
+msgstr "Сетка"
 
 #: editor/import/resource_importer_scene.cpp
-#, fuzzy
 msgid "Ensure Tangents"
-msgstr "Вычислить касательные"
+msgstr "Проверить соприкосновение"
 
 #: editor/import/resource_importer_scene.cpp
-#, fuzzy
 msgid "Light Baking"
-msgstr "Карты освещения"
+msgstr "запекание света"
 
 #: editor/import/resource_importer_scene.cpp
-#, fuzzy
 msgid "Lightmap Texel Size"
-msgstr "Запекание LightMap"
+msgstr "Запекание Lightmap"
 
 #: editor/import/resource_importer_scene.cpp modules/gltf/gltf_state.cpp
 msgid "Skins"
-msgstr "Скины"
+msgstr "Обложки"
 
 #: editor/import/resource_importer_scene.cpp
-#, fuzzy
 msgid "Use Named Skins"
-msgstr "Использовать привязку масштабирования"
+msgstr "Использование заданной обложки"
 
 #: editor/import/resource_importer_scene.cpp
-#, fuzzy
 msgid "External Files"
-msgstr "Внешний"
+msgstr "Внесение файлов"
 
 #: editor/import/resource_importer_scene.cpp
-#, fuzzy
 msgid "Store In Subdir"
 msgstr "Хранить в поддиректории"
 
 #: editor/import/resource_importer_scene.cpp
-#, fuzzy
 msgid "Filter Script"
-msgstr "Фильтр скриптов"
+msgstr "Фильтр сценариев"
 
 #: editor/import/resource_importer_scene.cpp
-#, fuzzy
 msgid "Keep Custom Tracks"
-msgstr "Преобразование"
+msgstr "Использовать пользовательские дорожки"
 
 #: editor/import/resource_importer_scene.cpp
-#, fuzzy
 msgid "Optimizer"
 msgstr "Оптимизировать"
 
-#: editor/import/resource_importer_scene.cpp main/main.cpp
+#: editor/import/resource_importer_scene.cpp
+#: editor/plugins/item_list_editor_plugin.cpp main/main.cpp
 #: modules/mono/mono_gd/gd_mono.cpp platform/javascript/export/export.cpp
 #: platform/osx/export/export.cpp scene/2d/camera_2d.cpp scene/2d/light_2d.cpp
 #: scene/2d/navigation_polygon.cpp scene/2d/ray_cast_2d.cpp scene/2d/sprite.cpp
 #: scene/2d/y_sort.cpp scene/3d/audio_stream_player_3d.cpp
 #: scene/3d/baked_lightmap.cpp scene/3d/interpolated_camera.cpp
 #: scene/3d/light.cpp scene/3d/navigation_mesh_instance.cpp
-#: scene/3d/physics_joint.cpp scene/3d/ray_cast.cpp scene/3d/sprite_3d.cpp
-#: scene/gui/graph_edit.cpp scene/gui/rich_text_label.cpp
-#: scene/resources/curve.cpp scene/resources/environment.cpp
-#: scene/resources/material.cpp
+#: scene/3d/physics_joint.cpp scene/3d/ray_cast.cpp scene/3d/skeleton.cpp
+#: scene/3d/sprite_3d.cpp scene/gui/graph_edit.cpp
+#: scene/gui/rich_text_label.cpp scene/resources/curve.cpp
+#: scene/resources/environment.cpp scene/resources/material.cpp
 msgid "Enabled"
 msgstr "Включено"
 
@@ -6957,19 +7195,16 @@ msgid "Max Angular Error"
 msgstr "Максимальная угловая погрешность"
 
 #: editor/import/resource_importer_scene.cpp
-#, fuzzy
 msgid "Max Angle"
-msgstr "Угол"
+msgstr "Максимальный Угол"
 
 #: editor/import/resource_importer_scene.cpp
-#, fuzzy
 msgid "Remove Unused Tracks"
-msgstr "Удалить дорожку"
+msgstr "Удалить неиспользуемые дорожки"
 
 #: editor/import/resource_importer_scene.cpp
-#, fuzzy
 msgid "Clips"
-msgstr "Анимационные клипы"
+msgstr "Клипы"
 
 #: editor/import/resource_importer_scene.cpp scene/2d/cpu_particles_2d.cpp
 #: scene/2d/particles_2d.cpp scene/3d/area.cpp scene/3d/cpu_particles.cpp
@@ -6991,8 +7226,8 @@ msgid "Generating Lightmaps"
 msgstr "Создание карт освещения"
 
 #: editor/import/resource_importer_scene.cpp
-msgid "Generating for Mesh: "
-msgstr "Создание для полисетки: "
+msgid "Generating for Mesh:"
+msgstr "Создание для полисетки:"
 
 #: editor/import/resource_importer_scene.cpp
 msgid "Running Custom Script..."
@@ -7018,77 +7253,85 @@ msgstr "Вы вернули производный от Node объект в м�
 msgid "Saving..."
 msgstr "Сохранение..."
 
+#: editor/import/resource_importer_texture.cpp
+msgid ""
+"%s: Texture detected as used as a normal map in 3D. Enabling red-green "
+"texture compression to reduce memory usage (blue channel is discarded)."
+msgstr ""
+"%s: Выбранная текстура используется как карта нормалей в 3D. Включено красно-"
+"зелёное сжатие текстуры для уменьшения использования памяти (синий канал "
+"отбрасывается)."
+
+#: editor/import/resource_importer_texture.cpp
+msgid ""
+"%s: Texture detected as used in 3D. Enabling filter, repeat, mipmap "
+"generation and VRAM texture compression."
+msgstr ""
+"%s: Текстура используется в 3D. Включена фильтрация, повторение и генерация "
+"mipmap-карт, а также VRAM сжатие текстуры."
+
+#: editor/import/resource_importer_texture.cpp
+msgid "2D, Detect 3D"
+msgstr "2D, Обнаружение 3D"
+
+#: editor/import/resource_importer_texture.cpp
+msgid "2D Pixel"
+msgstr "2D пиксели"
+
 #: editor/import/resource_importer_texture.cpp scene/resources/texture.cpp
-#, fuzzy
 msgid "Lossy Quality"
 msgstr "Качество с потерями"
 
 #: editor/import/resource_importer_texture.cpp
-#, fuzzy
 msgid "HDR Mode"
-msgstr "Режим выделения"
+msgstr "Режим HDR"
 
 #: editor/import/resource_importer_texture.cpp
 msgid "BPTC LDR"
-msgstr ""
+msgstr "BPTC LDR"
 
-#: editor/import/resource_importer_texture.cpp scene/2d/cpu_particles_2d.cpp
+#: editor/import/resource_importer_texture.cpp
+#: editor/plugins/tile_set_editor_plugin.cpp scene/2d/cpu_particles_2d.cpp
 #: scene/2d/mesh_instance_2d.cpp scene/2d/multimesh_instance_2d.cpp
 #: scene/2d/particles_2d.cpp scene/2d/sprite.cpp scene/resources/style_box.cpp
 msgid "Normal Map"
 msgstr "Карта нормалей"
 
 #: editor/import/resource_importer_texture.cpp
-#, fuzzy
 msgid "Process"
-msgstr "Предобработка"
+msgstr "Процесс"
 
 #: editor/import/resource_importer_texture.cpp
-#, fuzzy
 msgid "Fix Alpha Border"
 msgstr "Исправить альфа-границу"
 
 #: editor/import/resource_importer_texture.cpp
-#, fuzzy
 msgid "Premult Alpha"
-msgstr "Редактировать полигон"
+msgstr "Предшествующая Альфа"
 
 #: editor/import/resource_importer_texture.cpp
-#, fuzzy
 msgid "Hdr As Srgb"
 msgstr "Hdr как Srgb"
 
 #: editor/import/resource_importer_texture.cpp
-#, fuzzy
 msgid "Invert Color"
-msgstr "Вершины"
+msgstr "Обращенный цвет"
 
 #: editor/import/resource_importer_texture.cpp
-#, fuzzy
 msgid "Normal Map Invert Y"
-msgstr "Карта нормалей"
+msgstr "Инвестирование карты нормалей по Y"
 
 #: editor/import/resource_importer_texture.cpp
-#: scene/2d/audio_stream_player_2d.cpp scene/3d/audio_stream_player_3d.cpp
-#: scene/audio/audio_stream_player.cpp scene/gui/video_player.cpp
-#, fuzzy
-msgid "Stream"
-msgstr "Поток"
-
-#: editor/import/resource_importer_texture.cpp
-#, fuzzy
 msgid "Size Limit"
-msgstr "Лимит"
+msgstr "Размер лимита"
 
 #: editor/import/resource_importer_texture.cpp
-#, fuzzy
 msgid "Detect 3D"
 msgstr "Обнаружить 3D"
 
 #: editor/import/resource_importer_texture.cpp
-#, fuzzy
 msgid "SVG"
-msgstr "CSG"
+msgstr "SVG"
 
 #: editor/import/resource_importer_texture.cpp
 msgid ""
@@ -7096,24 +7339,21 @@ msgid ""
 "texture will not display correctly on PC."
 msgstr ""
 "Внимание, в Настройках проекта не включено подходящее сжатие видеопамяти для "
-"ПК. Эта текстура не будет корректно отображаться на ПК."
+"ПК. Эта текстура не будет корректно отображаться."
 
 #: editor/import/resource_importer_texture_atlas.cpp
-#, fuzzy
 msgid "Atlas File"
-msgstr "Размер атласа"
+msgstr "Файл атласа"
 
 #: editor/import/resource_importer_texture_atlas.cpp
 msgid "Import Mode"
-msgstr "Режим импорта"
+msgstr "Режим импортирования"
 
 #: editor/import/resource_importer_texture_atlas.cpp
-#, fuzzy
 msgid "Crop To Region"
-msgstr "Задать область тайла"
+msgstr "Обрезать края"
 
 #: editor/import/resource_importer_texture_atlas.cpp
-#, fuzzy
 msgid "Trim Alpha Border From Region"
 msgstr "Обрезать альфа-границу из области"
 
@@ -7131,41 +7371,35 @@ msgid "Mono"
 msgstr "Моно"
 
 #: editor/import/resource_importer_wav.cpp
-#, fuzzy
 msgid "Max Rate"
-msgstr "Mix узел"
+msgstr "максимальная частота"
 
 #: editor/import/resource_importer_wav.cpp
-#, fuzzy
 msgid "Max Rate Hz"
-msgstr "Mix узел"
+msgstr "Максимальная частота Hz"
 
 #: editor/import/resource_importer_wav.cpp
 msgid "Trim"
 msgstr "Обрезать"
 
 #: editor/import/resource_importer_wav.cpp
-#, fuzzy
 msgid "Normalize"
-msgstr "Нормализованный"
+msgstr "Нормализация"
 
 #: editor/import/resource_importer_wav.cpp
 #: scene/resources/audio_stream_sample.cpp
-#, fuzzy
 msgid "Loop Mode"
-msgstr "Режим перемещения"
+msgstr "Режим цикла"
 
 #: editor/import/resource_importer_wav.cpp
 #: scene/resources/audio_stream_sample.cpp
-#, fuzzy
 msgid "Loop Begin"
-msgstr "Режим перемещения"
+msgstr "Начало цикла"
 
 #: editor/import/resource_importer_wav.cpp
 #: scene/resources/audio_stream_sample.cpp
-#, fuzzy
 msgid "Loop End"
-msgstr "Режим перемещения"
+msgstr "Конец цикла"
 
 #: editor/import_defaults_editor.cpp
 msgid "Select Importer"
@@ -7249,25 +7483,23 @@ msgstr "Стиль имени свойства"
 
 #: editor/inspector_dock.cpp scene/gui/color_picker.cpp
 msgid "Raw"
-msgstr "Raw"
+msgstr "Без обработки"
 
 #: editor/inspector_dock.cpp
-#, fuzzy
 msgid "Capitalized"
-msgstr "С Заглавных Букв"
+msgstr "Капитализированный"
 
 #: editor/inspector_dock.cpp
-#, fuzzy
 msgid "Localized"
-msgstr "Локаль"
+msgstr "Локализация"
 
 #: editor/inspector_dock.cpp
 msgid "Localization not available for current language."
-msgstr "Локализация недоступна для текущего языка."
+msgstr "Локализация недоступна для данного языка."
 
 #: editor/inspector_dock.cpp
 msgid "Copy Properties"
-msgstr "Копировать свойства"
+msgstr "Копировать характеристики"
 
 #: editor/inspector_dock.cpp
 msgid "Paste Properties"
@@ -7709,8 +7941,17 @@ msgid "New Anim"
 msgstr "Новая анимация"
 
 #: editor/plugins/animation_player_editor_plugin.cpp
+msgid "Create New Animation"
+msgstr "Создать новую анимацию"
+
+#: editor/plugins/animation_player_editor_plugin.cpp
 msgid "Change Animation Name:"
 msgstr "Изменить имя анимации:"
+
+#: editor/plugins/animation_player_editor_plugin.cpp
+#: editor/plugins/sprite_frames_editor_plugin.cpp
+msgid "Rename Animation"
+msgstr "Переименовать анимацию"
 
 #: editor/plugins/animation_player_editor_plugin.cpp
 #: editor/plugins/sprite_frames_editor_plugin.cpp
@@ -7729,11 +7970,6 @@ msgstr "Недопустимое название анимации!"
 #: editor/plugins/animation_player_editor_plugin.cpp
 msgid "Animation name already exists!"
 msgstr "Такое название анимации уже существует!"
-
-#: editor/plugins/animation_player_editor_plugin.cpp
-#: editor/plugins/sprite_frames_editor_plugin.cpp
-msgid "Rename Animation"
-msgstr "Переименовать анимацию"
 
 #: editor/plugins/animation_player_editor_plugin.cpp
 msgid "Duplicate Animation"
@@ -7804,9 +8040,8 @@ msgid "New"
 msgstr "Новый"
 
 #: editor/plugins/animation_player_editor_plugin.cpp
-#, fuzzy
 msgid "Paste As Reference"
-msgstr "Справка по классу %s"
+msgstr "Вставить ссылку"
 
 #: editor/plugins/animation_player_editor_plugin.cpp
 msgid "Edit Transitions..."
@@ -7836,17 +8071,20 @@ msgstr "Параметры режима кальки"
 msgid "Directions"
 msgstr "Направления"
 
+#. TRANSLATORS: Opposite of "Future", refers to a direction in animation onion skinning.
 #: editor/plugins/animation_player_editor_plugin.cpp
 msgid "Past"
 msgstr "Прошлые"
 
+#. TRANSLATORS: Opposite of "Past", refers to a direction in animation onion skinning.
 #: editor/plugins/animation_player_editor_plugin.cpp
 msgid "Future"
 msgstr "Будущие"
 
 #: editor/plugins/animation_player_editor_plugin.cpp modules/csg/csg_shape.cpp
 #: scene/3d/collision_polygon.cpp scene/main/scene_tree.cpp
-#: scene/resources/material.cpp servers/audio/effects/audio_effect_phaser.cpp
+#: scene/resources/material.cpp scene/resources/primitive_meshes.cpp
+#: servers/audio/effects/audio_effect_phaser.cpp
 msgid "Depth"
 msgstr "Глубина"
 
@@ -7877,10 +8115,6 @@ msgstr "Включать 3D гизмо"
 #: editor/plugins/animation_player_editor_plugin.cpp
 msgid "Pin AnimationPlayer"
 msgstr "Закрепить анимацию игрока"
-
-#: editor/plugins/animation_player_editor_plugin.cpp
-msgid "Create New Animation"
-msgstr "Создать новую анимацию"
 
 #: editor/plugins/animation_player_editor_plugin.cpp
 msgid "Animation Name:"
@@ -7998,8 +8232,8 @@ msgid "Set the end animation. This is useful for sub-transitions."
 msgstr "Установите конец анимации. Полезно для вспомогательных переходов."
 
 #: editor/plugins/animation_state_machine_editor.cpp
-msgid "Transition: "
-msgstr "Переход: "
+msgid "Transition:"
+msgstr "Переход:"
 
 #: editor/plugins/animation_state_machine_editor.cpp
 msgid "Play Mode:"
@@ -8015,11 +8249,6 @@ msgid "New name:"
 msgstr "Новое имя:"
 
 #: editor/plugins/animation_tree_player_editor_plugin.cpp
-#: editor/plugins/multimesh_editor_plugin.cpp
-msgid "Scale:"
-msgstr "Масштаб:"
-
-#: editor/plugins/animation_tree_player_editor_plugin.cpp
 msgid "Fade In (s):"
 msgstr "Проявление (сек.):"
 
@@ -8028,7 +8257,7 @@ msgid "Fade Out (s):"
 msgstr "Исчезновение (сек.):"
 
 #: editor/plugins/animation_tree_player_editor_plugin.cpp
-#: scene/resources/style_box.cpp
+#: scene/resources/style_box.cpp scene/resources/visual_shader.cpp
 msgid "Blend"
 msgstr "Смешивание"
 
@@ -8300,25 +8529,25 @@ msgid "License (Z-A)"
 msgstr "Лицензия (Я-А)"
 
 #: editor/plugins/asset_library_editor_plugin.cpp
-#, fuzzy
+msgid "Loading..."
+msgstr "Загрузка..."
+
+#: editor/plugins/asset_library_editor_plugin.cpp
 msgctxt "Pagination"
 msgid "First"
 msgstr "Первая"
 
 #: editor/plugins/asset_library_editor_plugin.cpp
-#, fuzzy
 msgctxt "Pagination"
 msgid "Previous"
 msgstr "Предыдущая"
 
 #: editor/plugins/asset_library_editor_plugin.cpp
-#, fuzzy
 msgctxt "Pagination"
 msgid "Next"
 msgstr "Следующая"
 
 #: editor/plugins/asset_library_editor_plugin.cpp
-#, fuzzy
 msgctxt "Pagination"
 msgid "Last"
 msgstr "Последняя"
@@ -8368,16 +8597,16 @@ msgid "Testing"
 msgstr "Тестируемые"
 
 #: editor/plugins/asset_library_editor_plugin.cpp
-msgid "Loading..."
-msgstr "Загрузка..."
+msgid "Failed to get repository configuration."
+msgstr "Не удалось получить конфигурацию репозитория."
 
 #: editor/plugins/asset_library_editor_plugin.cpp
 msgid "Assets ZIP File"
-msgstr "ZIP файл ассетов"
+msgstr "ZIP файл набора"
 
 #: editor/plugins/audio_stream_editor_plugin.cpp
 msgid "Audio Preview Play/Pause"
-msgstr "Аудио превью Старт/Пауза"
+msgstr "Аудио пред прослушивание Старт/Пауза"
 
 #: editor/plugins/baked_lightmap_editor_plugin.cpp
 msgid ""
@@ -8434,7 +8663,7 @@ msgid "Select lightmap bake file:"
 msgstr "Выберите файл запекания карты освещения:"
 
 #: editor/plugins/camera_editor_plugin.cpp
-#: editor/plugins/spatial_editor_plugin.cpp
+#: editor/plugins/spatial_editor_plugin.cpp scene/resources/mesh_library.cpp
 msgid "Preview"
 msgstr "Предпросмотр"
 
@@ -8924,6 +9153,7 @@ msgstr "Сделать пользовательские кость(и) от уз
 msgid "Clear Custom Bones"
 msgstr "Очистить пользовательские кости"
 
+#. TRANSLATORS: Noun, name of the 2D/3D View menus.
 #: editor/plugins/canvas_item_editor_plugin.cpp
 #: editor/plugins/spatial_editor_plugin.cpp
 msgid "View"
@@ -8985,6 +9215,10 @@ msgstr "Кадрировать выбранное"
 #: editor/plugins/canvas_item_editor_plugin.cpp
 msgid "Preview Canvas Scale"
 msgstr "Предпросмотр масштаба холста"
+
+#: editor/plugins/canvas_item_editor_plugin.cpp
+msgid "Layout"
+msgstr "Макет"
 
 #: editor/plugins/canvas_item_editor_plugin.cpp
 msgid "Translation mask for inserting keys."
@@ -9290,27 +9524,46 @@ msgid "Gradient Edited"
 msgstr "Градиент отредактирован"
 
 #: editor/plugins/gradient_texture_2d_editor_plugin.cpp
-#, fuzzy
 msgid "Swap GradientTexture2D Fill Points"
 msgstr "Поменять местами точки заливки GradientTexture2D"
 
 #: editor/plugins/gradient_texture_2d_editor_plugin.cpp
-#, fuzzy
 msgid "Swap Gradient Fill Points"
 msgstr "Поменять местами точки градиентной заливки"
 
 #: editor/plugins/gradient_texture_2d_editor_plugin.cpp
-#, fuzzy
 msgid "Toggle Grid Snap"
-msgstr "Переключить сетку"
+msgstr "Переключить сетку привязки"
+
+#: editor/plugins/item_list_editor_plugin.cpp editor/project_export.cpp
+#: scene/3d/label_3d.cpp scene/gui/button.cpp scene/gui/dialogs.cpp
+#: scene/gui/label.cpp scene/gui/line_edit.cpp scene/gui/link_button.cpp
+#: scene/gui/rich_text_label.cpp scene/gui/text_edit.cpp
+#: scene/resources/primitive_meshes.cpp
+msgid "Text"
+msgstr "Текстовый"
+
+#: editor/plugins/item_list_editor_plugin.cpp
+#: editor/plugins/tile_set_editor_plugin.cpp main/main.cpp
+#: platform/osx/export/export.cpp platform/windows/export/export.cpp
+#: scene/gui/button.cpp scene/gui/item_list.cpp
+msgid "Icon"
+msgstr "Иконка"
+
+#: editor/plugins/item_list_editor_plugin.cpp
+msgid "ID"
+msgstr "Идентификатор"
+
+#: editor/plugins/item_list_editor_plugin.cpp
+#: scene/resources/default_theme/default_theme.cpp
+msgid "Separator"
+msgstr "Разделитель"
 
 #: editor/plugins/item_list_editor_plugin.cpp
 msgid "Item %d"
 msgstr "Элемент %d"
 
-#: editor/plugins/item_list_editor_plugin.cpp scene/gui/item_list.cpp
-#: scene/gui/menu_button.cpp scene/gui/option_button.cpp
-#: scene/gui/popup_menu.cpp
+#: editor/plugins/item_list_editor_plugin.cpp
 msgid "Items"
 msgstr "Элементы"
 
@@ -9414,7 +9667,8 @@ msgstr "Создать контур"
 #: editor/plugins/mesh_instance_editor_plugin.cpp modules/csg/csg_shape.cpp
 #: modules/gltf/gltf_mesh.cpp modules/gltf/gltf_node.cpp
 #: scene/2d/mesh_instance_2d.cpp scene/3d/cpu_particles.cpp
-#: scene/3d/mesh_instance.cpp scene/resources/multimesh.cpp
+#: scene/3d/mesh_instance.cpp scene/resources/mesh_library.cpp
+#: scene/resources/multimesh.cpp scene/resources/primitive_meshes.cpp
 #: scene/resources/texture.cpp
 msgid "Mesh"
 msgstr "Меш"
@@ -9538,9 +9792,8 @@ msgstr ""
 "%s"
 
 #: editor/plugins/mesh_library_editor_plugin.cpp
-#, fuzzy
 msgid "MeshLibrary"
-msgstr "Библиотека полисеток"
+msgstr "Библиотека сеток"
 
 #: editor/plugins/mesh_library_editor_plugin.cpp
 msgid "Add Item"
@@ -9569,12 +9822,6 @@ msgstr "Применить без преобразований"
 #: editor/plugins/mesh_library_editor_plugin.cpp
 msgid "Apply with Transforms"
 msgstr "Применить с преобразованиями"
-
-#: editor/plugins/mesh_library_editor_plugin.cpp
-#: editor/plugins/tile_map_editor_plugin.cpp
-#: modules/gridmap/grid_map_editor_plugin.cpp
-msgid "Preview Size"
-msgstr "Размер превью"
 
 #: editor/plugins/multimesh_editor_plugin.cpp
 msgid "No mesh source specified (and no MultiMesh set in node)."
@@ -9740,8 +9987,8 @@ msgid "Volume"
 msgstr "Объём"
 
 #: editor/plugins/particles_editor_plugin.cpp
-msgid "Emission Source: "
-msgstr "Источник излучения: "
+msgid "Emission Source:"
+msgstr "Источник излучения:"
 
 #: editor/plugins/particles_editor_plugin.cpp
 msgid "A processor material of type 'ParticlesMaterial' is required."
@@ -9885,18 +10132,6 @@ msgstr "Удалить входную контрольную точку"
 msgid "Split Segment (in curve)"
 msgstr "Разделить сегмент (в кривой)"
 
-#: editor/plugins/path_editor_plugin.cpp
-#: editor/plugins/spatial_editor_plugin.cpp editor/spatial_editor_gizmos.cpp
-#: modules/csg/csg_gizmos.cpp
-msgid "3D Gizmos"
-msgstr "3D-гизмо"
-
-#: editor/plugins/path_editor_plugin.cpp
-#: editor/plugins/spatial_editor_plugin.cpp editor/spatial_editor_gizmos.cpp
-#: modules/csg/csg_gizmos.cpp
-msgid "Gizmo Colors"
-msgstr "Цвета гизмо"
-
 #: editor/plugins/physical_bone_plugin.cpp
 msgid "Move Joint"
 msgstr "Передвинуть сустав"
@@ -9985,12 +10220,12 @@ msgstr "UV"
 msgid "Points"
 msgstr "Точки"
 
-#: editor/plugins/polygon_2d_editor_plugin.cpp scene/2d/navigation_polygon.cpp
-#: scene/2d/polygon_2d.cpp scene/resources/navigation_mesh.cpp
+#: editor/plugins/polygon_2d_editor_plugin.cpp scene/2d/polygon_2d.cpp
+#: scene/resources/navigation_mesh.cpp
 msgid "Polygons"
 msgstr "Полигоны"
 
-#: editor/plugins/polygon_2d_editor_plugin.cpp scene/2d/polygon_2d.cpp
+#: editor/plugins/polygon_2d_editor_plugin.cpp scene/3d/skeleton.cpp
 msgid "Bones"
 msgstr "Кости"
 
@@ -10072,8 +10307,6 @@ msgid "Grid Settings"
 msgstr "Параметры сетки"
 
 #: editor/plugins/polygon_2d_editor_plugin.cpp modules/csg/csg_shape.cpp
-#: scene/animation/animation_blend_space_1d.cpp
-#: scene/animation/animation_blend_space_2d.cpp
 #: scene/resources/default_theme/default_theme.cpp
 msgid "Snap"
 msgstr "Привязка"
@@ -10110,6 +10343,10 @@ msgstr "Шаг сетки по Y:"
 msgid "Sync Bones to Polygon"
 msgstr "Синхронизация костей с полигоном"
 
+#: editor/plugins/ray_cast_2d_editor_plugin.cpp
+msgid "Set cast_to"
+msgstr "Задать cast_to"
+
 #: editor/plugins/resource_preloader_editor_plugin.cpp
 msgid "ERROR: Couldn't load resource!"
 msgstr "ОШИБКА: Невозможно загрузить ресурс!"
@@ -10141,13 +10378,6 @@ msgid "Instance:"
 msgstr "Экземпляр:"
 
 #: editor/plugins/resource_preloader_editor_plugin.cpp
-#: editor/plugins/theme_editor_plugin.cpp editor/project_settings_editor.cpp
-#: editor/scene_tree_editor.cpp editor/script_editor_debugger.cpp
-#: modules/visual_script/visual_script_editor.cpp
-msgid "Type:"
-msgstr "Тип:"
-
-#: editor/plugins/resource_preloader_editor_plugin.cpp
 #: editor/scene_tree_dock.cpp editor/scene_tree_editor.cpp
 msgid "Open in Editor"
 msgstr "Открыть в редакторе"
@@ -10155,10 +10385,6 @@ msgstr "Открыть в редакторе"
 #: editor/plugins/resource_preloader_editor_plugin.cpp
 msgid "Load Resource"
 msgstr "Загрузить ресурс"
-
-#: editor/plugins/resource_preloader_editor_plugin.cpp
-msgid "ResourcePreloader"
-msgstr "Предзагрузчик ресурсов"
 
 #: editor/plugins/room_manager_editor_plugin.cpp
 msgid "Flip Portals"
@@ -10199,11 +10425,6 @@ msgstr "Очистить недавние файлы"
 #: editor/plugins/script_editor_plugin.cpp
 msgid "Close and save changes?"
 msgstr "Закрыть и сохранить изменения?"
-
-#: editor/plugins/script_editor_plugin.cpp
-#: editor/plugins/shader_editor_plugin.cpp
-msgid "Auto Reload Scripts On External Change"
-msgstr "Автоматически перезагружать скрипты при внешнем изменении"
 
 #: editor/plugins/script_editor_plugin.cpp
 msgid "Error writing TextFile:"
@@ -10285,10 +10506,6 @@ msgid "%s Class Reference"
 msgstr "Справка по классу %s"
 
 #: editor/plugins/script_editor_plugin.cpp
-msgid "Auto Reload And Parse Scripts On Save"
-msgstr "Автоматически перезагружать и разбирать скрипты при сохранении"
-
-#: editor/plugins/script_editor_plugin.cpp
 #: editor/plugins/script_text_editor.cpp
 msgid "Find Next"
 msgstr "Найти следующее"
@@ -10335,8 +10552,6 @@ msgid "Previous Script"
 msgstr "Предыдущий скрипт"
 
 #: editor/plugins/script_editor_plugin.cpp
-#: modules/gdnative/videodecoder/video_stream_gdnative.cpp
-#: modules/theora/video_stream_theora.cpp modules/webm/video_stream_webm.cpp
 #: scene/resources/default_theme/default_theme.cpp
 msgid "File"
 msgstr "Файл"
@@ -10568,7 +10783,8 @@ msgid "Convert Case"
 msgstr "Преобразовать регистр"
 
 #: editor/plugins/script_text_editor.cpp editor/plugins/text_editor.cpp
-#: scene/gui/label.cpp
+#: scene/3d/label_3d.cpp scene/gui/label.cpp
+#: scene/resources/primitive_meshes.cpp
 msgid "Uppercase"
 msgstr "ВЕРХНИЙ РЕГИСТР"
 
@@ -10864,13 +11080,15 @@ msgstr "Повернуть"
 msgid "Translate"
 msgstr "Сдвинуть"
 
+#. TRANSLATORS: Refers to changing the scale of a node in the 3D editor.
 #: editor/plugins/spatial_editor_plugin.cpp
-msgid "Scaling: "
-msgstr "Масштаб: "
+msgid "Scaling:"
+msgstr "Масштаб:"
 
+#. TRANSLATORS: Refers to changing the position of a node in the 3D editor.
 #: editor/plugins/spatial_editor_plugin.cpp
-msgid "Translating: "
-msgstr "Перемещение: "
+msgid "Translating:"
+msgstr "Перемещение:"
 
 #: editor/plugins/spatial_editor_plugin.cpp
 msgid "Rotating %s degrees."
@@ -10891,11 +11109,6 @@ msgstr "Высота:"
 #: editor/plugins/spatial_editor_plugin.cpp
 msgid "Yaw:"
 msgstr "Рыскание:"
-
-#: editor/plugins/spatial_editor_plugin.cpp
-#: editor/plugins/sprite_frames_editor_plugin.cpp
-msgid "Size:"
-msgstr "Размер:"
 
 #: editor/plugins/spatial_editor_plugin.cpp
 msgid "Objects Drawn:"
@@ -11337,10 +11550,6 @@ msgid "Show Viewport Rotation Gizmo"
 msgstr "Показывать гизмо вращения Viewport"
 
 #: editor/plugins/spatial_editor_plugin.cpp
-msgid "Instanced"
-msgstr "Инстанцирован"
-
-#: editor/plugins/spatial_editor_plugin.cpp
 msgid "Unnamed Gizmo"
 msgstr "Безымянный гизмо"
 
@@ -11390,7 +11599,8 @@ msgid "Invalid geometry, can't replace by mesh."
 msgstr "Недопустимая геометрия, не может быть заменена полисеткой."
 
 #: editor/plugins/sprite_editor_plugin.cpp
-msgid "Convert to Mesh2D"
+#, fuzzy
+msgid "Convert to MeshInstance2D"
 msgstr "Преобразовать в Mesh2D"
 
 #: editor/plugins/sprite_editor_plugin.cpp
@@ -11423,16 +11633,16 @@ msgid "Sprite"
 msgstr "Спрайт"
 
 #: editor/plugins/sprite_editor_plugin.cpp
-msgid "Simplification: "
-msgstr "Упрощение: "
+msgid "Simplification:"
+msgstr "Упрощение:"
 
 #: editor/plugins/sprite_editor_plugin.cpp
-msgid "Shrink (Pixels): "
-msgstr "Сжатие (пиксели): "
+msgid "Shrink (Pixels):"
+msgstr "Сжатие (пиксели):"
 
 #: editor/plugins/sprite_editor_plugin.cpp
-msgid "Grow (Pixels): "
-msgstr "Рост (пиксели): "
+msgid "Grow (Pixels):"
+msgstr "Рост (пиксели):"
 
 #: editor/plugins/sprite_editor_plugin.cpp
 msgid "Update Preview"
@@ -11493,6 +11703,11 @@ msgstr "Анимации:"
 #: editor/plugins/sprite_frames_editor_plugin.cpp
 msgid "New Animation"
 msgstr "Новая анимация"
+
+#: editor/plugins/sprite_frames_editor_plugin.cpp
+#, fuzzy
+msgid "Filter animations"
+msgstr "Фильтр методов"
 
 #: editor/plugins/sprite_frames_editor_plugin.cpp
 msgid "Speed:"
@@ -11792,9 +12007,8 @@ msgstr ""
 "Всё равно закрыть?"
 
 #: editor/plugins/theme_editor_plugin.cpp
-#, fuzzy
 msgid "Remove Type"
-msgstr "Удалить тайл"
+msgstr "Удалить тип"
 
 #: editor/plugins/theme_editor_plugin.cpp
 msgid ""
@@ -11838,14 +12052,12 @@ msgstr ""
 "Добавьте в него элементы вручную или импортировав из другой темы."
 
 #: editor/plugins/theme_editor_plugin.cpp
-#, fuzzy
 msgid "Add Theme Type"
-msgstr "Добавить тип элемента"
+msgstr "Добавить тип Темы"
 
 #: editor/plugins/theme_editor_plugin.cpp
-#, fuzzy
 msgid "Remove Theme Type"
-msgstr "Удалить внешний репозиторий"
+msgstr "Удалить тип Темы"
 
 #: editor/plugins/theme_editor_plugin.cpp
 msgid "Add Color Item"
@@ -12094,7 +12306,7 @@ msgstr "Кнопка-переключатель"
 msgid "Disabled Button"
 msgstr "Заблокированная кнопка"
 
-#: editor/plugins/theme_editor_preview.cpp
+#: editor/plugins/theme_editor_preview.cpp scene/resources/mesh_library.cpp
 msgid "Item"
 msgstr "Элемент"
 
@@ -12300,9 +12512,8 @@ msgid "Palette Min Width"
 msgstr "Минимальная ширина палитры"
 
 #: editor/plugins/tile_map_editor_plugin.cpp
-#, fuzzy
 msgid "Palette Item H Separation"
-msgstr "Горизонтальное разделение элементов палитры"
+msgstr "Разделение элементов в палитре H"
 
 #: editor/plugins/tile_map_editor_plugin.cpp
 msgid "Show Tile Names"
@@ -12322,7 +12533,6 @@ msgstr "Предварительный просмотр заливки"
 
 #: editor/plugins/tile_map_editor_plugin.cpp
 #: modules/gridmap/grid_map_editor_plugin.cpp
-#, fuzzy
 msgid "Editor Side"
 msgstr "Сторона редактора"
 
@@ -12379,8 +12589,7 @@ msgid "Select the previous shape, subtile, or Tile."
 msgstr "Выберите предыдущую форму, элемент тайла или тайл."
 
 #: editor/plugins/tile_set_editor_plugin.cpp scene/2d/sprite.cpp
-#: scene/3d/sprite_3d.cpp scene/resources/navigation_mesh.cpp
-#: scene/resources/texture.cpp
+#: scene/3d/sprite_3d.cpp scene/resources/texture.cpp
 msgid "Region"
 msgstr "Регион"
 
@@ -12406,12 +12615,6 @@ msgstr "Битовая маска"
 #: scene/animation/animation_node_state_machine.cpp
 msgid "Priority"
 msgstr "Приоритет"
-
-#: editor/plugins/tile_set_editor_plugin.cpp main/main.cpp
-#: platform/osx/export/export.cpp platform/windows/export/export.cpp
-#: scene/gui/button.cpp scene/gui/item_list.cpp
-msgid "Icon"
-msgstr "Иконка"
 
 #: editor/plugins/tile_set_editor_plugin.cpp scene/2d/node_2d.cpp
 msgid "Z Index"
@@ -12674,6 +12877,133 @@ msgstr "Создать полигон перекрытия"
 #: editor/plugins/tile_set_editor_plugin.cpp
 msgid "This property can't be changed."
 msgstr "Это свойство не может быть изменено."
+
+#: editor/plugins/tile_set_editor_plugin.cpp
+msgid "Snap Options"
+msgstr "Параметры привязки"
+
+#: editor/plugins/tile_set_editor_plugin.cpp scene/2d/animated_sprite.cpp
+#: scene/2d/camera_2d.cpp scene/2d/cpu_particles_2d.cpp scene/2d/light_2d.cpp
+#: scene/2d/parallax_background.cpp scene/2d/parallax_layer.cpp
+#: scene/2d/path_2d.cpp scene/2d/polygon_2d.cpp scene/2d/sprite.cpp
+#: scene/3d/cpu_particles.cpp scene/3d/label_3d.cpp scene/3d/path.cpp
+#: scene/3d/physics_body.cpp scene/3d/soft_body.cpp scene/3d/sprite_3d.cpp
+#: scene/gui/graph_node.cpp scene/gui/rich_text_effect.cpp
+#: scene/main/canvas_layer.cpp scene/resources/material.cpp
+#: scene/resources/particles_material.cpp scene/resources/style_box.cpp
+msgid "Offset"
+msgstr "Смещение"
+
+#: editor/plugins/tile_set_editor_plugin.cpp editor/rename_dialog.cpp
+#: scene/gui/range.cpp scene/resources/animation.cpp
+#: scene/resources/visual_shader_nodes.cpp servers/physics_2d_server.cpp
+#: servers/physics_server.cpp
+msgid "Step"
+msgstr "Шаг"
+
+#: editor/plugins/tile_set_editor_plugin.cpp
+#: scene/resources/default_theme/default_theme.cpp
+msgid "Separation"
+msgstr "Разделение"
+
+#: editor/plugins/tile_set_editor_plugin.cpp
+msgid "Selected Tile"
+msgstr "Выбранная плитка"
+
+#: editor/plugins/tile_set_editor_plugin.cpp scene/2d/cpu_particles_2d.cpp
+#: scene/2d/light_2d.cpp scene/2d/line_2d.cpp scene/2d/mesh_instance_2d.cpp
+#: scene/2d/multimesh_instance_2d.cpp scene/2d/particles_2d.cpp
+#: scene/2d/polygon_2d.cpp scene/2d/sprite.cpp scene/3d/sprite_3d.cpp
+#: scene/gui/nine_patch_rect.cpp scene/gui/texture_rect.cpp
+#: scene/resources/material.cpp scene/resources/sky.cpp
+#: scene/resources/style_box.cpp scene/resources/visual_shader_nodes.cpp
+msgid "Texture"
+msgstr "Текстура"
+
+#: editor/plugins/tile_set_editor_plugin.cpp
+#, fuzzy
+msgid "Tex Offset"
+msgstr "Смещение байтов"
+
+#: editor/plugins/tile_set_editor_plugin.cpp modules/csg/csg_shape.cpp
+#: scene/2d/canvas_item.cpp scene/2d/particles_2d.cpp
+#: scene/3d/mesh_instance.cpp scene/resources/primitive_meshes.cpp
+msgid "Material"
+msgstr "Материал"
+
+#: editor/plugins/tile_set_editor_plugin.cpp scene/2d/canvas_item.cpp
+#: scene/3d/label_3d.cpp scene/3d/sprite_3d.cpp scene/resources/style_box.cpp
+msgid "Modulate"
+msgstr "Модуляция"
+
+#: editor/plugins/tile_set_editor_plugin.cpp
+msgid "Tile Mode"
+msgstr "Режим плитки"
+
+#: editor/plugins/tile_set_editor_plugin.cpp
+#, fuzzy
+msgid "Autotile Bitmask Mode"
+msgstr "Режим битовой маски"
+
+#: editor/plugins/tile_set_editor_plugin.cpp
+#, fuzzy
+msgid "Subtile Size"
+msgstr "Размер контура"
+
+#: editor/plugins/tile_set_editor_plugin.cpp
+#, fuzzy
+msgid "Subtile Spacing"
+msgstr "Межстрочный интервал"
+
+#: editor/plugins/tile_set_editor_plugin.cpp
+#, fuzzy
+msgid "Occluder Offset"
+msgstr "Отверстие окклюдера"
+
+#: editor/plugins/tile_set_editor_plugin.cpp
+#, fuzzy
+msgid "Navigation Offset"
+msgstr "Чувствительность навигации"
+
+#: editor/plugins/tile_set_editor_plugin.cpp
+#, fuzzy
+msgid "Shape Offset"
+msgstr "Базовое смещение"
+
+#: editor/plugins/tile_set_editor_plugin.cpp
+#, fuzzy
+msgid "Shape Transform"
+msgstr "Преобразование"
+
+#: editor/plugins/tile_set_editor_plugin.cpp
+#, fuzzy
+msgid "Selected Collision"
+msgstr "Использовать столкновение"
+
+#: editor/plugins/tile_set_editor_plugin.cpp
+#, fuzzy
+msgid "Selected Collision One Way"
+msgstr "Только выделенное"
+
+#: editor/plugins/tile_set_editor_plugin.cpp
+#, fuzzy
+msgid "Selected Collision One Way Margin"
+msgstr "Отступ столкновения BVH"
+
+#: editor/plugins/tile_set_editor_plugin.cpp
+#, fuzzy
+msgid "Selected Navigation"
+msgstr "Видимая навигация"
+
+#: editor/plugins/tile_set_editor_plugin.cpp
+#, fuzzy
+msgid "Selected Occlusion"
+msgstr "Выделение"
+
+#: editor/plugins/tile_set_editor_plugin.cpp
+#, fuzzy
+msgid "Tileset Script"
+msgstr "Фильтр сценариев"
 
 #: editor/plugins/tile_set_editor_plugin.cpp
 msgid "TileSet"
@@ -13759,38 +14089,22 @@ msgid "Runnable"
 msgstr "Активный"
 
 #: editor/project_export.cpp
+msgid "Export the project for all the presets defined."
+msgstr "Экспортируйте проект для всех заданных предустановок."
+
+#: editor/project_export.cpp
+msgid "All presets must have an export path defined for Export All to work."
+msgstr ""
+"Для работы функции \"Экспортировать все\" у всех предустановок должен быть "
+"определен путь экспорта."
+
+#: editor/project_export.cpp
 msgid "Delete preset '%s'?"
 msgstr "Удалить пресет «%s»?"
 
 #: editor/project_export.cpp
-msgid ""
-"Failed to export the project for platform '%s'.\n"
-"Export templates seem to be missing or invalid."
-msgstr ""
-"Не удалось экспортировать проект для платформы «%s».\n"
-"Шаблоны экспорта отсутствуют или недействительны."
-
-#: editor/project_export.cpp
-msgid ""
-"Failed to export the project for platform '%s'.\n"
-"This might be due to a configuration issue in the export preset or your "
-"export settings."
-msgstr ""
-"Не удалось экспортировать проект для платформы «%s».\n"
-"Это может быть связано с проблемой конфигурации в предустановке экспорта или "
-"настройках экспорта."
-
-#: editor/project_export.cpp
 msgid "Exporting All"
 msgstr "Экспорт всех"
-
-#: editor/project_export.cpp
-msgid "The given export path doesn't exist:"
-msgstr "Данный путь экспорта не существует:"
-
-#: editor/project_export.cpp
-msgid "Export templates for this platform are missing/corrupted:"
-msgstr "Шаблоны экспорта для этой платформы отсутствуют/повреждены:"
 
 #: editor/project_export.cpp
 msgid "Export Path"
@@ -13813,7 +14127,7 @@ msgstr ""
 "использования в развертывании одним щелчком мыши.\n"
 "Только одна предустановка на платформу может быть помечена как работающая."
 
-#: editor/project_export.cpp scene/main/resource_preloader.cpp
+#: editor/project_export.cpp
 msgid "Resources"
 msgstr "Ресурсы"
 
@@ -13873,12 +14187,6 @@ msgstr "Скрипт"
 msgid "GDScript Export Mode:"
 msgstr "Режим экспорта GDScript:"
 
-#: editor/project_export.cpp scene/gui/button.cpp scene/gui/dialogs.cpp
-#: scene/gui/label.cpp scene/gui/line_edit.cpp scene/gui/link_button.cpp
-#: scene/gui/rich_text_label.cpp scene/gui/text_edit.cpp
-msgid "Text"
-msgstr "Текстовый"
-
 #: editor/project_export.cpp
 msgid "Compiled Bytecode (Faster Loading)"
 msgstr "Скомпилированный байткод (более быстрая загрузка)"
@@ -13909,19 +14217,27 @@ msgid "More Info..."
 msgstr "Подробнее..."
 
 #: editor/project_export.cpp
-msgid "Export PCK/Zip"
+#, fuzzy
+msgid "Export PCK/Zip..."
 msgstr "Экспортировать PCK/Zip"
 
 #: editor/project_export.cpp
-msgid "Export Project"
+#, fuzzy
+msgid "Export Project..."
 msgstr "Экспортировать проект"
 
 #: editor/project_export.cpp
-msgid "Export mode?"
-msgstr "Режим экспорта?"
+msgid "Export All"
+msgstr "Экспортировать всё"
 
 #: editor/project_export.cpp
-msgid "Export All"
+#, fuzzy
+msgid "Choose an export mode:"
+msgstr "Пожалуйста, выберите пустую папку."
+
+#: editor/project_export.cpp
+#, fuzzy
+msgid "Export All..."
 msgstr "Экспортировать всё"
 
 #: editor/project_export.cpp editor/project_manager.cpp
@@ -13929,12 +14245,18 @@ msgid "ZIP File"
 msgstr "ZIP-файл"
 
 #: editor/project_export.cpp
-msgid "Godot Game Pack"
+#, fuzzy
+msgid "Godot Project Pack"
 msgstr "Пакет игры Godot"
 
 #: editor/project_export.cpp
 msgid "Export templates for this platform are missing:"
 msgstr "Шаблоны экспорта для этой платформы отсутствуют:"
+
+#: editor/project_export.cpp
+#, fuzzy
+msgid "Project Export"
+msgstr "Основатели проекта"
 
 #: editor/project_export.cpp
 msgid "Manage Export Templates"
@@ -14071,7 +14393,7 @@ msgstr "Отрисовщик:"
 
 #: editor/project_manager.cpp
 msgid "OpenGL ES 3.0"
-msgstr "OpenGL ES 3.0"
+msgstr "ОткрытыйGL ES 3.0"
 
 #: editor/project_manager.cpp
 msgid "Not supported by your GPU drivers."
@@ -14091,7 +14413,7 @@ msgstr ""
 
 #: editor/project_manager.cpp
 msgid "OpenGL ES 2.0"
-msgstr "OpenGL ES 2.0"
+msgstr "ОткрытыйGL ES 2.0"
 
 #: editor/project_manager.cpp
 msgid ""
@@ -14118,6 +14440,18 @@ msgstr "Отсутствующий проект"
 #: editor/project_manager.cpp
 msgid "Error: Project is missing on the filesystem."
 msgstr "Ошибка: Проект отсутствует в файловой системе."
+
+#: editor/project_manager.cpp editor/scene_tree_dock.cpp
+msgid "Local"
+msgstr "Локальный"
+
+#: editor/project_manager.cpp
+msgid "Local Projects"
+msgstr "Локальные проекты"
+
+#: editor/project_manager.cpp
+msgid "Asset Library Projects"
+msgstr "Проекты Библиотеки ресурсов"
 
 #: editor/project_manager.cpp
 msgid "Can't open project at '%s'."
@@ -14237,16 +14571,12 @@ msgid "Project Manager"
 msgstr "Менеджер проектов"
 
 #: editor/project_manager.cpp
-msgid "Local Projects"
-msgstr "Локальные проекты"
+msgid "Last Modified"
+msgstr "Последнее изменение"
 
 #: editor/project_manager.cpp
 msgid "Loading, please wait..."
 msgstr "Загрузка, пожалуйста, ждите..."
-
-#: editor/project_manager.cpp
-msgid "Last Modified"
-msgstr "Последнее изменение"
 
 #: editor/project_manager.cpp
 msgid "Edit Project"
@@ -14287,10 +14617,6 @@ msgstr "Удалить отсутствующие"
 #: editor/project_manager.cpp
 msgid "About"
 msgstr "О Godot Engine"
-
-#: editor/project_manager.cpp
-msgid "Asset Library Projects"
-msgstr "Проекты Библиотеки ресурсов"
 
 #: editor/project_manager.cpp
 msgid "Restart Now"
@@ -14639,7 +14965,8 @@ msgstr "Локали:"
 msgid "AutoLoad"
 msgstr "Автозагрузка"
 
-#: editor/project_settings_editor.cpp
+#: editor/project_settings_editor.cpp platform/android/export/export_plugin.cpp
+#: platform/iphone/export/export.cpp
 msgid "Plugins"
 msgstr "Плагины"
 
@@ -14767,12 +15094,6 @@ msgstr ""
 #: editor/rename_dialog.cpp
 msgid "Initial value for the counter"
 msgstr "Начальное значение для счетчика"
-
-#: editor/rename_dialog.cpp scene/gui/range.cpp scene/resources/animation.cpp
-#: scene/resources/visual_shader_nodes.cpp servers/physics_2d_server.cpp
-#: servers/physics_server.cpp
-msgid "Step"
-msgstr "Шаг"
 
 #: editor/rename_dialog.cpp
 msgid "Amount by which counter is incremented for each node"
@@ -15049,6 +15370,18 @@ msgstr ""
 msgid "Make Local"
 msgstr "Сделать локальным"
 
+#: editor/scene_tree_dock.cpp editor/scene_tree_editor.cpp
+msgid "Another node already uses this unique name in the scene."
+msgstr "Данное уникальное имя уже использовано у другого узла в сцене."
+
+#: editor/scene_tree_dock.cpp
+msgid "Enable Scene Unique Name"
+msgstr "Добавить уникальное имя сцене"
+
+#: editor/scene_tree_dock.cpp editor/scene_tree_editor.cpp
+msgid "Disable Scene Unique Name"
+msgstr "Убрать уникальное имя в сцене"
+
 #: editor/scene_tree_dock.cpp
 msgid "New Scene Root"
 msgstr "Новый корень сцены"
@@ -15120,6 +15453,10 @@ msgstr "Ошибка дублирования сцены, при её сохра
 #: editor/scene_tree_dock.cpp
 msgid "Sub-Resources"
 msgstr "Вложенные ресурсы"
+
+#: editor/scene_tree_dock.cpp
+msgid "Access as Scene Unique Name"
+msgstr "Доступ к уникальному имени сцены"
 
 #: editor/scene_tree_dock.cpp
 msgid "Clear Inheritance"
@@ -15215,10 +15552,6 @@ msgstr ""
 "дерева сцены."
 
 #: editor/scene_tree_dock.cpp
-msgid "Local"
-msgstr "Локальный"
-
-#: editor/scene_tree_dock.cpp
 msgid "Clear Inheritance? (No Undo!)"
 msgstr "Очистить наследование? (Нельзя отменить!)"
 
@@ -15227,7 +15560,6 @@ msgid "Show Scene Tree Root Selection"
 msgstr "Показывать выбор корня дерева сцены"
 
 #: editor/scene_tree_dock.cpp
-#, fuzzy
 msgid "Derive Script Globals By Name"
 msgstr "Вывести скриптовые глобальные переменные по имени"
 
@@ -15254,6 +15586,15 @@ msgstr "(Источник)"
 #: editor/scene_tree_editor.cpp
 msgid "Node configuration warning:"
 msgstr "Предупреждение о конфигурации узла:"
+
+#: editor/scene_tree_editor.cpp
+msgid ""
+"This node can be accessed from within anywhere in the scene by preceding it "
+"with the '%s' prefix in a node path.\n"
+"Click to disable this."
+msgstr ""
+"Доступ к узлу можно получить из любой точки сцены, предшествовав ему с "
+"префиксом «%s» на пути узла. Нажмите, чтобы отключить"
 
 #: editor/scene_tree_editor.cpp
 msgid ""
@@ -15464,8 +15805,8 @@ msgid "Attach Node Script"
 msgstr "Прикрепить скрипт"
 
 #: editor/script_editor_debugger.cpp
-msgid "Remote "
-msgstr "Удаленный "
+msgid "Remote %s:"
+msgstr "Удаленный %s:"
 
 #: editor/script_editor_debugger.cpp
 msgid "Bytes:"
@@ -15562,11 +15903,6 @@ msgstr "Сетевой профайлер"
 #: editor/script_editor_debugger.cpp
 msgid "Monitor"
 msgstr "Параметр"
-
-#: editor/script_editor_debugger.cpp
-#: modules/visual_script/visual_script_nodes.cpp scene/gui/range.cpp
-msgid "Value"
-msgstr "Значение"
 
 #: editor/script_editor_debugger.cpp
 msgid "Monitors"
@@ -15677,20 +16013,6 @@ msgstr "Изменить FOV камеры"
 msgid "Change Camera Size"
 msgstr "Изменить размер камеры"
 
-#: editor/spatial_editor_gizmos.cpp modules/gltf/gltf_node.cpp
-#: scene/3d/physics_body.cpp
-msgid "Joint"
-msgstr "Сустав"
-
-#: editor/spatial_editor_gizmos.cpp scene/2d/collision_shape_2d.cpp
-#: scene/2d/cpu_particles_2d.cpp scene/2d/touch_screen_button.cpp
-#: scene/3d/collision_shape.cpp scene/3d/cpu_particles.cpp
-#: scene/3d/occluder.cpp scene/3d/spring_arm.cpp
-#: scene/resources/particles_material.cpp servers/physics_2d_server.cpp
-#: servers/physics_server.cpp
-msgid "Shape"
-msgstr "Форма"
-
 #: editor/spatial_editor_gizmos.cpp
 msgid "Visibility Notifier"
 msgstr "Уведомитель видимости"
@@ -15748,27 +16070,22 @@ msgid "Change Ray Shape Length"
 msgstr "Изменить длину луча"
 
 #: editor/spatial_editor_gizmos.cpp
-#, fuzzy
 msgid "Navigation Edge"
 msgstr "Край навигации"
 
 #: editor/spatial_editor_gizmos.cpp
-#, fuzzy
 msgid "Navigation Edge Disabled"
 msgstr "Край навигации отключён"
 
 #: editor/spatial_editor_gizmos.cpp
-#, fuzzy
 msgid "Navigation Solid"
 msgstr "Твёрдая навигация"
 
 #: editor/spatial_editor_gizmos.cpp
-#, fuzzy
 msgid "Navigation Solid Disabled"
 msgstr "Твёрдая навигация отключена"
 
 #: editor/spatial_editor_gizmos.cpp
-#, fuzzy
 msgid "Joint Body A"
 msgstr "Сустав тела A"
 
@@ -15777,12 +16094,10 @@ msgid "Joint Body B"
 msgstr "Сустав тела B"
 
 #: editor/spatial_editor_gizmos.cpp
-#, fuzzy
 msgid "Room Edge"
 msgstr "Край комнаты"
 
 #: editor/spatial_editor_gizmos.cpp
-#, fuzzy
 msgid "Room Overlap"
 msgstr "Пересечение комнат"
 
@@ -15791,17 +16106,14 @@ msgid "Set Room Point Position"
 msgstr "Задать положение точки комнаты"
 
 #: editor/spatial_editor_gizmos.cpp scene/3d/portal.cpp
-#, fuzzy
 msgid "Portal Margin"
 msgstr "Отступ портала"
 
 #: editor/spatial_editor_gizmos.cpp
-#, fuzzy
 msgid "Portal Edge"
 msgstr "Край портала"
 
 #: editor/spatial_editor_gizmos.cpp
-#, fuzzy
 msgid "Portal Arrow"
 msgstr "Стрела портала"
 
@@ -15936,38 +16248,6 @@ msgstr "Откат к GLES2"
 msgid "Use Nvidia Rect Flicker Workaround"
 msgstr "Обходить проблему Nvidia Rect Flicker"
 
-#: main/main.cpp platform/javascript/export/export.cpp
-#: platform/osx/export/export.cpp platform/uwp/os_uwp.cpp
-msgid "Display"
-msgstr "Дисплей"
-
-#: main/main.cpp modules/csg/csg_shape.cpp
-#: modules/opensimplex/noise_texture.cpp scene/2d/line_2d.cpp
-#: scene/gui/text_edit.cpp scene/resources/texture.cpp
-msgid "Width"
-msgstr "Ширина"
-
-#: main/main.cpp modules/csg/csg_shape.cpp modules/gltf/gltf_node.cpp
-#: modules/opensimplex/noise_texture.cpp scene/2d/light_2d.cpp
-#: scene/resources/capsule_shape.cpp scene/resources/capsule_shape_2d.cpp
-#: scene/resources/cylinder_shape.cpp scene/resources/font.cpp
-#: scene/resources/navigation_mesh.cpp scene/resources/primitive_meshes.cpp
-#: scene/resources/texture.cpp
-msgid "Height"
-msgstr "Высота"
-
-#: main/main.cpp
-msgid "Always On Top"
-msgstr "Всегда сверху"
-
-#: main/main.cpp
-msgid "Test Width"
-msgstr "Тестовая ширина"
-
-#: main/main.cpp
-msgid "Test Height"
-msgstr "Тестовая высота"
-
 #: main/main.cpp
 msgid "DPI"
 msgstr "DPI"
@@ -16050,7 +16330,7 @@ msgstr "GUI"
 
 #: main/main.cpp
 msgid "Drop Mouse On GUI Input Disabled"
-msgstr ""
+msgstr "Отключение курсора мыши в интерфейсе"
 
 #: main/main.cpp
 msgid "stdout"
@@ -16064,10 +16344,17 @@ msgstr "Печатать FPS"
 msgid "Verbose stdout"
 msgstr "Подробный стандартный вывод"
 
+#: main/main.cpp scene/main/scene_tree.cpp scene/resources/multimesh.cpp
+msgid "Physics Interpolation"
+msgstr "физическая интерполяции"
+
 #: main/main.cpp
-#, fuzzy
+msgid "Enable Warnings"
+msgstr "Включить предупреждения"
+
+#: main/main.cpp
 msgid "Frame Delay Msec"
-msgstr "Задержка кадра (мс)"
+msgstr "Задержка кадра в Мс"
 
 #: main/main.cpp
 msgid "Low Processor Mode"
@@ -16195,10 +16482,6 @@ msgstr "Ждать отладчик"
 msgid "Wait Timeout"
 msgstr "Ждать таймаут"
 
-#: main/main.cpp modules/mono/mono_gd/gd_mono.cpp
-msgid "Args"
-msgstr "Аргументы"
-
 #: main/main.cpp
 msgid "Runtime"
 msgstr "Среда выполнения"
@@ -16224,11 +16507,11 @@ msgstr "Соотношение"
 msgid "Shrink"
 msgstr "Сжатие"
 
-#: main/main.cpp
+#: main/main.cpp scene/main/scene_tree.cpp
 msgid "Auto Accept Quit"
 msgstr "Автоподтверждение выхода"
 
-#: main/main.cpp
+#: main/main.cpp scene/main/scene_tree.cpp
 msgid "Quit On Go Back"
 msgstr "Выходить на Назад"
 
@@ -16241,12 +16524,10 @@ msgid "Dynamic Fonts"
 msgstr "Динамические шрифты"
 
 #: main/main.cpp
-#, fuzzy
 msgid "Use Oversampling"
 msgstr "Использовать передискретизацию"
 
 #: modules/bullet/register_types.cpp modules/bullet/space_bullet.cpp
-#, fuzzy
 msgid "Active Soft World"
 msgstr "Активный мягкий мир"
 
@@ -16296,11 +16577,6 @@ msgstr "Маска столкновения"
 msgid "Invert Faces"
 msgstr "Инвертировать грани"
 
-#: modules/csg/csg_shape.cpp scene/2d/canvas_item.cpp scene/2d/particles_2d.cpp
-#: scene/resources/primitive_meshes.cpp
-msgid "Material"
-msgstr "Материал"
-
 #: modules/csg/csg_shape.cpp scene/2d/navigation_agent_2d.cpp
 #: scene/2d/navigation_obstacle_2d.cpp scene/3d/navigation_agent.cpp
 #: scene/3d/navigation_obstacle.cpp scene/3d/vehicle_body.cpp
@@ -16346,61 +16622,51 @@ msgstr "Стороны кольца"
 
 #: modules/csg/csg_shape.cpp scene/2d/collision_polygon_2d.cpp
 #: scene/2d/light_occluder_2d.cpp scene/2d/polygon_2d.cpp
-#: scene/3d/collision_polygon.cpp scene/resources/navigation_mesh.cpp
+#: scene/3d/collision_polygon.cpp
 msgid "Polygon"
 msgstr "Полигон"
 
 #: modules/csg/csg_shape.cpp
-#, fuzzy
 msgid "Spin Degrees"
 msgstr "Градусы вращения"
 
 #: modules/csg/csg_shape.cpp
-#, fuzzy
 msgid "Spin Sides"
 msgstr "Стороны вращения"
 
 #: modules/csg/csg_shape.cpp
-#, fuzzy
 msgid "Path Node"
 msgstr "Узел пути"
 
 #: modules/csg/csg_shape.cpp
-#, fuzzy
 msgid "Path Interval Type"
-msgstr "Создать внутреннюю вершину"
+msgstr "Путь типа интервала"
 
 #: modules/csg/csg_shape.cpp
 msgid "Path Interval"
 msgstr "Интервал пути"
 
 #: modules/csg/csg_shape.cpp
-#, fuzzy
 msgid "Path Simplify Angle"
 msgstr "Угол упрощения пути"
 
 #: modules/csg/csg_shape.cpp
-#, fuzzy
 msgid "Path Rotation"
 msgstr "Вращение пути"
 
 #: modules/csg/csg_shape.cpp
-#, fuzzy
 msgid "Path Local"
-msgstr "Сделать локальным"
+msgstr "Дополнить локально"
 
 #: modules/csg/csg_shape.cpp
-#, fuzzy
 msgid "Path Continuous U"
-msgstr "Непрерывная"
+msgstr "Продолжать дополнть U"
 
 #: modules/csg/csg_shape.cpp
-#, fuzzy
 msgid "Path U Distance"
 msgstr "Расстояние пути U"
 
 #: modules/csg/csg_shape.cpp
-#, fuzzy
 msgid "Path Joined"
 msgstr "Путь присоединен"
 
@@ -16421,19 +16687,16 @@ msgid "Always Ordered"
 msgstr "Всегда по порядку"
 
 #: modules/enet/networked_multiplayer_enet.cpp
-#, fuzzy
 msgid "Server Relay"
-msgstr "Релей сервера"
+msgstr "Переключение сервера"
 
 #: modules/enet/networked_multiplayer_enet.cpp
-#, fuzzy
 msgid "DTLS Verify"
-msgstr "Проверка DTLS"
+msgstr "Уточнение DTLS"
 
 #: modules/enet/networked_multiplayer_enet.cpp
-#, fuzzy
 msgid "DTLS Hostname"
-msgstr "Имя хоста DTLS"
+msgstr "Хост имя DTLS"
 
 #: modules/enet/networked_multiplayer_enet.cpp
 msgid "Use DTLS"
@@ -16441,12 +16704,11 @@ msgstr "Использовать DTLS"
 
 #: modules/fbx/editor_scene_importer_fbx.cpp
 msgid "FBX"
-msgstr ""
+msgstr "ФБХ"
 
 #: modules/fbx/editor_scene_importer_fbx.cpp
-#, fuzzy
 msgid "Use FBX"
-msgstr "Использовать FXAA"
+msgstr "Использовать FBX"
 
 #: modules/gdnative/gdnative.cpp
 msgid "Config File"
@@ -16520,8 +16782,9 @@ msgid "Disabled GDNative Singleton"
 msgstr "Выключен GDNative синглтон"
 
 #: modules/gdnative/gdnative_library_singleton_editor.cpp
-msgid "Libraries: "
-msgstr "Библиотеки: "
+#, fuzzy
+msgid "Libraries:"
+msgstr "Библиотеки:"
 
 #: modules/gdnative/nativescript/nativescript.cpp
 msgid "Class Name"
@@ -16537,12 +16800,12 @@ msgstr "Путь иконки"
 
 #: modules/gdnative/register_types.cpp
 msgid "GDNative"
-msgstr "GDNative"
+msgstr "GDNative Базовый"
 
 #: modules/gdscript/editor/gdscript_highlighter.cpp
 #: modules/gdscript/gdscript.cpp
 msgid "GDScript"
-msgstr "GDScript"
+msgstr "GDScript код"
 
 #: modules/gdscript/editor/gdscript_highlighter.cpp
 msgid "Function Definition Color"
@@ -16553,9 +16816,8 @@ msgid "Node Path Color"
 msgstr "Цвет пути узла"
 
 #: modules/gdscript/gdscript.cpp modules/visual_script/visual_script.cpp
-#, fuzzy
 msgid "Max Call Stack"
-msgstr "Максимальный стек вызовов"
+msgstr "Максимальное чисто вызовов"
 
 #: modules/gdscript/gdscript.cpp
 msgid "Treat Warnings As Errors"
@@ -16615,9 +16877,8 @@ msgid "Enable Smart Resolve"
 msgstr "Включить интеллектуальное разрешение"
 
 #: modules/gdscript/language_server/gdscript_language_server.cpp
-#, fuzzy
 msgid "Show Native Symbols In Editor"
-msgstr "Показывать нативные символы в редакторе"
+msgstr "Показать базовые символы в редакторе"
 
 #: modules/gdscript/language_server/gdscript_language_server.cpp
 msgid "Use Thread"
@@ -16636,9 +16897,8 @@ msgid "Buffer View"
 msgstr "Просмотр буфера"
 
 #: modules/gltf/gltf_accessor.cpp modules/gltf/gltf_buffer_view.cpp
-#, fuzzy
 msgid "Byte Offset"
-msgstr "Смещение байтов"
+msgstr "Смещение байта"
 
 #: modules/gltf/gltf_accessor.cpp
 msgid "Component Type"
@@ -16661,17 +16921,16 @@ msgid "Max"
 msgstr "Максимум"
 
 #: modules/gltf/gltf_accessor.cpp
-#, fuzzy
 msgid "Sparse Count"
-msgstr "Добавить экземпляр"
+msgstr "разделенный подсчет"
 
 #: modules/gltf/gltf_accessor.cpp
 msgid "Sparse Indices Buffer View"
-msgstr ""
+msgstr "Посмотреть пересчет буфера"
 
 #: modules/gltf/gltf_accessor.cpp
 msgid "Sparse Indices Byte Offset"
-msgstr ""
+msgstr "Посмотреть пересчет индекс байта"
 
 #: modules/gltf/gltf_accessor.cpp
 #, fuzzy
@@ -16679,12 +16938,13 @@ msgid "Sparse Indices Component Type"
 msgstr "Тип компонента разреженных индексов"
 
 #: modules/gltf/gltf_accessor.cpp
+#, fuzzy
 msgid "Sparse Values Buffer View"
-msgstr ""
+msgstr "Просмотр буфера разреженных значений"
 
 #: modules/gltf/gltf_accessor.cpp
 msgid "Sparse Values Byte Offset"
-msgstr ""
+msgstr "Смещение байтов разреженных значений"
 
 #: modules/gltf/gltf_buffer_view.cpp
 msgid "Buffer"
@@ -16696,25 +16956,23 @@ msgstr "Длина байта"
 
 #: modules/gltf/gltf_buffer_view.cpp
 msgid "Byte Stride"
-msgstr ""
+msgstr "Шаг байта"
 
 #: modules/gltf/gltf_buffer_view.cpp
 msgid "Indices"
 msgstr "Индексы"
 
 #: modules/gltf/gltf_camera.cpp
-#, fuzzy
 msgid "FOV Size"
-msgstr "Размер FOV"
+msgstr "Область поля зрения"
 
 #: modules/gltf/gltf_camera.cpp
 msgid "Zfar"
-msgstr ""
+msgstr "Отдаление по Z"
 
 #: modules/gltf/gltf_camera.cpp
-#, fuzzy
 msgid "Znear"
-msgstr "Линейный"
+msgstr "приближение по Z"
 
 #: modules/gltf/gltf_light.cpp scene/2d/canvas_modulate.cpp
 #: scene/2d/cpu_particles_2d.cpp scene/2d/light_2d.cpp scene/2d/polygon_2d.cpp
@@ -16737,17 +16995,14 @@ msgid "Range"
 msgstr "Диапазон"
 
 #: modules/gltf/gltf_light.cpp
-#, fuzzy
 msgid "Inner Cone Angle"
 msgstr "Угол внутреннего конуса"
 
 #: modules/gltf/gltf_light.cpp
-#, fuzzy
 msgid "Outer Cone Angle"
 msgstr "Угол внешнего конуса"
 
 #: modules/gltf/gltf_mesh.cpp
-#, fuzzy
 msgid "Blend Weights"
 msgstr "Веса смешивания"
 
@@ -16756,14 +17011,14 @@ msgstr "Веса смешивания"
 msgid "Instance Materials"
 msgstr "Материалы экземпляра"
 
-#: modules/gltf/gltf_node.cpp
+#: modules/gltf/gltf_node.cpp scene/3d/skeleton.cpp
 msgid "Parent"
 msgstr "Родитель"
 
 #: modules/gltf/gltf_node.cpp
 #, fuzzy
 msgid "Xform"
-msgstr "Xform"
+msgstr "Трансформация"
 
 #: modules/gltf/gltf_node.cpp scene/3d/mesh_instance.cpp
 msgid "Skin"
@@ -16772,12 +17027,6 @@ msgstr "Скин"
 #: modules/gltf/gltf_node.cpp scene/3d/spatial.cpp
 msgid "Translation"
 msgstr "Смещение"
-
-#: modules/gltf/gltf_node.cpp scene/2d/node_2d.cpp scene/2d/polygon_2d.cpp
-#: scene/2d/remote_transform_2d.cpp scene/3d/remote_transform.cpp
-#: scene/3d/spatial.cpp scene/gui/control.cpp scene/main/canvas_layer.cpp
-msgid "Rotation"
-msgstr "Поворот"
 
 #: modules/gltf/gltf_node.cpp
 msgid "Children"
@@ -16811,7 +17060,7 @@ msgstr "Сфокусироваться на начале координат"
 
 #: modules/gltf/gltf_skin.cpp
 msgid "Inverse Binds"
-msgstr ""
+msgstr "Инвертировать Связи"
 
 #: modules/gltf/gltf_skin.cpp
 #, fuzzy
@@ -16820,27 +17069,27 @@ msgstr "Передвинуть сустав"
 
 #: modules/gltf/gltf_skin.cpp
 msgid "Joint I To Bone I"
-msgstr ""
+msgstr "Узел I к Кости I"
 
 #: modules/gltf/gltf_skin.cpp
 msgid "Joint I To Name"
-msgstr ""
+msgstr "Узел I К Имени"
 
 #: modules/gltf/gltf_skin.cpp
 msgid "Godot Skin"
-msgstr "Godot костюм"
+msgstr "Скин Godot"
 
 #: modules/gltf/gltf_spec_gloss.cpp
 msgid "Diffuse Img"
-msgstr ""
+msgstr "Рассеянное изображение"
 
 #: modules/gltf/gltf_spec_gloss.cpp
 msgid "Diffuse Factor"
-msgstr ""
+msgstr "Диффузный фактор"
 
 #: modules/gltf/gltf_spec_gloss.cpp
 msgid "Gloss Factor"
-msgstr ""
+msgstr "Коэфф. Глянца"
 
 #: modules/gltf/gltf_spec_gloss.cpp
 #, fuzzy
@@ -16891,7 +17140,6 @@ msgstr "Корневые узлы"
 
 #: modules/gltf/gltf_state.cpp scene/2d/particles_2d.cpp
 #: scene/gui/texture_button.cpp scene/gui/texture_progress.cpp
-#: scene/resources/font.cpp
 msgid "Textures"
 msgstr "Текстуры"
 
@@ -16916,11 +17164,10 @@ msgid "Skeletons"
 msgstr "Скелеты"
 
 #: modules/gltf/gltf_state.cpp
-#, fuzzy
 msgid "Skeleton To Node"
-msgstr "Выбрать узел"
+msgstr "Скелет в узел"
 
-#: modules/gltf/gltf_state.cpp scene/2d/animated_sprite.cpp
+#: modules/gltf/gltf_state.cpp
 msgid "Animations"
 msgstr "Анимации"
 
@@ -16941,7 +17188,6 @@ msgid "Use In Baked Light"
 msgstr "Использовать в запечённом свете"
 
 #: modules/gridmap/grid_map.cpp scene/2d/tile_map.cpp
-#: scene/resources/navigation_mesh.cpp
 msgid "Cell"
 msgstr "Ячейка"
 
@@ -16969,6 +17215,19 @@ msgstr "По центру"
 #: scene/resources/material.cpp
 msgid "Mask"
 msgstr "Маска"
+
+#: modules/gridmap/grid_map.cpp scene/2d/tile_map.cpp
+#, fuzzy
+msgid "Bake Navigation"
+msgstr "Навигация"
+
+#: modules/gridmap/grid_map.cpp scene/2d/navigation_2d.cpp
+#: scene/2d/navigation_agent_2d.cpp scene/2d/navigation_polygon.cpp
+#: scene/2d/tile_map.cpp scene/3d/navigation.cpp scene/3d/navigation_agent.cpp
+#: scene/3d/navigation_mesh_instance.cpp
+#, fuzzy
+msgid "Navigation Layers"
+msgstr "Чувствительность навигации"
 
 #: modules/gridmap/grid_map_editor_plugin.cpp
 msgid "Next Plane"
@@ -17323,7 +17582,7 @@ msgstr ""
 
 #: modules/upnp/upnp.cpp
 msgid "Discover Local Port"
-msgstr ""
+msgstr "Обнаружить локальный порт"
 
 #: modules/upnp/upnp.cpp
 msgid "Discover IPv6"
@@ -17355,10 +17614,6 @@ msgstr ""
 msgid "IGD Status"
 msgstr "Статус"
 
-#: modules/visual_script/visual_script.cpp scene/resources/visual_shader.cpp
-msgid "Default Input Values"
-msgstr "Входные значения по умолчанию"
-
 #: modules/visual_script/visual_script.cpp
 msgid ""
 "A node yielded without working memory, please read the docs on how to yield "
@@ -17383,8 +17638,8 @@ msgstr ""
 "памяти! Исправьте узел пожалуйста."
 
 #: modules/visual_script/visual_script.cpp
-msgid "Node returned an invalid sequence output: "
-msgstr "Узел вернул ошибочную последовательность: "
+msgid "Node returned an invalid sequence output:"
+msgstr "Узел вернул ошибочный вывод последовательности:"
 
 #: modules/visual_script/visual_script.cpp
 msgid "Found sequence bit but not the node in the stack, report bug!"
@@ -17392,8 +17647,9 @@ msgstr ""
 "Найдена последовательность бит, но не узел в стеке, сообщение об ошибке!"
 
 #: modules/visual_script/visual_script.cpp
-msgid "Stack overflow with stack depth: "
-msgstr "Переполнение стека с глубиной стека: "
+#, fuzzy
+msgid "Stack overflow with stack depth:"
+msgstr "Переполнение стека с глубиной стека:"
 
 #: modules/visual_script/visual_script.cpp
 msgid "Visual Script"
@@ -17760,16 +18016,18 @@ msgid "for (elem) in (input):"
 msgstr "для (элемент) в (вход):"
 
 #: modules/visual_script/visual_script_flow_control.cpp
-msgid "Input type not iterable: "
-msgstr "Входной тип не итерируемый: "
+#, fuzzy
+msgid "Input type not iterable:"
+msgstr "Входной тип не итерируемый:"
 
 #: modules/visual_script/visual_script_flow_control.cpp
 msgid "Iterator became invalid"
 msgstr "Итератор стал недействительным"
 
 #: modules/visual_script/visual_script_flow_control.cpp
-msgid "Iterator became invalid: "
-msgstr "Итератор стал недействительным: "
+#, fuzzy
+msgid "Iterator became invalid:"
+msgstr "Итератор стал недействительным:"
 
 #: modules/visual_script/visual_script_flow_control.cpp
 msgid "Sequence"
@@ -17829,10 +18087,6 @@ msgid "Node Path"
 msgstr "Путь узла"
 
 #: modules/visual_script/visual_script_func_nodes.cpp
-msgid "Argument Cache"
-msgstr "Кэш аргументов"
-
-#: modules/visual_script/visual_script_func_nodes.cpp
 msgid "Use Default Args"
 msgstr "Использовать аргументы по умолчанию"
 
@@ -17886,10 +18140,6 @@ msgid "Set Mode"
 msgstr "Режим выделения"
 
 #: modules/visual_script/visual_script_func_nodes.cpp
-msgid "Type Cache"
-msgstr "Кеш типов"
-
-#: modules/visual_script/visual_script_func_nodes.cpp
 #, fuzzy
 msgid "Assign Op"
 msgstr "Оператор присваивания"
@@ -17909,7 +18159,8 @@ msgid "Base object is not a Node!"
 msgstr "Базовый объект не является узлом!"
 
 #: modules/visual_script/visual_script_func_nodes.cpp
-msgid "Path does not lead Node!"
+#, fuzzy
+msgid "Path does not lead to Node!"
 msgstr "Путь не приводит к узлу!"
 
 #: modules/visual_script/visual_script_func_nodes.cpp
@@ -17924,18 +18175,18 @@ msgstr "Излучить %s"
 msgid "Compose Array"
 msgstr "Создать массив"
 
-#: modules/visual_script/visual_script_nodes.cpp
+#: modules/visual_script/visual_script_nodes.cpp scene/resources/material.cpp
 #: scene/resources/visual_shader_nodes.cpp
 msgid "Operator"
 msgstr "Оператор"
 
 #: modules/visual_script/visual_script_nodes.cpp
-msgid ": Invalid argument of type: "
-msgstr ": Недопустимый аргумент типа: "
+msgid "Invalid argument of type:"
+msgstr "Недопустимый аргумент типа:"
 
 #: modules/visual_script/visual_script_nodes.cpp
-msgid ": Invalid arguments: "
-msgstr ": Недопустимые аргументы: "
+msgid "Invalid arguments:"
+msgstr "Недопустимые аргументы:"
 
 #: modules/visual_script/visual_script_nodes.cpp
 msgid "a if cond, else b"
@@ -17946,12 +18197,13 @@ msgid "Var Name"
 msgstr "Имя переменной"
 
 #: modules/visual_script/visual_script_nodes.cpp
-msgid "VariableGet not found in script: "
-msgstr "VariableGet не найден в скрипте: "
+msgid "VariableGet not found in script:"
+msgstr "VariableGet отсутствует в скрипте:"
 
 #: modules/visual_script/visual_script_nodes.cpp
-msgid "VariableSet not found in script: "
-msgstr "VariableSet не найден в скрипте: "
+#, fuzzy
+msgid "VariableSet not found in script:"
+msgstr "VariableSet не найден в скрипте:"
 
 #: modules/visual_script/visual_script_nodes.cpp
 msgid "Preload"
@@ -18027,10 +18279,6 @@ msgid "Construct %s"
 msgstr "Составить %s"
 
 #: modules/visual_script/visual_script_nodes.cpp
-msgid "Constructor"
-msgstr "Конструктор"
-
-#: modules/visual_script/visual_script_nodes.cpp
 msgid "Get Local Var"
 msgstr "Получить локальную переменную"
 
@@ -18045,10 +18293,6 @@ msgstr "Действие %s"
 #: modules/visual_script/visual_script_nodes.cpp
 msgid "Deconstruct %s"
 msgstr "Разобрать %s"
-
-#: modules/visual_script/visual_script_nodes.cpp
-msgid "Elem Cache"
-msgstr "Кеш элемента"
 
 #: modules/visual_script/visual_script_property_selector.cpp
 msgid "Search VisualScript"
@@ -18096,7 +18340,7 @@ msgstr "Режим записи"
 
 #: modules/webrtc/webrtc_data_channel.h
 msgid "WebRTC"
-msgstr ""
+msgstr "WebRTC"
 
 #: modules/webrtc/webrtc_data_channel.h
 #, fuzzy
@@ -18105,43 +18349,39 @@ msgstr "Размер буфера индекса полигонов холста
 
 #: modules/websocket/websocket_client.cpp
 msgid "Verify SSL"
-msgstr ""
+msgstr "Проверить SSL"
 
 #: modules/websocket/websocket_client.cpp
 msgid "Trusted SSL Certificate"
-msgstr ""
+msgstr "Доверенный SSL-сертификат"
 
 #: modules/websocket/websocket_macros.h
-#, fuzzy
 msgid "WebSocket Client"
-msgstr "Сетевой узел"
+msgstr "Клиент WebSocket"
 
 #: modules/websocket/websocket_macros.h
-#, fuzzy
 msgid "Max In Buffer (KB)"
-msgstr "Максимальный размер (КБ)"
+msgstr "Максимальный Входной Буфер (КБ)"
 
 #: modules/websocket/websocket_macros.h
 msgid "Max In Packets"
-msgstr ""
+msgstr "Максимальные Входящие Пакеты"
 
 #: modules/websocket/websocket_macros.h
-#, fuzzy
 msgid "Max Out Buffer (KB)"
-msgstr "Максимальный размер (КБ)"
+msgstr "Максимальный Буфер Вывода (КБ)"
 
 #: modules/websocket/websocket_macros.h
 msgid "Max Out Packets"
-msgstr ""
+msgstr "Максимальный Вывод Пакетов"
 
 #: modules/websocket/websocket_macros.h
-#, fuzzy
 msgid "WebSocket Server"
-msgstr "Сетевой узел"
+msgstr "Сервер WebSocket"
 
 #: modules/websocket/websocket_server.cpp
 msgid "Bind IP"
-msgstr ""
+msgstr "Привязать IP"
 
 #: modules/websocket/websocket_server.cpp
 msgid "Private Key"
@@ -18165,14 +18405,12 @@ msgid "Session Mode"
 msgstr "Режим сессии"
 
 #: modules/webxr/webxr_interface.cpp
-#, fuzzy
 msgid "Required Features"
-msgstr "Необходимые функции"
+msgstr "Необходимые Компоненты"
 
 #: modules/webxr/webxr_interface.cpp
-#, fuzzy
 msgid "Optional Features"
-msgstr "Дополнительные функции"
+msgstr "Дополнительные Компоненты"
 
 #: modules/webxr/webxr_interface.cpp
 msgid "Requested Reference Space Types"
@@ -18183,9 +18421,8 @@ msgid "Reference Space Type"
 msgstr ""
 
 #: modules/webxr/webxr_interface.cpp
-#, fuzzy
 msgid "Visibility State"
-msgstr "Переключить видимость"
+msgstr "Видимость"
 
 #: modules/webxr/webxr_interface.cpp
 #, fuzzy
@@ -18193,13 +18430,12 @@ msgid "Bounds Geometry"
 msgstr "Повторить"
 
 #: modules/webxr/webxr_interface.cpp
-#, fuzzy
 msgid "XR Standard Mapping"
-msgstr "Интеллектуальная привязка"
+msgstr "Стандартный Маппинг XR"
 
 #: platform/android/export/export.cpp
 msgid "Android SDK Path"
-msgstr ""
+msgstr "Путь к Android SDK"
 
 #: platform/android/export/export.cpp
 #, fuzzy
@@ -18220,7 +18456,23 @@ msgstr ""
 
 #: platform/android/export/export.cpp
 msgid "Shutdown ADB On Exit"
-msgstr ""
+msgstr "Выключение ADB при выходе"
+
+#: platform/android/export/export_plugin.cpp
+msgid "Launcher Icons"
+msgstr "Иконки Лаунчера"
+
+#: platform/android/export/export_plugin.cpp
+msgid "Main 192 X 192"
+msgstr "Основная 192 X 192"
+
+#: platform/android/export/export_plugin.cpp
+msgid "Adaptive Foreground 432 X 432"
+msgstr "Адаптивный Передний Фон 432 X 432"
+
+#: platform/android/export/export_plugin.cpp
+msgid "Adaptive Background 432 X 432"
+msgstr "Адаптивный Задний Фон 432 X 432"
 
 #: platform/android/export/export_plugin.cpp
 msgid "Package name is missing."
@@ -18247,19 +18499,32 @@ msgid "The package must have at least one '.' separator."
 msgstr "Пакет должен иметь хотя бы один разделитель «.»."
 
 #: platform/android/export/export_plugin.cpp
-#, fuzzy
+msgid "Custom Build"
+msgstr "Настраиваемая Сборка"
+
+#: platform/android/export/export_plugin.cpp
 msgid "Use Custom Build"
-msgstr "Использовать собственную директорию данных пользователя"
+msgstr "Использовать Настраиваемую Сборку"
 
 #: platform/android/export/export_plugin.cpp
-#, fuzzy
 msgid "Export Format"
-msgstr "Путь экспорта"
+msgstr "Формат Экспорта"
 
 #: platform/android/export/export_plugin.cpp
-#, fuzzy
+msgid "Min SDK"
+msgstr "Min SDK"
+
+#: platform/android/export/export_plugin.cpp
+msgid "Target SDK"
+msgstr "Целевой SDK"
+
+#: platform/android/export/export_plugin.cpp platform/iphone/export/export.cpp
+msgid "Architectures"
+msgstr "Архитектуры"
+
+#: platform/android/export/export_plugin.cpp
 msgid "Keystore"
-msgstr "Отладочное хранилище ключей"
+msgstr "Хранилище ключей"
 
 #: platform/android/export/export_plugin.cpp
 #, fuzzy
@@ -18283,41 +18548,27 @@ msgstr "Пароль"
 
 #: platform/android/export/export_plugin.cpp
 msgid "One Click Deploy"
-msgstr ""
+msgstr "Развёртывание в Один Клик"
 
 #: platform/android/export/export_plugin.cpp
-#, fuzzy
 msgid "Clear Previous Install"
-msgstr "Осмотреть предыдущий экземпляр"
+msgstr "Очистить Предыдущую Установку"
 
-#: platform/android/export/export_plugin.cpp scene/resources/shader.cpp
+#: platform/android/export/export_plugin.cpp
 msgid "Code"
 msgstr "Код"
 
-#: platform/android/export/export_plugin.cpp
-#, fuzzy
-msgid "Min SDK"
-msgstr "Минимальный размер"
-
-#: platform/android/export/export_plugin.cpp
-#, fuzzy
-msgid "Target SDK"
-msgstr "Целевой FPS"
-
 #: platform/android/export/export_plugin.cpp platform/uwp/export/export.cpp
-#, fuzzy
 msgid "Package"
-msgstr "Упаковывание"
+msgstr "Пакет"
 
 #: platform/android/export/export_plugin.cpp platform/uwp/export/export.cpp
-#, fuzzy
 msgid "Unique Name"
-msgstr "Уникальные имена"
+msgstr "Уникальное Имя"
 
 #: platform/android/export/export_plugin.cpp
-#, fuzzy
 msgid "Signed"
-msgstr "Сигнал"
+msgstr "Подписано"
 
 #: platform/android/export/export_plugin.cpp
 #, fuzzy
@@ -18407,9 +18658,8 @@ msgid "Command Line"
 msgstr "Command"
 
 #: platform/android/export/export_plugin.cpp platform/uwp/export/export.cpp
-#, fuzzy
 msgid "Extra Args"
-msgstr "Дополнительные параметры вызова:"
+msgstr "Дополнительные аргументы"
 
 #: platform/android/export/export_plugin.cpp
 #, fuzzy
@@ -18466,10 +18716,6 @@ msgstr "Запуск на устройстве..."
 #: platform/android/export/export_plugin.cpp
 msgid "Could not execute on device."
 msgstr "Не удалось выполнить на устройстве."
-
-#: platform/android/export/export_plugin.cpp
-msgid "Unable to find the 'apksigner' tool."
-msgstr "Не удалось найти инструмент «apksigner»."
 
 #: platform/android/export/export_plugin.cpp
 msgid ""
@@ -18562,15 +18808,17 @@ msgid "\"Use Custom Build\" must be enabled to use the plugins."
 msgstr "«Use Custom Build» должен быть включен для использования плагинов."
 
 #: platform/android/export/export_plugin.cpp
+#, fuzzy
 msgid ""
-"\"Hand Tracking\" is only valid when \"Xr Mode\" is \"Oculus Mobile VrApi\" "
+"\"Hand Tracking\" is only valid when \"XR Mode\" is \"Oculus Mobile VrApi\" "
 "or \"OpenXR\"."
 msgstr ""
 "«Hand Tracking» действителен только тогда, когда «Xr Mode» установлен в "
 "«Oculus Mobile VrApi» или «OpenXR»."
 
 #: platform/android/export/export_plugin.cpp
-msgid "\"Passthrough\" is only valid when \"Xr Mode\" is \"OpenXR\"."
+#, fuzzy
+msgid "\"Passthrough\" is only valid when \"XR Mode\" is \"OpenXR\"."
 msgstr ""
 "«Passthrough» действителен только тогда, когда «Xr Mode» установлен в "
 "«OpenXR»."
@@ -18582,34 +18830,60 @@ msgstr ""
 "пользовательскую сборку»."
 
 #: platform/android/export/export_plugin.cpp
+#, fuzzy
 msgid ""
-"Changing the \"Min Sdk\" is only valid when \"Use Custom Build\" is enabled."
+"\"Min SDK\" can only be overridden when \"Use Custom Build\" is enabled."
 msgstr ""
 "Изменение «Min Sdk» действительно только если включён параметр «Использовать "
 "пользовательскую сборку»."
 
 #: platform/android/export/export_plugin.cpp
+msgid "\"Min SDK\" should be a valid integer, but got \"%s\" which is invalid."
+msgstr ""
+
+#: platform/android/export/export_plugin.cpp
 msgid ""
-"Changing the \"Target Sdk\" is only valid when \"Use Custom Build\" is "
-"enabled."
+"\"Min SDK\" cannot be lower than %d, which is the version needed by the "
+"Godot library."
+msgstr ""
+
+#: platform/android/export/export_plugin.cpp
+#, fuzzy
+msgid ""
+"\"Target SDK\" can only be overridden when \"Use Custom Build\" is enabled."
 msgstr ""
 "Изменение «Target Sdk» действительно только если включён параметр "
 "«Использовать пользовательскую сборку»."
 
 #: platform/android/export/export_plugin.cpp
-msgid "\"Target Sdk\" version must be greater or equal to \"Min Sdk\" version."
-msgstr "Версия «Target Sdk» должна быть больше или равна версии «Min Sdk»."
+msgid ""
+"\"Target SDK\" should be a valid integer, but got \"%s\" which is invalid."
+msgstr ""
 
 #: platform/android/export/export_plugin.cpp
 msgid ""
-"'apksigner' could not be found.\n"
-"Please check the command is available in the Android SDK build-tools "
-"directory.\n"
-"The resulting %s is unsigned."
+"\"Target SDK\" %d is higher than the default version %d. This may work, but "
+"wasn't tested and may be unstable."
 msgstr ""
-"Не удалось найти команду «apksigner».\n"
-"Пожалуйста, проверьте наличие программы в каталоге Android SDK build-tools.\n"
-"Результат %s не подписан."
+
+#: platform/android/export/export_plugin.cpp
+#, fuzzy
+msgid "\"Target SDK\" version must be greater or equal to \"Min SDK\" version."
+msgstr "Версия «Target Sdk» должна быть больше или равна версии «Min Sdk»."
+
+#: platform/android/export/export_plugin.cpp platform/osx/export/export.cpp
+#: platform/windows/export/export.cpp
+#, fuzzy
+msgid "Code Signing"
+msgstr "Подпись кода DMG"
+
+#: platform/android/export/export_plugin.cpp
+msgid ""
+"'apksigner' could not be found. Please check that the command is available "
+"in the Android SDK build-tools directory. The resulting %s is unsigned."
+msgstr ""
+"Не удалось найти «apksigner». Пожалуйста, убедитесь в наличии команды в "
+"каталоге build-tools Android SDK. Результирующий %s не подписан."
 
 #: platform/android/export/export_plugin.cpp
 msgid "Signing debug %s..."
@@ -18622,6 +18896,10 @@ msgstr "Подписание релиза %s..."
 #: platform/android/export/export_plugin.cpp
 msgid "Could not find keystore, unable to export."
 msgstr "Не удалось найти хранилище ключей, невозможно экспортировать."
+
+#: platform/android/export/export_plugin.cpp
+msgid "Could not start apksigner executable."
+msgstr "Не удаётся запустить исполняемый файл apksigner."
 
 #: platform/android/export/export_plugin.cpp
 msgid "'apksigner' returned with error #%d"
@@ -18652,8 +18930,8 @@ msgid "Invalid filename! Android APK requires the *.apk extension."
 msgstr "Неверное имя файла! Android APK требует расширения *.apk."
 
 #: platform/android/export/export_plugin.cpp
-msgid "Unsupported export format!\n"
-msgstr "Неподдерживаемый формат экспорта!\n"
+msgid "Unsupported export format!"
+msgstr "Неподдерживаемый формат экспорта!"
 
 #: platform/android/export/export_plugin.cpp
 msgid ""
@@ -18665,25 +18943,22 @@ msgstr ""
 
 #: platform/android/export/export_plugin.cpp
 msgid ""
-"Android build version mismatch:\n"
-"   Template installed: %s\n"
-"   Godot Version: %s\n"
+"Android build version mismatch: Template installed: %s, Godot version: %s. "
 "Please reinstall Android build template from 'Project' menu."
 msgstr ""
-"Несоответствие версии сборки Android:\n"
-"   Установлен шаблон: %s\n"
-"   Версия Godot: %s\n"
-"Пожалуйста, переустановите шаблон сборки Android из меню «Проект»."
+"Несоответствие версии сборки Android: Установлен шаблон: %s, версия Godot: "
+"%s. Пожалуйста, переустановите шаблон сборки Android из меню «Проект»."
 
 #: platform/android/export/export_plugin.cpp
+#, fuzzy
 msgid ""
-"Unable to overwrite res://android/build/res/*.xml files with project name"
+"Unable to overwrite res://android/build/res/*.xml files with project name."
 msgstr ""
 "Невозможно перезаписать файлы res://android/build/res/*.xml с именем проекта"
 
 #: platform/android/export/export_plugin.cpp
-msgid "Could not export project files to gradle project\n"
-msgstr "Не удалось экспортировать файлы проекта в проект gradle\n"
+msgid "Could not export project files to gradle project."
+msgstr "Не удалось экспортировать файлы проекта в проект gradle."
 
 #: platform/android/export/export_plugin.cpp
 msgid "Could not write expansion package file!"
@@ -18695,12 +18970,12 @@ msgstr "Сборка проекта Android (gradle)"
 
 #: platform/android/export/export_plugin.cpp
 msgid ""
-"Building of Android project failed, check output for the error.\n"
+"Building of Android project failed, check output for the error. "
 "Alternatively visit docs.godotengine.org for Android build documentation."
 msgstr ""
-"Сборка проекта Android не удалась, проверьте вывод на ошибки.\n"
-"Также посетите docs.godotengine.org для получения документации по сборке "
-"Android."
+"Сборка Android проекта не удалась, проверьте вывод на ошибки. Вы также "
+"можете посетить docs.godotengine.org для получения документации по сборке "
+"для Android."
 
 #: platform/android/export/export_plugin.cpp
 msgid "Moving output"
@@ -18715,7 +18990,8 @@ msgstr ""
 "проекта gradle на наличие выходных данных."
 
 #: platform/android/export/export_plugin.cpp
-msgid "Package not found: %s"
+#, fuzzy
+msgid "Package not found: \"%s\"."
 msgstr "Пакет не найден: %s"
 
 #: platform/android/export/export_plugin.cpp
@@ -18723,30 +18999,26 @@ msgid "Creating APK..."
 msgstr "Создание APK..."
 
 #: platform/android/export/export_plugin.cpp
-msgid ""
-"Could not find template APK to export:\n"
-"%s"
-msgstr ""
-"Не удалось найти шаблон APK для экспорта:\n"
-"%s"
+msgid "Could not find template APK to export: \"%s\"."
+msgstr "Не удалось найти шаблон APK для экспорта: \"%s\"."
 
 #: platform/android/export/export_plugin.cpp
 msgid ""
-"Missing libraries in the export template for the selected architectures: "
-"%s.\n"
+"Missing libraries in the export template for the selected architectures: %s. "
 "Please build a template with all required libraries, or uncheck the missing "
 "architectures in the export preset."
 msgstr ""
-"В шаблоне экспорта отсутствуют библиотеки для выбранных архитектур: %s.\n"
-"Пожалуйста, создайте шаблон со всеми необходимыми библиотеками или снимите "
-"флажки с отсутствующих архитектур в пресете экспорта."
+"В шаблоне экспорта отсутствуют библиотеки для выбранных архитектур: %s. "
+"Пожалуйста, постройте шаблон со всеми необходимыми библиотеками или снимите "
+"флажки с отсутствующих архитектур в предустановках экспорта."
 
 #: platform/android/export/export_plugin.cpp
 msgid "Adding files..."
 msgstr "Добавление файлов..."
 
 #: platform/android/export/export_plugin.cpp
-msgid "Could not export project files"
+#, fuzzy
+msgid "Could not export project files."
 msgstr "Не удалось экспортировать файлы проекта"
 
 #: platform/android/export/export_plugin.cpp
@@ -18764,6 +19036,58 @@ msgstr "Отсутствует определитель."
 #: platform/iphone/export/export.cpp platform/osx/export/export.cpp
 msgid "The character '%s' is not allowed in Identifier."
 msgstr "Символ «%s» в идентификаторе не допускается."
+
+#: platform/iphone/export/export.cpp
+msgid "Landscape Launch Screens"
+msgstr ""
+
+#: platform/iphone/export/export.cpp
+msgid "iPhone 2436 X 1125"
+msgstr ""
+
+#: platform/iphone/export/export.cpp
+msgid "iPhone 2208 X 1242"
+msgstr ""
+
+#: platform/iphone/export/export.cpp
+msgid "iPad 1024 X 768"
+msgstr ""
+
+#: platform/iphone/export/export.cpp
+msgid "iPad 2048 X 1536"
+msgstr ""
+
+#: platform/iphone/export/export.cpp
+msgid "Portrait Launch Screens"
+msgstr ""
+
+#: platform/iphone/export/export.cpp
+msgid "iPhone 640 X 960"
+msgstr ""
+
+#: platform/iphone/export/export.cpp
+msgid "iPhone 640 X 1136"
+msgstr ""
+
+#: platform/iphone/export/export.cpp
+msgid "iPhone 750 X 1334"
+msgstr ""
+
+#: platform/iphone/export/export.cpp
+msgid "iPhone 1125 X 2436"
+msgstr ""
+
+#: platform/iphone/export/export.cpp
+msgid "iPad 768 X 1024"
+msgstr ""
+
+#: platform/iphone/export/export.cpp
+msgid "iPad 1536 X 2048"
+msgstr ""
+
+#: platform/iphone/export/export.cpp
+msgid "iPhone 1242 X 2208"
+msgstr ""
 
 #: platform/iphone/export/export.cpp
 msgid "App Store Team ID"
@@ -18791,9 +19115,8 @@ msgid "Code Sign Identity Release"
 msgstr ""
 
 #: platform/iphone/export/export.cpp
-#, fuzzy
 msgid "Export Method Release"
-msgstr "Режим экспортирования:"
+msgstr "Экспорт релиза"
 
 #: platform/iphone/export/export.cpp
 msgid "Targeted Device Family"
@@ -18801,12 +19124,11 @@ msgstr ""
 
 #: platform/iphone/export/export.cpp platform/osx/export/export.cpp
 msgid "Info"
-msgstr ""
+msgstr "Информация"
 
 #: platform/iphone/export/export.cpp platform/osx/export/export.cpp
-#, fuzzy
 msgid "Identifier"
-msgstr "Неверный идентификатор:"
+msgstr "Индетификатор"
 
 #: platform/iphone/export/export.cpp platform/osx/export/export.cpp
 #, fuzzy
@@ -18830,16 +19152,14 @@ msgid "Capabilities"
 msgstr "Капитализировать свойства"
 
 #: platform/iphone/export/export.cpp
-#, fuzzy
 msgid "Access Wi-Fi"
-msgstr "Доступ"
+msgstr "Доступ к Wi-Fi"
 
 #: platform/iphone/export/export.cpp
-#, fuzzy
 msgid "Push Notifications"
-msgstr "Вращение пути"
+msgstr "Всплывающее уведомление"
 
-#: platform/iphone/export/export.cpp scene/3d/baked_lightmap.cpp
+#: platform/iphone/export/export.cpp
 #, fuzzy
 msgid "User Data"
 msgstr "Пользовательский интерфейс"
@@ -18937,6 +19257,17 @@ msgstr "Пользовательский цвет"
 msgid "Custom BG Color"
 msgstr "Пользовательский цвет"
 
+#: platform/iphone/export/export.cpp platform/javascript/export/export.cpp
+#: platform/osx/export/export.cpp
+#, fuzzy
+msgid "Prepare Templates"
+msgstr "Управление шаблонами"
+
+#: platform/iphone/export/export.cpp platform/osx/export/export.cpp
+#, fuzzy
+msgid "Export template not found."
+msgstr "Пользовательский релизный шаблон не найден."
+
 #: platform/iphone/export/export.cpp
 msgid "App Store Team ID not specified - cannot configure the project."
 msgstr "App Store Team ID не указан - невозможно настроить проект."
@@ -18958,20 +19289,33 @@ msgid "Run exported HTML in the system's default browser."
 msgstr "Запустить HTML в системном браузере по умолчанию."
 
 #: platform/javascript/export/export.cpp
-msgid "Could not open template for export:"
+#, fuzzy
+msgid "Could not open template for export: \"%s\"."
 msgstr "Не удалось открыть шаблон для экспорта:"
 
 #: platform/javascript/export/export.cpp
-msgid "Invalid export template:"
+#, fuzzy
+msgid "Invalid export template: \"%s\"."
 msgstr "Неверный шаблон экспорта:"
 
 #: platform/javascript/export/export.cpp
-msgid "Could not write file:"
+#, fuzzy
+msgid "Could not write file: \"%s\"."
 msgstr "Не удалось записать файл:"
 
+#: platform/javascript/export/export.cpp platform/osx/export/export.cpp
+#, fuzzy
+msgid "Icon Creation"
+msgstr "Задать отступ"
+
 #: platform/javascript/export/export.cpp
-msgid "Could not read file:"
+#, fuzzy
+msgid "Could not read file: \"%s\"."
 msgstr "Не удалось прочитать файл:"
+
+#: platform/javascript/export/export.cpp
+msgid "PWA"
+msgstr ""
 
 #: platform/javascript/export/export.cpp
 #, fuzzy
@@ -19048,15 +19392,18 @@ msgid "Icon 512 X 512"
 msgstr ""
 
 #: platform/javascript/export/export.cpp
-msgid "Could not read HTML shell:"
+#, fuzzy
+msgid "Could not read HTML shell: \"%s\"."
 msgstr "Не удалось прочитать HTML-оболочку:"
 
 #: platform/javascript/export/export.cpp
-msgid "Could not create HTTP server directory:"
+#, fuzzy
+msgid "Could not create HTTP server directory: %s."
 msgstr "Не удалось создать каталог HTTP-сервера:"
 
 #: platform/javascript/export/export.cpp
-msgid "Error starting HTTP server:"
+#, fuzzy
+msgid "Error starting HTTP server: %d."
 msgstr "Ошибка запуска HTTP-сервера:"
 
 #: platform/javascript/export/export.cpp
@@ -19152,9 +19499,8 @@ msgid "Unknown object type."
 msgstr "Неизвестный тип объекта."
 
 #: platform/osx/export/export.cpp
-#, fuzzy
 msgid "App Category"
-msgstr "Категория:"
+msgstr "Категория приложения"
 
 #: platform/osx/export/export.cpp
 msgid "High Res"
@@ -19349,9 +19695,28 @@ msgid "Apple Team ID"
 msgstr ""
 
 #: platform/osx/export/export.cpp
+#, fuzzy
+msgid "Could not open icon file \"%s\"."
+msgstr "Не удалось экспортировать файлы проекта"
+
+#: platform/osx/export/export.cpp
+msgid "Could not start xcrun executable."
+msgstr "Не удаётся запустить исполняемый файл xcrun."
+
+#: platform/osx/export/export.cpp
+#, fuzzy
+msgid "Notarization failed."
+msgstr "Локализация"
+
+#: platform/osx/export/export.cpp
+msgid "Notarization request UUID: \"%s\""
+msgstr ""
+
+#: platform/osx/export/export.cpp
+#, fuzzy
 msgid ""
-"Note: The notarization process generally takes less than an hour. When the "
-"process is completed, you'll receive an email."
+"The notarization process generally takes less than an hour. When the process "
+"is completed, you'll receive an email."
 msgstr ""
 "Примечание: Процесс подтверждения обычно занимает менее часа. Когда процесс "
 "завершится, вы получите электронное письмо."
@@ -19373,16 +19738,77 @@ msgstr ""
 "экспортированному приложению (необязательно):"
 
 #: platform/osx/export/export.cpp
+#, fuzzy
+msgid "Timestamping is not compatible with ad-hoc signature, and was disabled!"
+msgstr "Временные метки не совместимы с подписью ad-hoc и будут отключены!"
+
+#: platform/osx/export/export.cpp
+#, fuzzy
+msgid ""
+"Hardened Runtime is not compatible with ad-hoc signature, and was disabled!"
+msgstr ""
+"Защищённая среда выполнения несовместима с подписью ad-hoc и будет отключена!"
+
+#: platform/osx/export/export.cpp
+msgid "Built-in CodeSign failed with error \"%s\"."
+msgstr ""
+
+#: platform/osx/export/export.cpp
+msgid "Built-in CodeSign require regex module."
+msgstr ""
+
+#: platform/osx/export/export.cpp
+msgid ""
+"Could not start codesign executable, make sure Xcode command line tools are "
+"installed."
+msgstr ""
+
+#: platform/osx/export/export.cpp platform/windows/export/export.cpp
 msgid "No identity found."
 msgstr "Identity не найдена."
+
+#: platform/osx/export/export.cpp
+#, fuzzy
+msgid "Cannot sign file %s."
+msgstr "Ошибка при сохранении файла: %s"
+
+#: platform/osx/export/export.cpp
+#, fuzzy
+msgid "Relative symlinks are not supported, exported \"%s\" might be broken!"
+msgstr ""
+"Относительные символические ссылки не поддерживаются в этой ОС, "
+"экспортируемый проект может быть повреждён!"
+
+#: platform/osx/export/export.cpp
+#, fuzzy
+msgid "DMG Creation"
+msgstr "Направление"
+
+#: platform/osx/export/export.cpp
+msgid "Could not start hdiutil executable."
+msgstr "Не удаётся запустить исполняемый файл hdiutil."
+
+#: platform/osx/export/export.cpp
+msgid "`hdiutil create` failed - file exists."
+msgstr ""
+
+#: platform/osx/export/export.cpp
+msgid "`hdiutil create` failed."
+msgstr ""
 
 #: platform/osx/export/export.cpp
 msgid "Creating app bundle"
 msgstr "Создание пакета приложения"
 
 #: platform/osx/export/export.cpp
-msgid "Could not find template app to export:"
+#, fuzzy
+msgid "Could not find template app to export: \"%s\"."
 msgstr "Не удалось найти шаблон приложения для экспорта:"
+
+#: platform/osx/export/export.cpp
+#, fuzzy
+msgid "Invalid export format."
+msgstr "Неверный шаблон экспорта:"
 
 #: platform/osx/export/export.cpp
 msgid ""
@@ -19393,8 +19819,9 @@ msgstr ""
 "экспортируемый проект может быть повреждён!"
 
 #: platform/osx/export/export.cpp
+#, fuzzy
 msgid ""
-"Requested template binary '%s' not found. It might be missing from your "
+"Requested template binary \"%s\" not found. It might be missing from your "
 "template archive."
 msgstr ""
 "Запрошенный двоичный файл шаблона «%s» не найден. Он может отсутствовать в "
@@ -19439,6 +19866,15 @@ msgstr ""
 #: platform/osx/export/export.cpp
 msgid "Sending archive for notarization"
 msgstr "Отправка архива для подтверждения"
+
+#: platform/osx/export/export.cpp
+#, fuzzy
+msgid "ZIP Creation"
+msgstr "Проекция"
+
+#: platform/osx/export/export.cpp
+msgid "Could not open file to read from path \"%s\"."
+msgstr "Не удалось открыть файл для чтения по пути \"%s\"."
 
 #: platform/osx/export/export.cpp
 msgid "Invalid bundle identifier:"
@@ -19590,9 +20026,8 @@ msgid "Display Name"
 msgstr "Масштаб отображения"
 
 #: platform/uwp/export/export.cpp
-#, fuzzy
 msgid "Short Name"
-msgstr "Имя скрипта:"
+msgstr "Короткое имя"
 
 #: platform/uwp/export/export.cpp
 msgid "Publisher"
@@ -19603,9 +20038,8 @@ msgid "Publisher Display Name"
 msgstr "Отображаемое имя издателя"
 
 #: platform/uwp/export/export.cpp
-#, fuzzy
 msgid "Product GUID"
-msgstr "Неверный GUID продукта."
+msgstr "GUID Продукта"
 
 #: platform/uwp/export/export.cpp
 #, fuzzy
@@ -19772,12 +20206,17 @@ msgstr "Сигнал"
 
 #: platform/uwp/export/export.cpp
 msgid "Debug Certificate"
-msgstr ""
+msgstr "Сертификат отладки"
 
 #: platform/uwp/export/export.cpp
 #, fuzzy
 msgid "Debug Algorithm"
 msgstr "Отладчик"
+
+#: platform/windows/export/export.cpp
+#, fuzzy
+msgid "Failed to rename temporary file \"%s\"."
+msgstr "Невозможно удалить временный файл:"
 
 #: platform/windows/export/export.cpp
 msgid "Identity Type"
@@ -19794,13 +20233,17 @@ msgstr "Отладчик"
 
 #: platform/windows/export/export.cpp
 #, fuzzy
+msgid "Modify Resources"
+msgstr "Копировать параметры"
+
+#: platform/windows/export/export.cpp
+#, fuzzy
 msgid "File Version"
 msgstr "Версия"
 
 #: platform/windows/export/export.cpp
-#, fuzzy
 msgid "Product Version"
-msgstr "Недопустимая версия продукта:"
+msgstr "Версия продукта"
 
 #: platform/windows/export/export.cpp
 #, fuzzy
@@ -19808,9 +20251,8 @@ msgid "Company Name"
 msgstr "Имя кости"
 
 #: platform/windows/export/export.cpp
-#, fuzzy
 msgid "Product Name"
-msgstr "Название проекта:"
+msgstr "Название продукта"
 
 #: platform/windows/export/export.cpp
 #, fuzzy
@@ -19820,6 +20262,76 @@ msgstr "Описание"
 #: platform/windows/export/export.cpp
 msgid "Trademarks"
 msgstr ""
+
+#: platform/windows/export/export.cpp
+#, fuzzy
+msgid "Resources Modification"
+msgstr "Всплывающее уведомление"
+
+#: platform/windows/export/export.cpp
+#, fuzzy
+msgid "Could not find rcedit executable at \"%s\"."
+msgstr "Не удалось найти хранилище ключей, невозможно экспортировать."
+
+#: platform/windows/export/export.cpp
+#, fuzzy
+msgid "Could not find wine executable at \"%s\"."
+msgstr "Не удалось найти хранилище ключей, невозможно экспортировать."
+
+#: platform/windows/export/export.cpp
+#, fuzzy
+msgid ""
+"Could not start rcedit executable. Configure rcedit path in the Editor "
+"Settings (Export > Windows > Rcedit), or disable \"Application > Modify "
+"Resources\" in the export preset."
+msgstr ""
+"Инструмент rcedit должен быть настроен в Настройках редактора (Export > "
+"Windows > Rcedit) для изменения значка или информационных данных приложения."
+
+#: platform/windows/export/export.cpp
+#, fuzzy
+msgid "rcedit failed to modify executable: %s."
+msgstr "Недопустимый исполняемый файл."
+
+#: platform/windows/export/export.cpp
+#, fuzzy
+msgid "Could not find signtool executable at \"%s\"."
+msgstr "Не удалось найти хранилище ключей, невозможно экспортировать."
+
+#: platform/windows/export/export.cpp
+#, fuzzy
+msgid "Could not find osslsigncode executable at \"%s\"."
+msgstr "Не удалось найти хранилище ключей, невозможно экспортировать."
+
+#: platform/windows/export/export.cpp
+#, fuzzy
+msgid "Invalid identity type."
+msgstr "Неверный идентификатор:"
+
+#: platform/windows/export/export.cpp
+#, fuzzy
+msgid "Invalid timestamp server."
+msgstr "Недопустимое имя."
+
+#: platform/windows/export/export.cpp
+#, fuzzy
+msgid ""
+"Could not start signtool executable. Configure signtool path in the Editor "
+"Settings (Export > Windows > Signtool), or disable \"Codesign\" in the "
+"export preset."
+msgstr ""
+"Инструмент rcedit должен быть настроен в Настройках редактора (Export > "
+"Windows > Rcedit) для изменения значка или информационных данных приложения."
+
+#: platform/windows/export/export.cpp
+#, fuzzy
+msgid "Signtool failed to sign executable: %s."
+msgstr "Недопустимый исполняемый файл."
+
+#: platform/windows/export/export.cpp
+#, fuzzy
+msgid "Failed to remove temporary file \"%s\"."
+msgstr "Невозможно удалить временный файл:"
 
 #: platform/windows/export/export.cpp
 msgid ""
@@ -19842,12 +20354,29 @@ msgid "Invalid product version:"
 msgstr "Недопустимая версия продукта:"
 
 #: platform/windows/export/export.cpp
+msgid "Windows executables cannot be >= 4 GiB."
+msgstr ""
+
+#: platform/windows/export/export.cpp platform/x11/export/export.cpp
+#, fuzzy
+msgid "Failed to open executable file \"%s\"."
+msgstr "Недопустимый исполняемый файл."
+
+#: platform/windows/export/export.cpp platform/x11/export/export.cpp
+msgid "Executable file header corrupted."
+msgstr ""
+
+#: platform/windows/export/export.cpp platform/x11/export/export.cpp
+msgid "Executable \"pck\" section not found."
+msgstr ""
+
+#: platform/windows/export/export.cpp
 msgid "Windows"
 msgstr "Windows"
 
 #: platform/windows/export/export.cpp
 msgid "Rcedit"
-msgstr "Rcedit"
+msgstr ""
 
 #: platform/windows/export/export.cpp
 msgid "Osslsigncode"
@@ -19855,7 +20384,11 @@ msgstr ""
 
 #: platform/windows/export/export.cpp
 msgid "Wine"
-msgstr "Wine"
+msgstr ""
+
+#: platform/x11/export/export.cpp
+msgid "32-bit executables cannot have embedded data >= 4 GiB."
+msgstr ""
 
 #: scene/2d/animated_sprite.cpp scene/3d/sprite_3d.cpp
 #: scene/resources/texture.cpp
@@ -19869,11 +20402,6 @@ msgid ""
 msgstr ""
 "Чтобы AnimatedSprite отображал кадры, ресурс SpriteFrames должен быть создан "
 "или задан в свойстве «Frames»."
-
-#: scene/2d/animated_sprite.cpp scene/2d/sprite.cpp scene/3d/sprite_3d.cpp
-#: scene/resources/default_theme/default_theme.cpp
-msgid "Frame"
-msgstr "Кадр"
 
 #: scene/2d/animated_sprite.cpp scene/2d/cpu_particles_2d.cpp
 #: scene/2d/particles_2d.cpp scene/3d/cpu_particles.cpp scene/3d/particles.cpp
@@ -19889,18 +20417,6 @@ msgstr "Проигрывается"
 #: scene/2d/animated_sprite.cpp scene/2d/sprite.cpp scene/3d/sprite_3d.cpp
 msgid "Centered"
 msgstr "Центрированный"
-
-#: scene/2d/animated_sprite.cpp scene/2d/camera_2d.cpp
-#: scene/2d/cpu_particles_2d.cpp scene/2d/light_2d.cpp
-#: scene/2d/parallax_background.cpp scene/2d/parallax_layer.cpp
-#: scene/2d/path_2d.cpp scene/2d/polygon_2d.cpp scene/2d/sprite.cpp
-#: scene/3d/cpu_particles.cpp scene/3d/path.cpp scene/3d/physics_body.cpp
-#: scene/3d/sprite_3d.cpp scene/gui/graph_node.cpp
-#: scene/gui/rich_text_effect.cpp scene/main/canvas_layer.cpp
-#: scene/resources/material.cpp scene/resources/particles_material.cpp
-#: scene/resources/style_box.cpp
-msgid "Offset"
-msgstr "Смещение"
 
 #: scene/2d/animated_sprite.cpp scene/2d/sprite.cpp scene/3d/sprite_3d.cpp
 #: scene/gui/texture_button.cpp scene/gui/texture_rect.cpp
@@ -19985,8 +20501,7 @@ msgid "Pitch Scale"
 msgstr "Масштабировать"
 
 #: scene/2d/audio_stream_player_2d.cpp scene/3d/audio_stream_player_3d.cpp
-#: scene/animation/animation_player.cpp scene/audio/audio_stream_player.cpp
-#: scene/gui/video_player.cpp
+#: scene/audio/audio_stream_player.cpp scene/gui/video_player.cpp
 #, fuzzy
 msgid "Autoplay"
 msgstr "Переключить автовоспроизведение"
@@ -19994,11 +20509,12 @@ msgstr "Переключить автовоспроизведение"
 #: scene/2d/audio_stream_player_2d.cpp scene/3d/audio_stream_player_3d.cpp
 #: scene/audio/audio_stream_player.cpp
 msgid "Stream Paused"
-msgstr ""
+msgstr "Поток приостановлен"
 
 #: scene/2d/audio_stream_player_2d.cpp scene/3d/audio_stream_player_3d.cpp
 #: scene/3d/light.cpp scene/3d/reflection_probe.cpp
-#: scene/3d/visual_instance.cpp scene/resources/material.cpp
+#: scene/3d/visibility_notifier.cpp scene/3d/visual_instance.cpp
+#: scene/resources/material.cpp
 msgid "Max Distance"
 msgstr "Максимальное расстояние"
 
@@ -20029,7 +20545,8 @@ msgstr "Режим якорей"
 msgid "Rotating"
 msgstr "Вращающийся"
 
-#: scene/2d/camera_2d.cpp scene/3d/camera.cpp
+#: scene/2d/camera_2d.cpp scene/2d/listener_2d.cpp scene/3d/camera.cpp
+#: scene/3d/listener.cpp scene/animation/animation_blend_tree.cpp
 msgid "Current"
 msgstr "Текущая"
 
@@ -20043,7 +20560,7 @@ msgstr "Приблизить"
 msgid "Custom Viewport"
 msgstr "1 Окно"
 
-#: scene/2d/camera_2d.cpp scene/3d/camera.cpp
+#: scene/2d/camera_2d.cpp scene/3d/camera.cpp scene/3d/interpolated_camera.cpp
 #: scene/animation/animation_player.cpp scene/animation/animation_tree.cpp
 #: scene/animation/animation_tree_player.cpp scene/main/timer.cpp
 #, fuzzy
@@ -20055,19 +20572,20 @@ msgid "Limit"
 msgstr "Лимит"
 
 #: scene/2d/camera_2d.cpp scene/gui/control.cpp scene/gui/nine_patch_rect.cpp
-#: scene/resources/style_box.cpp
+#: scene/resources/style_box.cpp scene/resources/texture.cpp
 #, fuzzy
 msgid "Left"
 msgstr "UI Влево"
 
 #: scene/2d/camera_2d.cpp scene/gui/control.cpp scene/gui/nine_patch_rect.cpp
-#: scene/resources/style_box.cpp
+#: scene/resources/style_box.cpp scene/resources/texture.cpp
 #, fuzzy
 msgid "Right"
 msgstr "Свет"
 
 #: scene/2d/camera_2d.cpp scene/gui/control.cpp scene/gui/nine_patch_rect.cpp
 #: scene/resources/dynamic_font.cpp scene/resources/style_box.cpp
+#: scene/resources/texture.cpp
 #, fuzzy
 msgid "Bottom"
 msgstr "Слева внизу"
@@ -20125,8 +20643,8 @@ msgstr "Рисовать лимиты"
 msgid "Draw Drag Margin"
 msgstr "Задать отступ"
 
-#: scene/2d/canvas_item.cpp scene/animation/animation_blend_space_2d.cpp
-#: scene/resources/environment.cpp scene/resources/material.cpp
+#: scene/2d/canvas_item.cpp scene/resources/environment.cpp
+#: scene/resources/material.cpp
 #, fuzzy
 msgid "Blend Mode"
 msgstr "Blend2 узел"
@@ -20163,11 +20681,6 @@ msgstr "Видимость"
 msgid "Visible"
 msgstr "Видимый"
 
-#: scene/2d/canvas_item.cpp scene/3d/sprite_3d.cpp
-#: scene/resources/style_box.cpp
-msgid "Modulate"
-msgstr "Модуляция"
-
 #: scene/2d/canvas_item.cpp
 #, fuzzy
 msgid "Self Modulate"
@@ -20190,10 +20703,6 @@ msgstr "Маска света"
 #: scene/2d/canvas_item.cpp
 msgid "Use Parent Material"
 msgstr ""
-
-#: scene/2d/canvas_item.cpp
-msgid "Toplevel"
-msgstr "Верхний уровень"
 
 #: scene/2d/canvas_modulate.cpp
 msgid ""
@@ -20242,6 +20751,11 @@ msgstr ""
 msgid "Invalid polygon. At least 2 points are needed in 'Segments' build mode."
 msgstr ""
 "Недопустимый полигон. В режиме «Segments» необходимо по крайней мере 2 точки."
+
+#: scene/2d/collision_polygon_2d.cpp scene/2d/collision_shape_2d.cpp
+msgid ""
+"The One Way Collision property will be ignored when the parent is an Area2D."
+msgstr ""
 
 #: scene/2d/collision_polygon_2d.cpp
 #, fuzzy
@@ -20362,16 +20876,6 @@ msgstr "Локальные проекты"
 msgid "Draw Order"
 msgstr ""
 
-#: scene/2d/cpu_particles_2d.cpp scene/2d/light_2d.cpp scene/2d/line_2d.cpp
-#: scene/2d/mesh_instance_2d.cpp scene/2d/multimesh_instance_2d.cpp
-#: scene/2d/particles_2d.cpp scene/2d/polygon_2d.cpp scene/2d/sprite.cpp
-#: scene/3d/sprite_3d.cpp scene/gui/nine_patch_rect.cpp
-#: scene/gui/texture_rect.cpp scene/resources/material.cpp
-#: scene/resources/sky.cpp scene/resources/style_box.cpp
-#: scene/resources/visual_shader_nodes.cpp
-msgid "Texture"
-msgstr "Текстура"
-
 #: scene/2d/cpu_particles_2d.cpp scene/3d/cpu_particles.cpp
 #: scene/resources/particles_material.cpp
 msgid "Emission Shape"
@@ -20470,8 +20974,9 @@ msgid "Tangential Accel"
 msgstr "Тангенциальное ускорение"
 
 #: scene/2d/cpu_particles_2d.cpp scene/2d/joints_2d.cpp
-#: scene/3d/cpu_particles.cpp scene/3d/physics_joint.cpp
-#: scene/3d/vehicle_body.cpp scene/resources/particles_material.cpp
+#: scene/3d/cpu_particles.cpp scene/3d/physics_body.cpp
+#: scene/3d/physics_joint.cpp scene/3d/vehicle_body.cpp
+#: scene/resources/particles_material.cpp
 #: servers/audio/effects/audio_effect_reverb.cpp
 msgid "Damping"
 msgstr ""
@@ -20609,7 +21114,7 @@ msgid "Node B"
 msgstr "Узел"
 
 #: scene/2d/joints_2d.cpp scene/3d/baked_lightmap.cpp scene/3d/gi_probe.cpp
-#: scene/3d/light.cpp scene/3d/physics_joint.cpp
+#: scene/3d/light.cpp scene/3d/physics_body.cpp scene/3d/physics_joint.cpp
 #: scene/resources/environment.cpp
 msgid "Bias"
 msgstr ""
@@ -20619,14 +21124,14 @@ msgstr ""
 msgid "Disable Collision"
 msgstr "Заблокированная кнопка"
 
-#: scene/2d/joints_2d.cpp scene/3d/physics_joint.cpp
+#: scene/2d/joints_2d.cpp scene/3d/physics_body.cpp scene/3d/physics_joint.cpp
 msgid "Softness"
 msgstr ""
 
 #: scene/2d/joints_2d.cpp scene/resources/animation.cpp
 #: scene/resources/ray_shape.cpp scene/resources/segment_shape_2d.cpp
 msgid "Length"
-msgstr ""
+msgstr "Длина"
 
 #: scene/2d/joints_2d.cpp
 #, fuzzy
@@ -20658,7 +21163,8 @@ msgid "Texture Scale"
 msgstr "Область текстуры"
 
 #: scene/2d/light_2d.cpp scene/3d/baked_lightmap.cpp scene/3d/gi_probe.cpp
-#: scene/3d/light.cpp scene/resources/environment.cpp scene/resources/sky.cpp
+#: scene/3d/light.cpp scene/resources/environment.cpp
+#: scene/resources/material.cpp scene/resources/sky.cpp
 msgid "Energy"
 msgstr "Энергия"
 
@@ -20784,7 +21290,7 @@ msgstr "Сглаженный"
 msgid "Multimesh"
 msgstr "Умножить %s"
 
-#: scene/2d/navigation_2d.cpp scene/3d/baked_lightmap.cpp scene/3d/gi_probe.cpp
+#: scene/2d/navigation_2d.cpp scene/3d/baked_lightmap.cpp
 #: scene/3d/navigation.cpp scene/animation/root_motion_view.cpp
 #: scene/resources/world_2d.cpp servers/physics_2d/physics_2d_server_sw.cpp
 msgid "Cell Size"
@@ -20795,9 +21301,41 @@ msgstr "Размер ячейки"
 msgid "Edge Connection Margin"
 msgstr "Пограничное соединение"
 
+#: scene/2d/navigation_2d.cpp
+msgid ""
+"'Navigation2D' node and 'Navigation2D.get_simple_path()' are deprecated and "
+"will be removed in a future version. Use 'Navigation2DServer.map_get_path()' "
+"instead."
+msgstr ""
+
+#: scene/2d/navigation_agent_2d.cpp scene/3d/navigation_agent.cpp
+#, fuzzy
+msgid "Pathfinding"
+msgstr "Привязка"
+
+#: scene/2d/navigation_agent_2d.cpp scene/3d/navigation_agent.cpp
+#, fuzzy
+msgid "Path Desired Distance"
+msgstr "Расстояние пути U"
+
 #: scene/2d/navigation_agent_2d.cpp scene/3d/navigation_agent.cpp
 msgid "Target Desired Distance"
 msgstr ""
+
+#: scene/2d/navigation_agent_2d.cpp scene/3d/navigation_agent.cpp
+#, fuzzy
+msgid "Path Max Distance"
+msgstr "Максимальное расстояние пути"
+
+#: scene/2d/navigation_agent_2d.cpp scene/3d/navigation_agent.cpp
+#, fuzzy
+msgid "Avoidance"
+msgstr "Дополнительно"
+
+#: scene/2d/navigation_agent_2d.cpp scene/3d/navigation_agent.cpp
+#, fuzzy
+msgid "Avoidance Enabled"
+msgstr "Включить"
 
 #: scene/2d/navigation_agent_2d.cpp scene/3d/navigation_agent.cpp
 msgid "Neighbor Dist"
@@ -20816,13 +21354,10 @@ msgstr "Перевернуть по горизонтали"
 msgid "Max Speed"
 msgstr "Макс скорость"
 
-#: scene/2d/navigation_agent_2d.cpp scene/3d/navigation_agent.cpp
-#, fuzzy
-msgid "Path Max Distance"
-msgstr "Максимальное расстояние пути"
-
 #: scene/2d/navigation_agent_2d.cpp
-msgid "The NavigationAgent2D can be used only under a Node2D node."
+#, fuzzy
+msgid ""
+"The NavigationAgent2D can be used only under a Node2D inheriting parent node."
 msgstr "NavigationAgent2D можно использовать только под узлом Node2D."
 
 #: scene/2d/navigation_obstacle_2d.cpp scene/3d/navigation_obstacle.cpp
@@ -20838,14 +21373,6 @@ msgstr ""
 "NavigationObstacle2D служит только для предотвращения столкновений с "
 "объектом Node2D."
 
-#: scene/2d/navigation_polygon.cpp scene/resources/navigation_mesh.cpp
-msgid "Vertices"
-msgstr "Вершины"
-
-#: scene/2d/navigation_polygon.cpp
-msgid "Outlines"
-msgstr "Контуры"
-
 #: scene/2d/navigation_polygon.cpp
 msgid ""
 "A NavigationPolygon resource must be set or created for this node to work. "
@@ -20855,16 +21382,18 @@ msgstr ""
 "Пожалуйста, установите свойство или нарисуйте многоугольник."
 
 #: scene/2d/navigation_polygon.cpp
-msgid ""
-"NavigationPolygonInstance must be a child or grandchild to a Navigation2D "
-"node. It only provides navigation data."
-msgstr ""
-"NavigationPolygonInstance должен быть ребёнком или внуком узла Navigation2D. "
-"Он предоставляет только навигационные данные."
-
-#: scene/2d/navigation_polygon.cpp
 msgid "Navpoly"
 msgstr ""
+
+#: scene/2d/navigation_polygon.cpp scene/3d/navigation_mesh_instance.cpp
+#, fuzzy
+msgid "Enter Cost"
+msgstr "Внизу посередине"
+
+#: scene/2d/navigation_polygon.cpp scene/3d/navigation_mesh_instance.cpp
+#, fuzzy
+msgid "Travel Cost"
+msgstr "Переместится"
 
 #: scene/2d/node_2d.cpp scene/2d/polygon_2d.cpp scene/3d/spatial.cpp
 #: scene/main/canvas_layer.cpp
@@ -20872,7 +21401,7 @@ msgstr ""
 msgid "Rotation Degrees"
 msgstr "Градусы вращения"
 
-#: scene/2d/node_2d.cpp
+#: scene/2d/node_2d.cpp scene/3d/spatial.cpp
 msgid "Global Rotation"
 msgstr "Глобальный поворот"
 
@@ -21246,7 +21775,7 @@ msgstr "Удалить точку"
 msgid "Use Global Coordinates"
 msgstr "Следующая координата"
 
-#: scene/2d/skeleton_2d.cpp
+#: scene/2d/skeleton_2d.cpp scene/3d/skeleton.cpp
 #, fuzzy
 msgid "Rest"
 msgstr "Перезапустить"
@@ -21485,11 +22014,11 @@ msgstr ""
 
 #: scene/3d/audio_stream_player_3d.cpp
 msgid "Max dB"
-msgstr ""
+msgstr "Максимальное количество дБ"
 
 #: scene/3d/audio_stream_player_3d.cpp
 msgid "Out Of Range Mode"
-msgstr ""
+msgstr "Режим Вне Зоны Действия"
 
 #: scene/3d/audio_stream_player_3d.cpp
 #, fuzzy
@@ -21531,27 +22060,9 @@ msgid "Tracking"
 msgstr "Упаковывание"
 
 #: scene/3d/baked_lightmap.cpp scene/3d/gi_probe.cpp
-msgid "Bounds"
-msgstr ""
-
-#: scene/3d/baked_lightmap.cpp
-#, fuzzy
-msgid "Cell Space Transform"
-msgstr "Очистить преобразование"
-
-#: scene/3d/baked_lightmap.cpp
-msgid "Cell Subdiv"
-msgstr ""
-
-#: scene/3d/baked_lightmap.cpp scene/3d/gi_probe.cpp
 #: scene/3d/reflection_probe.cpp
 msgid "Interior"
 msgstr ""
-
-#: scene/3d/baked_lightmap.cpp
-#, fuzzy
-msgid "Octree"
-msgstr "Поддерево"
 
 #: scene/3d/baked_lightmap.cpp
 msgid "Finding meshes and lights"
@@ -21585,8 +22096,9 @@ msgid "Extents"
 msgstr "Гизмо"
 
 #: scene/3d/baked_lightmap.cpp
+#, fuzzy
 msgid "Tweaks"
-msgstr ""
+msgstr "Подстройки"
 
 #: scene/3d/baked_lightmap.cpp
 msgid "Bounces"
@@ -21597,7 +22109,6 @@ msgid "Bounce Indirect Energy"
 msgstr ""
 
 #: scene/3d/baked_lightmap.cpp
-#, fuzzy
 msgid "Use Denoiser"
 msgstr "Использовать шумоподавитель"
 
@@ -21631,9 +22142,8 @@ msgid "Custom Sky"
 msgstr "Пользовательское небо"
 
 #: scene/3d/baked_lightmap.cpp
-#, fuzzy
 msgid "Custom Sky Rotation Degrees"
-msgstr "Пользовательские градусы вращения неба"
+msgstr "Пользовательские Градусы Вращения Неба"
 
 #: scene/3d/baked_lightmap.cpp scene/3d/ray_cast.cpp
 msgid "Custom Color"
@@ -21644,9 +22154,8 @@ msgid "Custom Energy"
 msgstr "Пользовательская энергия"
 
 #: scene/3d/baked_lightmap.cpp
-#, fuzzy
 msgid "Min Light"
-msgstr "Отступ вправо"
+msgstr "Минимальный Свет"
 
 #: scene/3d/baked_lightmap.cpp scene/3d/gi_probe.cpp
 #, fuzzy
@@ -21655,21 +22164,20 @@ msgstr "Навигация"
 
 #: scene/3d/baked_lightmap.cpp
 msgid "Image Path"
-msgstr ""
+msgstr "Путь к изображению"
 
 #: scene/3d/baked_lightmap.cpp
 #, fuzzy
 msgid "Light Data"
 msgstr "С данными"
 
-#: scene/3d/bone_attachment.cpp
-#, fuzzy
+#: scene/3d/bone_attachment.cpp scene/3d/physics_body.cpp
 msgid "Bone Name"
-msgstr "Имя кости"
+msgstr "Имя Кости"
 
 #: scene/3d/camera.cpp
 msgid "Keep Aspect"
-msgstr ""
+msgstr "Хранить Аспект"
 
 #: scene/3d/camera.cpp scene/3d/light.cpp scene/3d/reflection_probe.cpp
 msgid "Cull Mask"
@@ -21681,13 +22189,12 @@ msgid "Doppler Tracking"
 msgstr "Трек параметра"
 
 #: scene/3d/camera.cpp
-#, fuzzy
 msgid "Projection"
-msgstr "Проект"
+msgstr "Проекция"
 
 #: scene/3d/camera.cpp
 msgid "FOV"
-msgstr ""
+msgstr "Поле зрения"
 
 #: scene/3d/camera.cpp
 #, fuzzy
@@ -21695,13 +22202,12 @@ msgid "Frustum Offset"
 msgstr "Смещение усеченного конуса"
 
 #: scene/3d/camera.cpp
-#, fuzzy
 msgid "Near"
-msgstr "Ближайшие"
+msgstr "Близко"
 
 #: scene/3d/camera.cpp
 msgid "Far"
-msgstr ""
+msgstr "Далеко"
 
 #: scene/3d/camera.cpp scene/3d/collision_polygon.cpp scene/3d/spring_arm.cpp
 #: scene/gui/control.cpp scene/resources/default_theme/default_theme.cpp
@@ -21712,18 +22218,16 @@ msgid "Margin"
 msgstr "Отступ"
 
 #: scene/3d/camera.cpp
-#, fuzzy
 msgid "Clip To"
-msgstr "Обрезать сверху"
+msgstr "Обрезать До"
 
 #: scene/3d/collision_object.cpp scene/3d/soft_body.cpp
 msgid "Ray Pickable"
 msgstr ""
 
 #: scene/3d/collision_object.cpp
-#, fuzzy
 msgid "Capture On Drag"
-msgstr "Захват"
+msgstr "Захват При Перетаскивании"
 
 #: scene/3d/collision_object.cpp
 msgid ""
@@ -21799,24 +22303,20 @@ msgid "Box Extents"
 msgstr "Гизмо"
 
 #: scene/3d/cpu_particles.cpp scene/resources/particles_material.cpp
-#, fuzzy
 msgid "Ring Radius"
-msgstr "Маска излучения"
+msgstr "Радиус Кольца"
 
 #: scene/3d/cpu_particles.cpp scene/resources/particles_material.cpp
-#, fuzzy
 msgid "Ring Inner Radius"
-msgstr "Изменение внутреннего радиуса полукруга"
+msgstr "Внутренний Радиус Кольца"
 
 #: scene/3d/cpu_particles.cpp scene/resources/particles_material.cpp
-#, fuzzy
 msgid "Ring Height"
-msgstr "Повернуть вправо"
+msgstr "Высота Кольца"
 
 #: scene/3d/cpu_particles.cpp scene/resources/particles_material.cpp
-#, fuzzy
 msgid "Ring Axis"
-msgstr "Предупреждения"
+msgstr "Ось Кольца"
 
 #: scene/3d/cpu_particles.cpp scene/resources/particles_material.cpp
 #, fuzzy
@@ -21856,24 +22356,6 @@ msgid "Autoplace Priority"
 msgstr "Включить приоритет"
 
 #: scene/3d/gi_probe.cpp
-msgid "To Cell Xform"
-msgstr ""
-
-#: scene/3d/gi_probe.cpp
-#, fuzzy
-msgid "Dynamic Data"
-msgstr "Динамическая библиотека"
-
-#: scene/3d/gi_probe.cpp
-#, fuzzy
-msgid "Dynamic Range"
-msgstr "Динамическая библиотека"
-
-#: scene/3d/gi_probe.cpp scene/3d/light.cpp
-msgid "Normal Bias"
-msgstr ""
-
-#: scene/3d/gi_probe.cpp
 msgid "Plotting Meshes"
 msgstr "Построение полисетки"
 
@@ -21903,6 +22385,85 @@ msgstr ""
 msgid "Subdiv"
 msgstr ""
 
+#: scene/3d/gi_probe.cpp
+#, fuzzy
+msgid "Dynamic Range"
+msgstr "Динамическая библиотека"
+
+#: scene/3d/gi_probe.cpp scene/3d/light.cpp
+msgid "Normal Bias"
+msgstr ""
+
+#: scene/3d/label_3d.cpp scene/3d/sprite_3d.cpp
+#: scene/resources/primitive_meshes.cpp
+#, fuzzy
+msgid "Pixel Size"
+msgstr "Попиксельная привязка"
+
+#: scene/3d/label_3d.cpp scene/3d/sprite_3d.cpp
+msgid "Billboard"
+msgstr ""
+
+#: scene/3d/label_3d.cpp scene/3d/sprite_3d.cpp
+#, fuzzy
+msgid "Shaded"
+msgstr "Шейдер"
+
+#: scene/3d/label_3d.cpp scene/3d/sprite_3d.cpp
+#, fuzzy
+msgid "Double Sided"
+msgstr "Двойной щелчок"
+
+#: scene/3d/label_3d.cpp scene/3d/sprite_3d.cpp scene/resources/material.cpp
+msgid "No Depth Test"
+msgstr ""
+
+#: scene/3d/label_3d.cpp scene/3d/sprite_3d.cpp scene/resources/material.cpp
+msgid "Fixed Size"
+msgstr "Фиксированный размер"
+
+#: scene/3d/label_3d.cpp scene/3d/sprite_3d.cpp
+msgid "Alpha Cut"
+msgstr ""
+
+#: scene/3d/label_3d.cpp scene/resources/material.cpp
+msgid "Alpha Scissor Threshold"
+msgstr ""
+
+#: scene/3d/label_3d.cpp scene/3d/sprite_3d.cpp scene/resources/material.cpp
+#, fuzzy
+msgid "Render Priority"
+msgstr "Приоритет рендеринга"
+
+#: scene/3d/label_3d.cpp
+#, fuzzy
+msgid "Outline Render Priority"
+msgstr "Приоритет рендеринга"
+
+#: scene/3d/label_3d.cpp
+#, fuzzy
+msgid "Outline Modulate"
+msgstr "Принудительно раскрашивание белым"
+
+#: scene/3d/label_3d.cpp scene/resources/default_theme/default_theme.cpp
+#: scene/resources/dynamic_font.cpp scene/resources/primitive_meshes.cpp
+msgid "Font"
+msgstr "Шрифт"
+
+#: scene/3d/label_3d.cpp scene/resources/primitive_meshes.cpp
+#, fuzzy
+msgid "Horizontal Alignment"
+msgstr "Горизонтальная включена"
+
+#: scene/3d/label_3d.cpp
+#, fuzzy
+msgid "Vertical Alignment"
+msgstr "Выравнивание"
+
+#: scene/3d/label_3d.cpp scene/gui/dialogs.cpp scene/gui/label.cpp
+msgid "Autowrap"
+msgstr "Автоперенос"
+
 #: scene/3d/light.cpp
 #, fuzzy
 msgid "Indirect Energy"
@@ -21913,7 +22474,8 @@ msgstr "Цвета излучения"
 msgid "Negative"
 msgstr "GDNative"
 
-#: scene/3d/light.cpp
+#: scene/3d/light.cpp scene/resources/material.cpp
+#: scene/resources/visual_shader.cpp
 #, fuzzy
 msgid "Specular"
 msgstr "Режим измерения"
@@ -22004,6 +22566,13 @@ msgstr ""
 msgid "Transform Normals"
 msgstr "Преобразование нормалей"
 
+#: scene/3d/navigation.cpp
+msgid ""
+"'Navigation' node and 'Navigation.get_simple_path()' are deprecated and will "
+"be removed in a future version. Use 'NavigationServer.map_get_path()' "
+"instead."
+msgstr ""
+
 #: scene/3d/navigation.cpp scene/resources/curve.cpp
 #, fuzzy
 msgid "Up Vector"
@@ -22024,25 +22593,21 @@ msgid "Ignore Y"
 msgstr "[Игнорировать]"
 
 #: scene/3d/navigation_agent.cpp
-msgid "The NavigationAgent can be used only under a spatial node."
+#, fuzzy
+msgid ""
+"The NavigationAgent can be used only under a Spatial inheriting parent node."
 msgstr "NavigationAgent можно использовать только под узлом Spatial."
 
-#: scene/3d/navigation_mesh_instance.cpp
-msgid ""
-"NavigationMeshInstance must be a child or grandchild to a Navigation node. "
-"It only provides navigation data."
-msgstr ""
-"NavigationMeshInstance должен быть дочерним или под-дочерним узлом "
-"Navigation. Он предоставляет только навигационные данные."
-
-#: scene/3d/navigation_mesh_instance.cpp
-msgid "Navmesh"
-msgstr ""
+#: scene/3d/navigation_mesh_instance.cpp scene/resources/mesh_library.cpp
+#, fuzzy
+msgid "NavMesh"
+msgstr "Запечь NavMesh"
 
 #: scene/3d/navigation_obstacle.cpp
+#, fuzzy
 msgid ""
 "The NavigationObstacle only serves to provide collision avoidance to a "
-"spatial object."
+"Spatial inheriting parent object."
 msgstr ""
 "NavigationObstacle служит только для предотвращения столкновений с объектом "
 "Spatial."
@@ -22187,18 +22752,170 @@ msgstr "Движение"
 
 #: scene/3d/physics_body.cpp
 #, fuzzy
-msgid "Move Lock X"
-msgstr "Переместить узел"
+msgid "Joint Constraints"
+msgstr "Константы"
+
+#: scene/3d/physics_body.cpp scene/3d/physics_joint.cpp
+msgid "Impulse Clamp"
+msgstr ""
+
+#: scene/3d/physics_body.cpp scene/3d/physics_joint.cpp
+#, fuzzy
+msgid "Swing Span"
+msgstr "Сохранение сцены"
+
+#: scene/3d/physics_body.cpp scene/3d/physics_joint.cpp
+msgid "Twist Span"
+msgstr ""
+
+#: scene/3d/physics_body.cpp scene/3d/physics_joint.cpp
+#: scene/3d/vehicle_body.cpp
+#, fuzzy
+msgid "Relaxation"
+msgstr "Расслабление"
 
 #: scene/3d/physics_body.cpp
 #, fuzzy
-msgid "Move Lock Y"
-msgstr "Переместить узел"
+msgid "Angular Limit Enabled"
+msgstr "Фильтр сигналов"
 
 #: scene/3d/physics_body.cpp
 #, fuzzy
-msgid "Move Lock Z"
-msgstr "Переместить узел"
+msgid "Angular Limit Upper"
+msgstr "Линейный"
+
+#: scene/3d/physics_body.cpp
+#, fuzzy
+msgid "Angular Limit Lower"
+msgstr "Угловая скорость"
+
+#: scene/3d/physics_body.cpp
+#, fuzzy
+msgid "Angular Limit Bias"
+msgstr "Линейный"
+
+#: scene/3d/physics_body.cpp
+#, fuzzy
+msgid "Angular Limit Softness"
+msgstr "Угловая скорость"
+
+#: scene/3d/physics_body.cpp
+#, fuzzy
+msgid "Angular Limit Relaxation"
+msgstr "Угловая скорость"
+
+#: scene/3d/physics_body.cpp
+#, fuzzy
+msgid "Linear Limit Upper"
+msgstr "Линейный"
+
+#: scene/3d/physics_body.cpp
+#, fuzzy
+msgid "Linear Limit Lower"
+msgstr "Линейный"
+
+#: scene/3d/physics_body.cpp
+#, fuzzy
+msgid "Linear Limit Softness"
+msgstr "Линейный"
+
+#: scene/3d/physics_body.cpp
+#, fuzzy
+msgid "Linear Limit Restitution"
+msgstr "Линейный"
+
+#: scene/3d/physics_body.cpp
+#, fuzzy
+msgid "Linear Limit Damping"
+msgstr "Линейный"
+
+#: scene/3d/physics_body.cpp
+#, fuzzy
+msgid "Angular Limit Restitution"
+msgstr "Угловая скорость"
+
+#: scene/3d/physics_body.cpp
+#, fuzzy
+msgid "Angular Limit Damping"
+msgstr "Угловая скорость"
+
+#: scene/3d/physics_body.cpp
+msgid "X"
+msgstr ""
+
+#: scene/3d/physics_body.cpp
+msgid "Y"
+msgstr ""
+
+#: scene/3d/physics_body.cpp
+msgid "Z"
+msgstr ""
+
+#: scene/3d/physics_body.cpp
+#, fuzzy
+msgid "Linear Limit Enabled"
+msgstr "Линейный"
+
+#: scene/3d/physics_body.cpp
+#, fuzzy
+msgid "Linear Spring Enabled"
+msgstr "Межстрочный интервал"
+
+#: scene/3d/physics_body.cpp
+#, fuzzy
+msgid "Linear Spring Stiffness"
+msgstr "Межстрочный интервал"
+
+#: scene/3d/physics_body.cpp
+#, fuzzy
+msgid "Linear Spring Damping"
+msgstr "Межстрочный интервал"
+
+#: scene/3d/physics_body.cpp
+#, fuzzy
+msgid "Linear Equilibrium Point"
+msgstr "Линейный"
+
+#: scene/3d/physics_body.cpp
+#, fuzzy
+msgid "Linear Restitution"
+msgstr "Описание"
+
+#: scene/3d/physics_body.cpp
+#, fuzzy
+msgid "Linear Damping"
+msgstr "Линейный"
+
+#: scene/3d/physics_body.cpp
+#, fuzzy
+msgid "Angular Restitution"
+msgstr "Описание"
+
+#: scene/3d/physics_body.cpp
+#, fuzzy
+msgid "Angular Damping"
+msgstr "Угловая скорость"
+
+#: scene/3d/physics_body.cpp scene/3d/physics_joint.cpp
+msgid "ERP"
+msgstr ""
+
+#: scene/3d/physics_body.cpp
+#, fuzzy
+msgid "Angular Spring Enabled"
+msgstr "Фильтр сигналов"
+
+#: scene/3d/physics_body.cpp
+msgid "Angular Spring Stiffness"
+msgstr ""
+
+#: scene/3d/physics_body.cpp
+msgid "Angular Spring Damping"
+msgstr "Угловое Затухание Пружины"
+
+#: scene/3d/physics_body.cpp
+msgid "Angular Equilibrium Point"
+msgstr "Угловая Точка Равновесия"
 
 #: scene/3d/physics_body.cpp
 #, fuzzy
@@ -22227,7 +22944,7 @@ msgstr "Узел А и Узел В должны быть различными о
 
 #: scene/3d/physics_joint.cpp
 msgid "Solver"
-msgstr ""
+msgstr "Разрешитель"
 
 #: scene/3d/physics_joint.cpp
 #, fuzzy
@@ -22240,12 +22957,8 @@ msgid "Params"
 msgstr "Параметры"
 
 #: scene/3d/physics_joint.cpp
-msgid "Impulse Clamp"
-msgstr ""
-
-#: scene/3d/physics_joint.cpp
 msgid "Angular Limit"
-msgstr ""
+msgstr "Угловой Предел"
 
 #: scene/3d/physics_joint.cpp
 #, fuzzy
@@ -22257,14 +22970,9 @@ msgstr "ВЕРХНИЙ РЕГИСТР"
 msgid "Lower"
 msgstr "нижний регистр"
 
-#: scene/3d/physics_joint.cpp scene/3d/vehicle_body.cpp
-#, fuzzy
-msgid "Relaxation"
-msgstr "Расслабление"
-
 #: scene/3d/physics_joint.cpp
 msgid "Motor"
-msgstr ""
+msgstr "Мотор"
 
 #: scene/3d/physics_joint.cpp
 #, fuzzy
@@ -22324,16 +23032,7 @@ msgstr "Угловая скорость"
 #: scene/3d/physics_joint.cpp
 #, fuzzy
 msgid "Angular Ortho"
-msgstr "Макс. Угловые погрешности:"
-
-#: scene/3d/physics_joint.cpp
-#, fuzzy
-msgid "Swing Span"
-msgstr "Сохранение сцены"
-
-#: scene/3d/physics_joint.cpp
-msgid "Twist Span"
-msgstr ""
+msgstr "Угловая прямость"
 
 #: scene/3d/physics_joint.cpp
 #, fuzzy
@@ -22357,15 +23056,11 @@ msgstr "Межстрочный интервал"
 
 #: scene/3d/physics_joint.cpp
 msgid "Equilibrium Point"
-msgstr ""
+msgstr "Точка Равновесия"
 
 #: scene/3d/physics_joint.cpp
 msgid "Angular Limit X"
-msgstr ""
-
-#: scene/3d/physics_joint.cpp
-msgid "ERP"
-msgstr ""
+msgstr "X Углового Предела"
 
 #: scene/3d/physics_joint.cpp
 #, fuzzy
@@ -22374,7 +23069,7 @@ msgstr "Угловая скорость"
 
 #: scene/3d/physics_joint.cpp
 msgid "Angular Spring X"
-msgstr ""
+msgstr "X Угловой Пружины"
 
 #: scene/3d/physics_joint.cpp
 #, fuzzy
@@ -22393,7 +23088,7 @@ msgstr "Межстрочный интервал"
 
 #: scene/3d/physics_joint.cpp
 msgid "Angular Limit Y"
-msgstr ""
+msgstr "Y Углового Предела"
 
 #: scene/3d/physics_joint.cpp
 #, fuzzy
@@ -22402,7 +23097,7 @@ msgstr "Угловая скорость"
 
 #: scene/3d/physics_joint.cpp
 msgid "Angular Spring Y"
-msgstr ""
+msgstr "Y Угловой Пружины"
 
 #: scene/3d/physics_joint.cpp
 #, fuzzy
@@ -22421,7 +23116,7 @@ msgstr "Межстрочный интервал"
 
 #: scene/3d/physics_joint.cpp
 msgid "Angular Limit Z"
-msgstr ""
+msgstr "Z Углового Предела"
 
 #: scene/3d/physics_joint.cpp
 #, fuzzy
@@ -22430,7 +23125,7 @@ msgstr "Угловая скорость"
 
 #: scene/3d/physics_joint.cpp
 msgid "Angular Spring Z"
-msgstr ""
+msgstr "Z Угловой Пружины"
 
 #: scene/3d/portal.cpp
 msgid "The RoomManager should not be a child or grandchild of a Portal."
@@ -22450,7 +23145,7 @@ msgstr "Портал активен"
 
 #: scene/3d/portal.cpp scene/resources/occluder_shape_polygon.cpp
 msgid "Two Way"
-msgstr ""
+msgstr "В обе Стороны"
 
 #: scene/3d/portal.cpp
 msgid "Linked Room"
@@ -22557,7 +23252,7 @@ msgstr ""
 
 #: scene/3d/room.cpp
 msgid "Bound"
-msgstr ""
+msgstr "Граница"
 
 #: scene/3d/room_group.cpp
 #, fuzzy
@@ -22592,8 +23287,9 @@ msgstr "В SceneTree должен быть только один RoomManager."
 msgid "Main"
 msgstr "Главная"
 
-#: scene/3d/room_manager.cpp scene/animation/animation_player.cpp
-#: scene/animation/animation_tree.cpp scene/animation/animation_tree_player.cpp
+#: scene/3d/room_manager.cpp scene/animation/animation_blend_tree.cpp
+#: scene/animation/animation_player.cpp scene/animation/animation_tree.cpp
+#: scene/animation/animation_tree_player.cpp
 #: servers/audio/effects/audio_effect_delay.cpp
 #, fuzzy
 msgid "Active"
@@ -22720,6 +23416,35 @@ msgstr ""
 "Ошибка при вычислении границ комнаты.\n"
 "Убедитесь, что все комнаты содержат геометрию или границы заданы вручную."
 
+#: scene/3d/skeleton.cpp scene/resources/skin.cpp
+#, fuzzy
+msgid "Pose"
+msgstr "Копировать позу"
+
+#: scene/3d/skeleton.cpp
+#, fuzzy
+msgid "Bound Children"
+msgstr "Дети"
+
+#: scene/3d/soft_body.cpp
+#, fuzzy
+msgid "Pinned Points"
+msgstr "Закреплено %s"
+
+#: scene/3d/soft_body.cpp
+#, fuzzy
+msgid "Attachments"
+msgstr "Гизмо"
+
+#: scene/3d/soft_body.cpp
+#, fuzzy
+msgid "Point Index"
+msgstr "Получить индекс"
+
+#: scene/3d/soft_body.cpp
+msgid "Spatial Attachment Path"
+msgstr ""
+
 #: scene/3d/soft_body.cpp
 #, fuzzy
 msgid "Physics Enabled"
@@ -22782,6 +23507,11 @@ msgstr ""
 "shapes)."
 
 #: scene/3d/spatial.cpp
+#, fuzzy
+msgid "Global Translation"
+msgstr "Глобальное преобразование"
+
+#: scene/3d/spatial.cpp
 msgid "Matrix"
 msgstr ""
 
@@ -22803,33 +23533,10 @@ msgstr ""
 msgid "Opacity"
 msgstr ""
 
-#: scene/3d/sprite_3d.cpp
-#, fuzzy
-msgid "Pixel Size"
-msgstr "Попиксельная привязка"
-
-#: scene/3d/sprite_3d.cpp
-msgid "Billboard"
-msgstr ""
-
 #: scene/3d/sprite_3d.cpp scene/resources/material.cpp
 #, fuzzy
 msgid "Transparent"
 msgstr "Транспонировать"
-
-#: scene/3d/sprite_3d.cpp
-#, fuzzy
-msgid "Shaded"
-msgstr "Шейдер"
-
-#: scene/3d/sprite_3d.cpp
-#, fuzzy
-msgid "Double Sided"
-msgstr "Двойной щелчок"
-
-#: scene/3d/sprite_3d.cpp
-msgid "Alpha Cut"
-msgstr ""
 
 #: scene/3d/sprite_3d.cpp
 msgid ""
@@ -22985,40 +23692,6 @@ msgstr ""
 "Этот WorldEnvironment игнорируется. Либо добавьте Camera (для 3D-сцен), либо "
 "установите в Environment ресурсе Background режим в Canvas (для 2D сцен)."
 
-#: scene/animation/animation_blend_space_1d.cpp
-#: scene/animation/animation_blend_space_2d.cpp
-#, fuzzy
-msgid "Min Space"
-msgstr "Главная сцена"
-
-#: scene/animation/animation_blend_space_1d.cpp
-#: scene/animation/animation_blend_space_2d.cpp
-msgid "Max Space"
-msgstr ""
-
-#: scene/animation/animation_blend_space_1d.cpp
-#, fuzzy
-msgid "Value Label"
-msgstr "Значение"
-
-#: scene/animation/animation_blend_space_2d.cpp
-#, fuzzy
-msgid "Auto Triangles"
-msgstr "Переключить автоматические треугольники"
-
-#: scene/animation/animation_blend_space_2d.cpp
-#, fuzzy
-msgid "Triangles"
-msgstr "Переключить автоматические треугольники"
-
-#: scene/animation/animation_blend_space_2d.cpp
-msgid "X Label"
-msgstr ""
-
-#: scene/animation/animation_blend_space_2d.cpp
-msgid "Y Label"
-msgstr ""
-
 #: scene/animation/animation_blend_tree.cpp
 msgid "On BlendTree node '%s', animation not found: '%s'"
 msgstr "На узле BlendTree «%s» анимация не найдена: «%s»"
@@ -23033,7 +23706,6 @@ msgid "Mix Mode"
 msgstr "Mix узел"
 
 #: scene/animation/animation_blend_tree.cpp
-#, fuzzy
 msgid "Fadein Time"
 msgstr "Время появления"
 
@@ -23052,12 +23724,29 @@ msgid "Autorestart"
 msgstr "Автоперезапуск"
 
 #: scene/animation/animation_blend_tree.cpp
-msgid "Autorestart Delay"
-msgstr "Задержка автоперезапуска"
+#, fuzzy
+msgid "Delay"
+msgstr "Задержка (мс)"
 
 #: scene/animation/animation_blend_tree.cpp
-msgid "Autorestart Random Delay"
+#, fuzzy
+msgid "Random Delay"
 msgstr "Случайная задержка автоперезапуска"
+
+#: scene/animation/animation_blend_tree.cpp
+#, fuzzy
+msgid "Add Amount"
+msgstr "Количество"
+
+#: scene/animation/animation_blend_tree.cpp
+#, fuzzy
+msgid "Blend Amount"
+msgstr "Количество солнц"
+
+#: scene/animation/animation_blend_tree.cpp
+#, fuzzy
+msgid "Seek Position"
+msgstr "Установить позицию входа кривой"
 
 #: scene/animation/animation_blend_tree.cpp
 #, fuzzy
@@ -23069,11 +23758,6 @@ msgstr "Добавить входной порт"
 #, fuzzy
 msgid "Xfade Time"
 msgstr "Время затухания"
-
-#: scene/animation/animation_blend_tree.cpp scene/resources/visual_shader.cpp
-#, fuzzy
-msgid "Graph Offset"
-msgstr "Смещение графа"
 
 #: scene/animation/animation_node_state_machine.cpp
 #, fuzzy
@@ -23143,10 +23827,6 @@ msgstr "Неверная анимация: «%s»."
 #: scene/animation/animation_tree.cpp
 msgid "Nothing connected to input '%s' of node '%s'."
 msgstr "Ничего не подключено к входу «%s» узла «%s»."
-
-#: scene/animation/animation_tree.cpp
-msgid "Filter Enabled"
-msgstr "Фильтр включён"
 
 #: scene/animation/animation_tree.cpp
 msgid "No root AnimationNode for the graph is set."
@@ -23509,10 +24189,6 @@ msgstr "Диалог"
 #: scene/gui/dialogs.cpp
 msgid "Hide On OK"
 msgstr ""
-
-#: scene/gui/dialogs.cpp scene/gui/label.cpp
-msgid "Autowrap"
-msgstr "Автоперенос"
 
 #: scene/gui/dialogs.cpp
 msgid "Alert!"
@@ -24060,6 +24736,11 @@ msgstr "Полоса сворачивания"
 
 #: scene/gui/text_edit.cpp
 #, fuzzy
+msgid "Drag And Drop Selection Enabled"
+msgstr "Только выделенное"
+
+#: scene/gui/text_edit.cpp
+#, fuzzy
 msgid "Hiding Enabled"
 msgstr "Включить"
 
@@ -24141,7 +24822,7 @@ msgstr ""
 msgid "Fill Mode"
 msgstr "Режим заполнения"
 
-#: scene/gui/texture_progress.cpp
+#: scene/gui/texture_progress.cpp scene/resources/material.cpp
 msgid "Tint"
 msgstr ""
 
@@ -24264,6 +24945,12 @@ msgid "Timeout"
 msgstr "Таймаут"
 
 #: scene/main/node.cpp
+msgid ""
+"Setting node name '%s' to be unique within scene for '%s', but it's already "
+"claimed by '%s'. This node is no longer set unique."
+msgstr ""
+
+#: scene/main/node.cpp
 #, fuzzy
 msgid "Name Num Separator"
 msgstr "Именованный разделитель"
@@ -24279,13 +24966,13 @@ msgstr "Описание"
 
 #: scene/main/node.cpp
 #, fuzzy
-msgid "Import Path"
-msgstr "Путь экспорта"
+msgid "Pause Mode"
+msgstr "Режим осмотра"
 
 #: scene/main/node.cpp
 #, fuzzy
-msgid "Pause Mode"
-msgstr "Режим осмотра"
+msgid "Physics Interpolation Mode"
+msgstr "физическая интерполяции"
 
 #: scene/main/node.cpp
 #, fuzzy
@@ -24315,11 +25002,6 @@ msgstr "Пользовательский мультиплеер"
 #, fuzzy
 msgid "Process Priority"
 msgstr "Включить приоритет"
-
-#: scene/main/node.cpp
-#, fuzzy
-msgid "Physics Interpolated"
-msgstr "Режим интерполяции"
 
 #: scene/main/scene_tree.cpp scene/main/timer.cpp
 #, fuzzy
@@ -24354,12 +25036,8 @@ msgstr ""
 msgid "Multiplayer Poll"
 msgstr "Умножить %s"
 
-#: scene/main/scene_tree.cpp scene/resources/multimesh.cpp
-#, fuzzy
-msgid "Physics Interpolation"
-msgstr "Режим интерполяции"
-
-#: scene/main/scene_tree.cpp scene/resources/shape_2d.cpp
+#: scene/main/scene_tree.cpp scene/resources/mesh_library.cpp
+#: scene/resources/shape_2d.cpp
 msgid "Shapes"
 msgstr ""
 
@@ -24464,24 +25142,20 @@ msgstr "Путь экспорта"
 
 #: scene/main/viewport.cpp
 msgid ""
-"This viewport is not set as render target. If you intend for it to display "
-"its contents directly to the screen, make it a child of a Control so it can "
-"obtain a size. Otherwise, make it a RenderTarget and assign its internal "
-"texture to some node for display."
-msgstr ""
-"Этот viewport не установлен в качестве цели рендеринга. Если вы собираетесь "
-"использовать его для отображения содержимого прямо на экран, то сделайте её "
-"потомком Control'а, чтобы он мог получить размер. В противном случае, "
-"сделайте его целью рендеринга и назначьте его внутреннюю текстуру какому-"
-"либо узлу для отображения."
-
-#: scene/main/viewport.cpp
-msgid ""
 "The Viewport size must be greater than or equal to 2 pixels on both "
 "dimensions to render anything."
 msgstr ""
 "Размер области просмотра должен быть больше или равен 2 пикселям в обоих "
 "измерениях, чтобы отобразить что-либо."
+
+#: scene/main/viewport.cpp
+msgid ""
+"This Viewport has HDR enabled, but its Usage is set to 2D or 2D No-"
+"Sampling.\n"
+"HDR is only supported in Viewports that have their Usage set to 3D or 3D No-"
+"Effects.\n"
+"HDR will be disabled for this Viewport."
+msgstr ""
 
 #: scene/main/viewport.cpp
 msgid "ARVR"
@@ -24636,6 +25310,16 @@ msgid "3D Physics"
 msgstr "Физика"
 
 #: scene/register_scene_types.cpp
+#, fuzzy
+msgid "2D Navigation"
+msgstr "Навигация"
+
+#: scene/register_scene_types.cpp
+#, fuzzy
+msgid "3D Navigation"
+msgstr "Навигация"
+
+#: scene/register_scene_types.cpp
 msgid "Use hiDPI"
 msgstr ""
 
@@ -24675,11 +25359,6 @@ msgid "Panel"
 msgstr ""
 
 #: scene/resources/default_theme/default_theme.cpp
-#: scene/resources/dynamic_font.cpp
-msgid "Font"
-msgstr "Шрифт"
-
-#: scene/resources/default_theme/default_theme.cpp
 #, fuzzy
 msgid "Font Color"
 msgstr "Цвет комментария"
@@ -24707,7 +25386,7 @@ msgstr "Отключить обрезку"
 #: scene/resources/default_theme/default_theme.cpp
 #, fuzzy
 msgid "H Separation"
-msgstr "Разделение:"
+msgstr "H Разделение"
 
 #: scene/resources/default_theme/default_theme.cpp
 #, fuzzy
@@ -24797,12 +25476,12 @@ msgstr "Принудительно раскрашивание белым"
 #: scene/resources/default_theme/default_theme.cpp
 #, fuzzy
 msgid "Shadow Offset X"
-msgstr "Отступ сетки по X:"
+msgstr "Отступ тени по X"
 
 #: scene/resources/default_theme/default_theme.cpp
 #, fuzzy
 msgid "Shadow Offset Y"
-msgstr "Отступ сетки по Y:"
+msgstr "Отступ тени по Y"
 
 #: scene/resources/default_theme/default_theme.cpp
 #, fuzzy
@@ -24860,14 +25539,12 @@ msgid "Space"
 msgstr "Главная сцена"
 
 #: scene/resources/default_theme/default_theme.cpp
-#, fuzzy
 msgid "Folded"
-msgstr "Папка:"
+msgstr "Свёрнутый"
 
 #: scene/resources/default_theme/default_theme.cpp
-#, fuzzy
 msgid "Fold"
-msgstr "Папка:"
+msgstr "Свернуть"
 
 #: scene/resources/default_theme/default_theme.cpp
 msgid "Font Color Readonly"
@@ -25012,11 +25689,6 @@ msgstr "Отключить обрезку"
 
 #: scene/resources/default_theme/default_theme.cpp
 #, fuzzy
-msgid "Separator"
-msgstr "Разделение:"
-
-#: scene/resources/default_theme/default_theme.cpp
-#, fuzzy
 msgid "Labeled Separator Left"
 msgstr "Именованный разделитель"
 
@@ -25027,18 +25699,22 @@ msgstr "Именованный разделитель"
 
 #: scene/resources/default_theme/default_theme.cpp
 #, fuzzy
+msgid "Font Separator"
+msgstr "Разделитель цветов шрифта"
+
+#: scene/resources/default_theme/default_theme.cpp
+#, fuzzy
 msgid "Font Color Accel"
 msgstr "Цвет кости 1"
 
 #: scene/resources/default_theme/default_theme.cpp
 #, fuzzy
 msgid "Font Color Separator"
-msgstr "Оператор цвета."
+msgstr "Разделитель цветов шрифта"
 
 #: scene/resources/default_theme/default_theme.cpp
-#, fuzzy
 msgid "V Separation"
-msgstr "Разделение:"
+msgstr "V Разделение"
 
 #: scene/resources/default_theme/default_theme.cpp
 #, fuzzy
@@ -25064,11 +25740,6 @@ msgstr "Комментарий"
 #, fuzzy
 msgid "Breakpoint"
 msgstr "Точки останова"
-
-#: scene/resources/default_theme/default_theme.cpp
-#, fuzzy
-msgid "Separation"
-msgstr "Разделение:"
 
 #: scene/resources/default_theme/default_theme.cpp
 #, fuzzy
@@ -25226,7 +25897,7 @@ msgstr "Задать отступ"
 #: scene/resources/default_theme/default_theme.cpp
 #, fuzzy
 msgid "Line Separation"
-msgstr "Разделение:"
+msgstr "Разделение линий"
 
 #: scene/resources/default_theme/default_theme.cpp
 #, fuzzy
@@ -25286,9 +25957,8 @@ msgid "Large"
 msgstr "Цель"
 
 #: scene/resources/default_theme/default_theme.cpp
-#, fuzzy
 msgid "Folder"
-msgstr "Папка:"
+msgstr "Папка"
 
 #: scene/resources/default_theme/default_theme.cpp
 #, fuzzy
@@ -25392,12 +26062,12 @@ msgstr "Основной шрифт"
 #: scene/resources/default_theme/default_theme.cpp
 #, fuzzy
 msgid "Table H Separation"
-msgstr "Разделение:"
+msgstr "Разделение таблицы H"
 
 #: scene/resources/default_theme/default_theme.cpp
 #, fuzzy
 msgid "Table V Separation"
-msgstr "Разделение:"
+msgstr "Разделение таблицы V"
 
 #: scene/resources/default_theme/default_theme.cpp
 #, fuzzy
@@ -25541,7 +26211,6 @@ msgid "Sky Rotation"
 msgstr "Вращение неба"
 
 #: scene/resources/environment.cpp
-#, fuzzy
 msgid "Sky Rotation Degrees"
 msgstr "Градусы поворота неба"
 
@@ -25565,7 +26234,7 @@ msgstr "Условие"
 
 #: scene/resources/environment.cpp
 msgid "Fog"
-msgstr ""
+msgstr "Туман"
 
 #: scene/resources/environment.cpp
 msgid "Sun Color"
@@ -25807,23 +26476,18 @@ msgid "Color Correction"
 msgstr "Цветовая коррекция"
 
 #: scene/resources/font.cpp
-msgid "Chars"
-msgstr "Символы"
-
-#: scene/resources/font.cpp
-#, fuzzy
-msgid "Kernings"
-msgstr "Предупреждения"
-
-#: scene/resources/font.cpp
-#, fuzzy
 msgid "Ascent"
-msgstr "Ascent"
+msgstr ""
 
 #: scene/resources/font.cpp
 #, fuzzy
 msgid "Distance Field"
 msgstr "Режим без отвлечения"
+
+#: scene/resources/gradient.cpp
+#, fuzzy
+msgid "Raw Data"
+msgstr "Данные карты"
 
 #: scene/resources/gradient.cpp
 #, fuzzy
@@ -25847,11 +26511,6 @@ msgid "D"
 msgstr ""
 
 #: scene/resources/material.cpp
-#, fuzzy
-msgid "Render Priority"
-msgstr "Приоритет рендеринга"
-
-#: scene/resources/material.cpp
 msgid "Next Pass"
 msgstr "Следующий проход"
 
@@ -25870,20 +26529,12 @@ msgid "Vertex Lighting"
 msgstr "Прямое освещение"
 
 #: scene/resources/material.cpp
-msgid "No Depth Test"
-msgstr ""
-
-#: scene/resources/material.cpp
 msgid "Use Point Size"
 msgstr "Использовать размер точки"
 
 #: scene/resources/material.cpp
 msgid "World Triplanar"
 msgstr ""
-
-#: scene/resources/material.cpp
-msgid "Fixed Size"
-msgstr "Фиксированный размер"
 
 #: scene/resources/material.cpp
 msgid "Albedo Tex Force sRGB"
@@ -25902,6 +26553,10 @@ msgstr "Отступ вправо"
 #, fuzzy
 msgid "Ensure Correct Normals"
 msgstr "Преобразование нормалей"
+
+#: scene/resources/material.cpp
+msgid "Albedo Tex MSDF"
+msgstr ""
 
 #: scene/resources/material.cpp
 #, fuzzy
@@ -25967,10 +26622,6 @@ msgid "Use Alpha Scissor"
 msgstr ""
 
 #: scene/resources/material.cpp
-msgid "Alpha Scissor Threshold"
-msgstr ""
-
-#: scene/resources/material.cpp
 #, fuzzy
 msgid "Particles Anim"
 msgstr "Частицы"
@@ -25994,26 +26645,9 @@ msgid "Metallic"
 msgstr ""
 
 #: scene/resources/material.cpp
-msgid "Metallic Specular"
-msgstr ""
-
-#: scene/resources/material.cpp
 #, fuzzy
-msgid "Metallic Texture"
-msgstr "Обычная текстура"
-
-#: scene/resources/material.cpp
-msgid "Metallic Texture Channel"
-msgstr ""
-
-#: scene/resources/material.cpp
-#, fuzzy
-msgid "Roughness Texture"
-msgstr "Удалить текстуру"
-
-#: scene/resources/material.cpp
-msgid "Roughness Texture Channel"
-msgstr ""
+msgid "Texture Channel"
+msgstr "Область текстуры"
 
 #: scene/resources/material.cpp
 #, fuzzy
@@ -26021,23 +26655,8 @@ msgid "Emission"
 msgstr "Маска излучения"
 
 #: scene/resources/material.cpp
-#, fuzzy
-msgid "Emission Energy"
-msgstr "Цвета излучения"
-
-#: scene/resources/material.cpp
-#, fuzzy
-msgid "Emission Operator"
-msgstr "Цвета излучения"
-
-#: scene/resources/material.cpp
-#, fuzzy
-msgid "Emission On UV2"
-msgstr "Маска излучения"
-
-#: scene/resources/material.cpp
-msgid "Emission Texture"
-msgstr "Источник излучения"
+msgid "On UV2"
+msgstr ""
 
 #: scene/resources/material.cpp
 msgid "NormalMap"
@@ -26049,35 +26668,19 @@ msgstr ""
 
 #: scene/resources/material.cpp
 #, fuzzy
-msgid "Rim Tint"
-msgstr "Оттенок обода"
-
-#: scene/resources/material.cpp
-#, fuzzy
-msgid "Rim Texture"
-msgstr "Удалить текстуру"
-
-#: scene/resources/material.cpp
-#, fuzzy
 msgid "Clearcoat"
 msgstr "Очистить"
 
 #: scene/resources/material.cpp
-#, fuzzy
-msgid "Clearcoat Gloss"
-msgstr "Очистить позу"
-
-#: scene/resources/material.cpp
-#, fuzzy
-msgid "Clearcoat Texture"
-msgstr "Тема редактора"
-
-#: scene/resources/material.cpp
-msgid "Anisotropy"
+msgid "Gloss"
 msgstr ""
 
 #: scene/resources/material.cpp
-msgid "Anisotropy Flowmap"
+msgid "Anisotropy"
+msgstr "Анизотропия"
+
+#: scene/resources/material.cpp
+msgid "Flowmap"
 msgstr ""
 
 #: scene/resources/material.cpp
@@ -26086,27 +26689,16 @@ msgid "Ambient Occlusion"
 msgstr "Перекрытие"
 
 #: scene/resources/material.cpp
-msgid "On UV2"
-msgstr ""
-
-#: scene/resources/material.cpp
-#, fuzzy
-msgid "Texture Channel"
-msgstr "Область текстуры"
-
-#: scene/resources/material.cpp
 msgid "Deep Parallax"
 msgstr ""
 
 #: scene/resources/material.cpp
-#, fuzzy
 msgid "Min Layers"
-msgstr "Слой"
+msgstr "Минимальное количество слоёв"
 
 #: scene/resources/material.cpp
-#, fuzzy
 msgid "Max Layers"
-msgstr "Слой"
+msgstr "Максимальное количество слоёв"
 
 #: scene/resources/material.cpp
 msgid "Flip Tangent"
@@ -26122,13 +26714,7 @@ msgid "Subsurf Scatter"
 msgstr ""
 
 #: scene/resources/material.cpp
-#, fuzzy
 msgid "Transmission"
-msgstr "Пропускание света"
-
-#: scene/resources/material.cpp
-#, fuzzy
-msgid "Transmission Texture"
 msgstr "Пропускание света"
 
 #: scene/resources/material.cpp
@@ -26136,7 +26722,7 @@ msgstr "Пропускание света"
 msgid "Refraction"
 msgstr "Преломление"
 
-#: scene/resources/material.cpp scene/resources/navigation_mesh.cpp
+#: scene/resources/material.cpp
 msgid "Detail"
 msgstr "Деталь"
 
@@ -26182,14 +26768,19 @@ msgstr "Режим осмотра"
 msgid "Lightmap Size Hint"
 msgstr "Запекание LightMap"
 
-#: scene/resources/mesh.cpp
-#, fuzzy
-msgid "Blend Shape Mode"
-msgstr "Blend2 узел"
-
 #: scene/resources/mesh.cpp scene/resources/primitive_meshes.cpp
 msgid "Custom AABB"
 msgstr ""
+
+#: scene/resources/mesh_library.cpp
+#, fuzzy
+msgid "Mesh Transform"
+msgstr "Преобразование"
+
+#: scene/resources/mesh_library.cpp
+#, fuzzy
+msgid "NavMesh Transform"
+msgstr "Очистить преобразование"
 
 #: scene/resources/multimesh.cpp
 #, fuzzy
@@ -26214,29 +26805,14 @@ msgstr "Добавить экземпляр"
 msgid "Visible Instance Count"
 msgstr ""
 
-#: scene/resources/multimesh.cpp
+#: scene/resources/navigation_mesh.cpp
 #, fuzzy
-msgid "Transform Array"
-msgstr "Массив преобразования"
-
-#: scene/resources/multimesh.cpp
-#, fuzzy
-msgid "Transform 2D Array"
-msgstr "Преобразовать UV карту"
-
-#: scene/resources/multimesh.cpp
-#, fuzzy
-msgid "Color Array"
-msgstr "Создать массив"
-
-#: scene/resources/multimesh.cpp
-#, fuzzy
-msgid "Custom Data Array"
-msgstr "Создать массив"
+msgid "Sampling"
+msgstr "Масштаб:"
 
 #: scene/resources/navigation_mesh.cpp
 #, fuzzy
-msgid "Sample Partition Type"
+msgid "Partition Type"
 msgstr "Задать базовый тип вариации"
 
 #: scene/resources/navigation_mesh.cpp
@@ -26253,8 +26829,14 @@ msgid "Source Group Name"
 msgstr "Название группы-источника"
 
 #: scene/resources/navigation_mesh.cpp
-msgid "Agent"
-msgstr ""
+#, fuzzy
+msgid "Cells"
+msgstr "Ячейка"
+
+#: scene/resources/navigation_mesh.cpp
+#, fuzzy
+msgid "Agents"
+msgstr "Сегменты"
 
 #: scene/resources/navigation_mesh.cpp
 msgid "Max Climb"
@@ -26266,12 +26848,18 @@ msgstr ""
 
 #: scene/resources/navigation_mesh.cpp
 #, fuzzy
+msgid "Regions"
+msgstr "Регион"
+
+#: scene/resources/navigation_mesh.cpp
+#, fuzzy
 msgid "Merge Size"
 msgstr "Слияние из Сцены"
 
 #: scene/resources/navigation_mesh.cpp
-msgid "Edge"
-msgstr ""
+#, fuzzy
+msgid "Edges"
+msgstr "Край"
 
 #: scene/resources/navigation_mesh.cpp
 #, fuzzy
@@ -26281,6 +26869,11 @@ msgstr "Ошибка"
 #: scene/resources/navigation_mesh.cpp
 msgid "Verts Per Poly"
 msgstr ""
+
+#: scene/resources/navigation_mesh.cpp
+#, fuzzy
+msgid "Details"
+msgstr "Деталь"
 
 #: scene/resources/navigation_mesh.cpp
 #, fuzzy
@@ -26301,12 +26894,22 @@ msgid "Ledge Spans"
 msgstr ""
 
 #: scene/resources/navigation_mesh.cpp
-msgid "Filter Walkable Low Height Spans"
+msgid "Walkable Low Height Spans"
 msgstr ""
+
+#: scene/resources/navigation_mesh.cpp
+#, fuzzy
+msgid "Baking AABB"
+msgstr "Генерация AABB"
+
+#: scene/resources/navigation_mesh.cpp
+#, fuzzy
+msgid "Baking AABB Offset"
+msgstr "Базовое смещение"
 
 #: scene/resources/occluder_shape.cpp
 msgid "Spheres"
-msgstr ""
+msgstr "Сферы"
 
 #: scene/resources/occluder_shape.cpp
 msgid "OccluderShapeSphere Set Spheres"
@@ -26324,11 +26927,11 @@ msgstr "Передвинуть точки"
 
 #: scene/resources/packed_scene.cpp
 msgid "Bundled"
-msgstr ""
+msgstr "Вложенный"
 
 #: scene/resources/particles_material.cpp
 msgid "Trail"
-msgstr ""
+msgstr "След"
 
 #: scene/resources/particles_material.cpp
 #, fuzzy
@@ -26351,24 +26954,20 @@ msgid "Point Texture"
 msgstr "Текстура точки"
 
 #: scene/resources/particles_material.cpp
-#, fuzzy
 msgid "Normal Texture"
-msgstr "Обычная текстура"
+msgstr "Нормаль Текстура"
 
 #: scene/resources/particles_material.cpp
-#, fuzzy
 msgid "Color Texture"
-msgstr "Тема редактора"
+msgstr "Текстура Цвета"
 
 #: scene/resources/particles_material.cpp
-#, fuzzy
 msgid "Point Count"
-msgstr "Добавить входной порт"
+msgstr "Количество Точек"
 
 #: scene/resources/particles_material.cpp
-#, fuzzy
 msgid "Scale Random"
-msgstr "Коэффициент масштабирования:"
+msgstr "Случайный Масштаб"
 
 #: scene/resources/particles_material.cpp
 #, fuzzy
@@ -26427,22 +27026,37 @@ msgstr "Справа вверху"
 msgid "Is Hemisphere"
 msgstr ""
 
+#: scene/resources/primitive_meshes.cpp
+#, fuzzy
+msgid "Curve Step"
+msgstr "Кривая"
+
 #: scene/resources/ray_shape.cpp scene/resources/segment_shape_2d.cpp
 msgid "Slips On Slope"
 msgstr ""
 
 #: scene/resources/segment_shape_2d.cpp
 msgid "A"
-msgstr ""
-
-#: scene/resources/shader.cpp
-#, fuzzy
-msgid "Custom Defines"
-msgstr "Запустить произвольную сцену"
+msgstr "А"
 
 #: scene/resources/shape_2d.cpp
 msgid "Custom Solver Bias"
 msgstr ""
+
+#: scene/resources/skin.cpp
+#, fuzzy
+msgid "Bind Count"
+msgstr "Добавить входной порт"
+
+#: scene/resources/skin.cpp
+#, fuzzy
+msgid "Bind"
+msgstr "Привязка"
+
+#: scene/resources/skin.cpp
+#, fuzzy
+msgid "Bone"
+msgstr "Кости"
 
 #: scene/resources/sky.cpp
 #, fuzzy
@@ -26500,6 +27114,10 @@ msgid "Expand Margin"
 msgstr "Развернуть все"
 
 #: scene/resources/style_box.cpp
+msgid "Skew"
+msgstr ""
+
+#: scene/resources/style_box.cpp
 #, fuzzy
 msgid "Corner Radius"
 msgstr "Изменение внутреннего радиуса полукруга"
@@ -26510,11 +27128,7 @@ msgstr ""
 
 #: scene/resources/style_box.cpp
 msgid "Anti Aliasing"
-msgstr ""
-
-#: scene/resources/style_box.cpp
-msgid "Anti Aliasing Size"
-msgstr ""
+msgstr "Сглаживание"
 
 #: scene/resources/style_box.cpp
 msgid "Grow Begin"
@@ -26539,6 +27153,21 @@ msgstr "Размер изображения"
 
 #: scene/resources/texture.cpp
 #, fuzzy
+msgid "Side"
+msgstr "Стороны"
+
+#: scene/resources/texture.cpp
+#, fuzzy
+msgid "Front"
+msgstr "Вид спереди"
+
+#: scene/resources/texture.cpp
+#, fuzzy
+msgid "Back"
+msgstr "Назад"
+
+#: scene/resources/texture.cpp
+#, fuzzy
 msgid "Storage Mode"
 msgstr "Режим масштабирования"
 
@@ -26549,13 +27178,13 @@ msgstr "Захват"
 
 #: scene/resources/texture.cpp
 #, fuzzy
-msgid "Fill From"
+msgid "From"
 msgstr "Заполнить от"
 
 #: scene/resources/texture.cpp
 #, fuzzy
-msgid "Fill To"
-msgstr "Заполнить до"
+msgid "To"
+msgstr "Верх"
 
 #: scene/resources/texture.cpp
 #, fuzzy
@@ -26587,8 +27216,29 @@ msgid "Output Port For Preview"
 msgstr ""
 
 #: scene/resources/visual_shader.cpp
-msgid "Initialized"
-msgstr "Инициализировано"
+#, fuzzy
+msgid "Depth Draw"
+msgstr "Режим интерполяции"
+
+#: scene/resources/visual_shader.cpp
+#, fuzzy
+msgid "Cull"
+msgstr "Режим измерения"
+
+#: scene/resources/visual_shader.cpp
+#, fuzzy
+msgid "Diffuse"
+msgstr "Режим осмотра"
+
+#: scene/resources/visual_shader.cpp
+#, fuzzy
+msgid "Async"
+msgstr "Режим осмотра"
+
+#: scene/resources/visual_shader.cpp
+#, fuzzy
+msgid "Modes"
+msgstr "Режим"
 
 #: scene/resources/visual_shader.cpp
 msgid "Input Name"
@@ -26650,6 +27300,11 @@ msgid "Scenario"
 msgstr "Сцена"
 
 #: scene/resources/world.cpp scene/resources/world_2d.cpp
+#, fuzzy
+msgid "Navigation Map"
+msgstr "Навигация"
+
+#: scene/resources/world.cpp scene/resources/world_2d.cpp
 msgid "Direct Space State"
 msgstr ""
 
@@ -26666,6 +27321,26 @@ msgstr "Левый линейный"
 msgid "Default Angular Damp"
 msgstr ""
 
+#: scene/resources/world.cpp
+#, fuzzy
+msgid "Default Map Up"
+msgstr "Шаг по умолчанию плавающих чисел"
+
+#: scene/resources/world.cpp scene/resources/world_2d.cpp
+#, fuzzy
+msgid "Default Cell Size"
+msgstr "Размер ячейки"
+
+#: scene/resources/world.cpp scene/resources/world_2d.cpp
+#, fuzzy
+msgid "Default Cell Height"
+msgstr "Тестируемые"
+
+#: scene/resources/world.cpp scene/resources/world_2d.cpp
+#, fuzzy
+msgid "Default Edge Connection Margin"
+msgstr "Пограничное соединение"
+
 #: scene/resources/world_2d.cpp
 msgid "Canvas"
 msgstr "Холст"
@@ -26680,7 +27355,7 @@ msgstr "Инициализирован"
 
 #: servers/arvr/arvr_interface.cpp
 msgid "AR"
-msgstr ""
+msgstr "AR"
 
 #: servers/arvr/arvr_interface.cpp
 msgid "Is Anchor Detection Enabled"
@@ -26832,11 +27507,11 @@ msgstr ""
 
 #: servers/audio/effects/audio_effect_phaser.cpp
 msgid "Range Min Hz"
-msgstr ""
+msgstr "Минимальный Диапазон Hz"
 
 #: servers/audio/effects/audio_effect_phaser.cpp
 msgid "Range Max Hz"
-msgstr ""
+msgstr "Максимальный Диапазон Hz"
 
 #: servers/audio/effects/audio_effect_pitch_shift.cpp
 msgid "Oversampling"
@@ -26892,7 +27567,7 @@ msgstr "Выходная задержка"
 
 #: servers/audio_server.cpp
 msgid "Channel Disable Threshold dB"
-msgstr ""
+msgstr "Порог Отключения Канала, дБ"
 
 #: servers/audio_server.cpp
 #, fuzzy
@@ -26901,7 +27576,7 @@ msgstr "Изменить время смешивания"
 
 #: servers/audio_server.cpp
 msgid "Video Delay Compensation (ms)"
-msgstr ""
+msgstr "Компенсация Задержки Видео (мс)"
 
 #: servers/audio_server.cpp
 #, fuzzy
@@ -27013,6 +27688,11 @@ msgstr "Режим столкновения"
 msgid "Collision Unsafe Fraction"
 msgstr "Режим столкновения"
 
+#: servers/physics_2d_server.cpp servers/physics_server.cpp
+#, fuzzy
+msgid "Physics Engine"
+msgstr "Кадр физики %"
+
 #: servers/physics_server.cpp
 msgid "Center Of Mass"
 msgstr "Центр масс"
@@ -27026,16 +27706,18 @@ msgid "Varying may not be assigned in the '%s' function."
 msgstr "Varying не может быть задано в функции «%s»."
 
 #: servers/visual/shader_language.cpp
+#, fuzzy
 msgid ""
-"Varyings which assigned in 'vertex' function may not be reassigned in "
+"Varyings which were assigned in 'vertex' function may not be reassigned in "
 "'fragment' or 'light'."
 msgstr ""
 "Вариации, назначенные в функции 'vertex', не могут быть переназначены в "
 "'fragment' или 'light'."
 
 #: servers/visual/shader_language.cpp
+#, fuzzy
 msgid ""
-"Varyings which assigned in 'fragment' function may not be reassigned in "
+"Varyings which were assigned in 'fragment' function may not be reassigned in "
 "'vertex' or 'light'."
 msgstr ""
 "Вариации, назначенные в функции 'fragment', не могут быть переназначены в "
@@ -27078,14 +27760,12 @@ msgid "Import S3TC"
 msgstr "Импорт"
 
 #: servers/visual_server.cpp
-#, fuzzy
 msgid "Import ETC"
-msgstr "Импорт"
+msgstr "Импортировать ETC"
 
 #: servers/visual_server.cpp
-#, fuzzy
 msgid "Import ETC2"
-msgstr "Импорт"
+msgstr "Импортировать ETC2"
 
 #: servers/visual_server.cpp
 #, fuzzy
@@ -27094,7 +27774,7 @@ msgstr "Импортировать тему"
 
 #: servers/visual_server.cpp
 msgid "Lossless Compression"
-msgstr ""
+msgstr "Сжатие без потерь"
 
 #: servers/visual_server.cpp
 #, fuzzy
@@ -27103,7 +27783,7 @@ msgstr "Принудительно отправить"
 
 #: servers/visual_server.cpp
 msgid "WebP Compression Level"
-msgstr ""
+msgstr "Уровень сжатия WebP"
 
 #: servers/visual_server.cpp
 msgid "Time Rollover Secs"
@@ -27145,7 +27825,7 @@ msgstr "Центрировать выбранное"
 
 #: servers/visual_server.cpp
 msgid "High Quality GGX"
-msgstr ""
+msgstr "Высокое Качество GGX"
 
 #: servers/visual_server.cpp
 msgid "Irradiance Max Size"
@@ -27170,7 +27850,7 @@ msgstr ""
 
 #: servers/visual_server.cpp
 msgid "Mesh Storage"
-msgstr ""
+msgstr "Хранилище Полисеток"
 
 #: servers/visual_server.cpp
 #, fuzzy
@@ -27191,7 +27871,7 @@ msgstr ""
 
 #: servers/visual_server.cpp
 msgid "Anisotropic Filter Level"
-msgstr ""
+msgstr "Уровень анизотропной фильтрации"
 
 #: servers/visual_server.cpp
 msgid "Use Nearest Mipmap Filter"
@@ -27220,7 +27900,7 @@ msgstr "Режим интерполяции"
 
 #: servers/visual_server.cpp
 msgid "OpenGL"
-msgstr ""
+msgstr "ОткрытыйGL"
 
 #: servers/visual_server.cpp
 msgid "Batching Send Null"
@@ -27237,12 +27917,11 @@ msgstr ""
 
 #: servers/visual_server.cpp
 msgid "Legacy Stream"
-msgstr ""
+msgstr "Устаревший Поток"
 
 #: servers/visual_server.cpp
-#, fuzzy
 msgid "Batching"
-msgstr "Пакетирование"
+msgstr "Сборка пакета"
 
 #: servers/visual_server.cpp
 msgid "Use Batching"
@@ -27286,13 +27965,12 @@ msgid "Flash Batching"
 msgstr ""
 
 #: servers/visual_server.cpp
-#, fuzzy
 msgid "Diagnose Frame"
-msgstr "Вставить кадр"
+msgstr "Диагностика кадров"
 
 #: servers/visual_server.cpp
 msgid "GLES2"
-msgstr ""
+msgstr "GLES2"
 
 #: servers/visual_server.cpp
 msgid "Compatibility"
@@ -27300,12 +27978,12 @@ msgstr "Совместимость"
 
 #: servers/visual_server.cpp
 msgid "Disable Half Float"
-msgstr ""
+msgstr "Выключить вещественные числа половинной точности"
 
 #: servers/visual_server.cpp
 #, fuzzy
 msgid "Enable High Float"
-msgstr "Включить приоритет"
+msgstr "Включить вещественные числа повышенной точности"
 
 #: servers/visual_server.cpp
 msgid "Precision"
@@ -27320,13 +27998,12 @@ msgid "UV Contract Amount"
 msgstr ""
 
 #: servers/visual_server.cpp
-#, fuzzy
 msgid "Use Simple PVS"
-msgstr "Использовать привязку масштабирования"
+msgstr "Использовать простой PVS"
 
 #: servers/visual_server.cpp
 msgid "PVS Logging"
-msgstr ""
+msgstr "Вести запись PVS"
 
 #: servers/visual_server.cpp
 msgid "Use Signals"
@@ -27349,27 +28026,25 @@ msgstr "Просмотр Occlusion Culling"
 
 #: servers/visual_server.cpp
 msgid "Max Active Spheres"
-msgstr ""
+msgstr "Максимальное количество активных сфер"
 
 #: servers/visual_server.cpp
-#, fuzzy
 msgid "Max Active Polygons"
-msgstr "Передвинуть полигон"
+msgstr "Максимальное количество активных полигонов"
 
 #: servers/visual_server.cpp
-#, fuzzy
 msgid "Shader Compilation Mode"
-msgstr "Режим интерполяции"
+msgstr "Режим компиляции шейдеров"
 
 #: servers/visual_server.cpp
 msgid "Max Simultaneous Compiles"
-msgstr ""
-
-#: servers/visual_server.cpp
-msgid "Log Active Async Compiles Count"
-msgstr ""
+msgstr "Максимальное количество одновременных компиляций"
 
 #: servers/visual_server.cpp
 #, fuzzy
+msgid "Log Active Async Compiles Count"
+msgstr "Регистрировать количество активных асинхронных компиляций"
+
+#: servers/visual_server.cpp
 msgid "Shader Cache Size (MB)"
-msgstr "Изменить размер камеры"
+msgstr "Размер Кэша Шейдера (МБ)"

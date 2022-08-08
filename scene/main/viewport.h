@@ -295,6 +295,7 @@ private:
 		// info used when this is a window
 
 		bool key_event_accepted;
+		bool mouse_in_window;
 		Control *mouse_focus;
 		Control *last_mouse_focus;
 		Control *mouse_click_grabber;
@@ -527,7 +528,7 @@ public:
 	Vector2 get_camera_coords(const Vector2 &p_viewport_coords) const;
 	Vector2 get_camera_rect_size() const;
 
-	void set_use_own_world(bool p_world);
+	void set_use_own_world(bool p_use_own_world);
 	bool is_using_own_world() const;
 
 	void input(const Ref<InputEvent> &p_event);
@@ -598,4 +599,4 @@ VARIANT_ENUM_CAST(Viewport::DebugDraw);
 VARIANT_ENUM_CAST(Viewport::ClearMode);
 VARIANT_ENUM_CAST(Viewport::RenderInfo);
 
-#endif
+#endif // VIEWPORT_H

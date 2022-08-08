@@ -27,11 +27,11 @@ jobs:
             build-mono: true
             artifact: true
 
-          - name: Editor and sanitizers (target=debug, tools=yes, use_asan=yes, use_ubsan=yes)
+          - name: Editor and sanitizers (target=debug, tools=yes, use_asan=yes, use_ubsan=yes, linker=gold)
             cache-name: linux-editor-sanitizers
             target: debug
             tools: true
-            sconsflags: use_asan=yes use_ubsan=yes
+            sconsflags: use_asan=yes use_ubsan=yes linker=gold
             test: true
             bin: "./bin/godot.x11.tools.64s"
             build-mono: false
@@ -59,7 +59,8 @@ jobs:
           # The actual dependencies
           sudo apt-get install build-essential pkg-config libx11-dev libxcursor-dev \
               libxinerama-dev libgl1-mesa-dev libglu-dev libasound2-dev libpulse-dev \
-              libdbus-1-dev libudev-dev libxi-dev libxrandr-dev yasm xvfb wget unzip
+              libdbus-1-dev libudev-dev libxi-dev libxrandr-dev yasm xvfb wget unzip \
+              libspeechd-dev speech-dispatcher
 
       - name: Setup Godot build cache
         uses: ./.github/actions/godot-cache

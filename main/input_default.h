@@ -239,7 +239,7 @@ public:
 	virtual Vector3 get_gyroscope() const;
 
 	virtual Point2 get_mouse_position() const;
-	virtual Point2 get_last_mouse_speed() const;
+	virtual Point2 get_last_mouse_speed();
 	virtual int get_mouse_button_mask() const;
 
 	virtual void warp_mouse_position(const Vector2 &p_to);
@@ -301,6 +301,7 @@ public:
 	virtual void flush_buffered_events();
 	virtual bool is_using_input_buffering();
 	virtual void set_use_input_buffering(bool p_enable);
+	virtual bool is_using_accumulated_input();
 	virtual void set_use_accumulated_input(bool p_enable);
 
 	virtual void release_pressed_events();

@@ -869,7 +869,49 @@ void VisualScriptEditor::_update_graph(int p_only_id) {
 							EditorResourcePreview::get_singleton()->queue_edited_resource_preview(res, this, "_button_resource_previewed", arr);
 
 						} else if (pi.type == Variant::INT && pi.hint == PROPERTY_HINT_ENUM) {
-							button->set_text(pi.hint_string.get_slice(",", value));
+							bool found = false;
+							Vector<String> options = pi.hint_string.split(",");
+							int64_t current_val = 0;
+							for (int j = 0; j < options.size(); j++) {
+								const Vector<String> text_split = options[j].split(":");
+								if (text_split.size() != 1) {
+									current_val = text_split[1].to_int64();
+								}
+								if (value.operator int() == current_val) {
+									button->set_text(text_split[0]);
+									found = true;
+									break;
+								}
+								current_val += 1;
+							}
+							if (!found) {
+								button->set_text(value);
+							}
+						} else if (pi.type == Variant::INT && pi.hint == PROPERTY_HINT_FLAGS) {
+							Vector<String> value_texts;
+							const Vector<String> options = pi.hint_string.split(",");
+							uint32_t v = value;
+							for (int j = 0; j < options.size(); j++) {
+								uint32_t current_val;
+								Vector<String> text_split = options[j].split(":");
+								if (text_split.size() != -1) {
+									current_val = text_split[1].to_int();
+								} else {
+									current_val = 1 << i;
+								}
+								if ((v & current_val) == current_val) {
+									value_texts.push_back(text_split[0]);
+								}
+							}
+							if (value_texts.size() != 0) {
+								String value_text = value_texts[0];
+								for (int j = 1; j < value_texts.size(); j++) {
+									value_text += " | " + value_texts[j];
+								}
+								button->set_text(value_text);
+							} else {
+								button->set_text(value);
+							}
 						} else {
 							button->set_text(value);
 						}
@@ -1831,17 +1873,23 @@ void VisualScriptEditor::_on_nodes_paste() {
 	}
 }
 
-void VisualScriptEditor::_on_nodes_delete() {
+void VisualScriptEditor::_on_nodes_delete(const Array &p_nodes) {
 	// delete all the selected nodes
 
 	List<int> to_erase;
 
-	for (int i = 0; i < graph->get_child_count(); i++) {
-		GraphNode *gn = Object::cast_to<GraphNode>(graph->get_child(i));
-		if (gn) {
-			if (gn->is_selected() && gn->is_close_button_visible()) {
-				to_erase.push_back(gn->get_name().operator String().to_int());
+	if (p_nodes.empty()) {
+		for (int i = 0; i < graph->get_child_count(); i++) {
+			GraphNode *gn = Object::cast_to<GraphNode>(graph->get_child(i));
+			if (gn) {
+				if (gn->is_selected() && gn->is_close_button_visible()) {
+					to_erase.push_back(gn->get_name().operator String().to_int());
+				}
 			}
+		}
+	} else {
+		for (int i = 0; i < graph->get_child_count(); i++) {
+			to_erase.push_back(p_nodes[i].operator String().to_int());
 		}
 	}
 
@@ -3191,7 +3239,7 @@ void VisualScriptEditor::_graph_connected(const String &p_from, int p_from_slot,
 			undo_redo->add_do_method(script.ptr(), "data_connect", func, p_from.to_int(), from_port, p_to.to_int(), to_port);
 			undo_redo->add_undo_method(script.ptr(), "data_disconnect", func, p_from.to_int(), from_port, p_to.to_int(), to_port);
 		} else {
-			// this is noice
+			// this is nice
 			undo_redo->add_do_method(script.ptr(), "data_connect", func, p_from.to_int(), from_port, conv_node, 0);
 			undo_redo->add_do_method(script.ptr(), "data_connect", func, conv_node, 0, p_to.to_int(), to_port);
 			// I don't think this is needed but gonna leave it here for now... until I need to finalise it all
@@ -4253,7 +4301,7 @@ void VisualScriptEditor::_comment_node_resized(const Vector2 &p_new_size, int p_
 void VisualScriptEditor::_menu_option(int p_what) {
 	switch (p_what) {
 		case EDIT_DELETE_NODES: {
-			_on_nodes_delete();
+			_on_nodes_delete(Array());
 		} break;
 		case EDIT_TOGGLE_BREAKPOINT: {
 			List<String> reselect;
@@ -4288,7 +4336,7 @@ void VisualScriptEditor::_menu_option(int p_what) {
 		} break;
 		case EDIT_CUT_NODES: {
 			_on_nodes_copy();
-			_on_nodes_delete();
+			_on_nodes_delete(Array());
 		} break;
 		case EDIT_PASTE_NODES: {
 			_on_nodes_paste();

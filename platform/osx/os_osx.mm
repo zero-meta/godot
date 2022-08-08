@@ -60,6 +60,8 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#include "tts_osx.h"
+
 #if MAC_OS_X_VERSION_MAX_ALLOWED < 101200
 #define NSEventMaskAny NSAnyEventMask
 #define NSEventTypeKeyDown NSKeyDown
@@ -471,6 +473,20 @@ static NSCursor *cursorFromSelector(SEL selector, SEL fallback = nil) {
 
 @implementation GodotContentView
 
+- (void)drawRect:(NSRect)dirtyRect {
+	if (OS_OSX::singleton->get_main_loop() && OS_OSX::singleton->is_resizing) {
+		Main::force_redraw();
+		if (!Main::is_iterating()) { // Avoid cyclic loop.
+			Main::iteration();
+		}
+	}
+}
+
+- (void)setFrameSize:(NSSize)newSize {
+	[super setFrameSize:newSize];
+	[self setNeedsDisplay:YES]; // Force "drawRect" call.
+}
+
 + (void)initialize {
 	if (self == [GodotContentView class]) {
 		// nothing left to do here at the moment..
@@ -795,9 +811,15 @@ static void _mouseDownEvent(NSEvent *event, int index, int mask, bool pressed) {
 	const Vector2 pos = get_mouse_pos(mpos);
 	mm->set_position(pos);
 	mm->set_pressure([event pressure]);
-	if ([event subtype] == NSEventSubtypeTabletPoint) {
+	NSEventSubtype subtype = [event subtype];
+	if (subtype == NSEventSubtypeTabletPoint) {
 		const NSPoint p = [event tilt];
 		mm->set_tilt(Vector2(p.x, p.y));
+		mm->set_pen_inverted(OS_OSX::singleton->last_pen_inverted);
+	} else if (subtype == NSEventSubtypeTabletProximity) {
+		// Check if using the eraser end of pen only on proximity event.
+		OS_OSX::singleton->last_pen_inverted = [event pointingDeviceType] == NSPointingDeviceTypeEraser;
+		mm->set_pen_inverted(OS_OSX::singleton->last_pen_inverted);
 	}
 	mm->set_global_position(pos);
 	mm->set_speed(OS_OSX::singleton->input->get_last_mouse_speed());
@@ -1079,7 +1101,7 @@ static int translateKey(unsigned int key) {
 }
 
 // Translates a Godot keycode back to a OSX keycode
-static unsigned int unmapKey(int key) {
+static unsigned int unmapKey(unsigned int key) {
 	for (int i = 0; i <= 126; i++) {
 		if (_osx_to_godot_table[i] == key) {
 			return i;
@@ -1554,6 +1576,41 @@ int OS_OSX::get_current_video_driver() const {
 	return video_driver_index;
 }
 
+bool OS_OSX::tts_is_speaking() const {
+	ERR_FAIL_COND_V(!tts, false);
+	return [tts isSpeaking];
+}
+
+bool OS_OSX::tts_is_paused() const {
+	ERR_FAIL_COND_V(!tts, false);
+	return [tts isPaused];
+}
+
+Array OS_OSX::tts_get_voices() const {
+	ERR_FAIL_COND_V(!tts, Array());
+	return [tts getVoices];
+}
+
+void OS_OSX::tts_speak(const String &p_text, const String &p_voice, int p_volume, float p_pitch, float p_rate, int p_utterance_id, bool p_interrupt) {
+	ERR_FAIL_COND(!tts);
+	[tts speak:p_text voice:p_voice volume:p_volume pitch:p_pitch rate:p_rate utterance_id:p_utterance_id interrupt:p_interrupt];
+}
+
+void OS_OSX::tts_pause() {
+	ERR_FAIL_COND(!tts);
+	[tts pauseSpeaking];
+}
+
+void OS_OSX::tts_resume() {
+	ERR_FAIL_COND(!tts);
+	[tts resumeSpeaking];
+}
+
+void OS_OSX::tts_stop() {
+	ERR_FAIL_COND(!tts);
+	[tts stopSpeaking];
+}
+
 Error OS_OSX::initialize(const VideoMode &p_desired, int p_video_driver, int p_audio_driver) {
 	/*** OSX INITIALIZATION ***/
 	/*** OSX INITIALIZATION ***/
@@ -1571,6 +1628,9 @@ Error OS_OSX::initialize(const VideoMode &p_desired, int p_video_driver, int p_a
 
 	// Register to be notified on displays arrangement changes
 	CGDisplayRegisterReconfigurationCallback(displays_arrangement_changed, NULL);
+
+	// Init TTS
+	tts = [[TTS_OSX alloc] init];
 
 	window_delegate = [[GodotWindowDelegate alloc] init];
 
@@ -2516,8 +2576,24 @@ void OS_OSX::set_current_screen(int p_screen) {
 		return;
 	}
 
+	if (get_current_screen() == p_screen) {
+		return;
+	}
+
+	bool was_fullscreen = false;
+	if (zoomed) {
+		// Temporary exit fullscreen mode to move window.
+		[window_object toggleFullScreen:nil];
+		was_fullscreen = true;
+	}
+
 	Vector2 wpos = get_window_position() - get_screen_position(get_current_screen());
 	set_window_position(wpos + get_screen_position(p_screen));
+
+	if (was_fullscreen) {
+		// Re-enter fullscreen mode.
+		[window_object toggleFullScreen:nil];
+	}
 };
 
 Point2 OS_OSX::get_native_screen_position(int p_screen) const {
@@ -3356,10 +3432,10 @@ void OS_OSX::force_process_input() {
 }
 
 void OS_OSX::pre_wait_observer_cb(CFRunLoopObserverRef p_observer, CFRunLoopActivity p_activiy, void *p_context) {
-	// Prevent main loop from sleeping and redraw window during resize / modal popups.
-	// Do not redraw when rendering is done from the separate thread, it will conflict with the OpenGL context updates triggered by window view resize.
+	// Prevent main loop from sleeping and redraw window during modal popup display.
+	// Do not redraw when rendering is done from the separate thread, it will conflict with the OpenGL context updates.
 
-	if (get_singleton()->get_main_loop() && (get_singleton()->get_render_thread_mode() != RENDER_SEPARATE_THREAD || !OS_OSX::singleton->is_resizing)) {
+	if (get_singleton()->get_main_loop() && (get_singleton()->get_render_thread_mode() != RENDER_SEPARATE_THREAD) && !OS_OSX::singleton->is_resizing) {
 		Main::force_redraw();
 		if (!Main::is_iterating()) { // Avoid cyclic loop.
 			Main::iteration();

@@ -107,6 +107,45 @@ static String get_atom_name(Display *p_disp, Atom p_atom) {
 	return ret;
 }
 
+#ifdef SPEECHD_ENABLED
+
+bool OS_X11::tts_is_speaking() const {
+	ERR_FAIL_COND_V(!tts, false);
+	return tts->is_speaking();
+}
+
+bool OS_X11::tts_is_paused() const {
+	ERR_FAIL_COND_V(!tts, false);
+	return tts->is_paused();
+}
+
+Array OS_X11::tts_get_voices() const {
+	ERR_FAIL_COND_V(!tts, Array());
+	return tts->get_voices();
+}
+
+void OS_X11::tts_speak(const String &p_text, const String &p_voice, int p_volume, float p_pitch, float p_rate, int p_utterance_id, bool p_interrupt) {
+	ERR_FAIL_COND(!tts);
+	tts->speak(p_text, p_voice, p_volume, p_pitch, p_rate, p_utterance_id, p_interrupt);
+}
+
+void OS_X11::tts_pause() {
+	ERR_FAIL_COND(!tts);
+	tts->pause();
+}
+
+void OS_X11::tts_resume() {
+	ERR_FAIL_COND(!tts);
+	tts->resume();
+}
+
+void OS_X11::tts_stop() {
+	ERR_FAIL_COND(!tts);
+	tts->stop();
+}
+
+#endif
+
 void OS_X11::initialize_core() {
 	crash_handler.initialize();
 
@@ -378,6 +417,11 @@ Error OS_X11::initialize(const VideoMode &p_desired, int p_video_driver, int p_a
 
 	context_gl->set_use_vsync(current_videomode.use_vsync);
 
+#endif
+
+#ifdef SPEECHD_ENABLED
+	// Init TTS
+	tts = memnew(TTS_Linux);
 #endif
 
 	visual_server = memnew(VisualServerRaster);
@@ -660,6 +704,7 @@ bool OS_X11::refresh_device_info() {
 
 	xi.absolute_devices.clear();
 	xi.touch_devices.clear();
+	xi.pen_inverted_devices.clear();
 
 	int dev_count;
 	XIDeviceInfo *info = XIQueryDevice(x11_display, XIAllDevices, &dev_count);
@@ -669,7 +714,7 @@ bool OS_X11::refresh_device_info() {
 		if (!dev->enabled) {
 			continue;
 		}
-		if (!(dev->use == XIMasterPointer || dev->use == XIFloatingSlave)) {
+		if (!(dev->use == XISlavePointer || dev->use == XIFloatingSlave)) {
 			continue;
 		}
 
@@ -738,6 +783,7 @@ bool OS_X11::refresh_device_info() {
 		xi.pen_pressure_range[dev->deviceid] = Vector2(pressure_min, pressure_max);
 		xi.pen_tilt_x_range[dev->deviceid] = Vector2(tilt_x_min, tilt_x_max);
 		xi.pen_tilt_y_range[dev->deviceid] = Vector2(tilt_y_min, tilt_y_max);
+		xi.pen_inverted_devices[dev->deviceid] = String(dev->name).findn("eraser") > 0;
 	}
 
 	XIFreeDeviceInfo(info);
@@ -845,6 +891,10 @@ void OS_X11::finalize() {
 	*/
 #ifdef ALSAMIDI_ENABLED
 	driver_alsamidi.close();
+#endif
+
+#ifdef SPEECHD_ENABLED
+	memdelete(tts);
 #endif
 
 #ifdef JOYDEV_ENABLED
@@ -1226,8 +1276,8 @@ void OS_X11::set_current_screen(int p_screen) {
 		XMoveResizeWindow(x11_display, x11_window, position.x, position.y, size.x, size.y);
 	} else {
 		if (p_screen != get_current_screen()) {
-			Point2i position = get_screen_position(p_screen);
-			XMoveWindow(x11_display, x11_window, position.x, position.y);
+			Vector2 ofs = get_window_position() - get_screen_position(get_current_screen());
+			set_window_position(ofs + get_screen_position(p_screen));
 		}
 	}
 }
@@ -1529,6 +1579,8 @@ void OS_X11::set_window_size(const Size2 p_size) {
 	int old_h = xwa.height;
 
 	Size2 size = p_size;
+
+	ERR_FAIL_COND(Math::is_nan(size.x) || Math::is_nan(size.y));
 	size.x = MAX(1, size.x);
 	size.y = MAX(1, size.y);
 
@@ -1806,6 +1858,49 @@ bool OS_X11::window_maximize_check(const char *p_atom_name) const {
 			}
 		}
 
+		XFree(data);
+	}
+
+	return retval;
+}
+
+bool OS_X11::window_fullscreen_check() const {
+	// Using EWMH -- Extended Window Manager Hints
+	Atom property = XInternAtom(x11_display, "_NET_WM_STATE", False);
+	Atom type;
+	int format;
+	unsigned long len;
+	unsigned long remaining;
+	unsigned char *data = nullptr;
+	bool retval = false;
+
+	if (property == None) {
+		return retval;
+	}
+
+	int result = XGetWindowProperty(
+			x11_display,
+			x11_window,
+			property,
+			0,
+			1024,
+			False,
+			XA_ATOM,
+			&type,
+			&format,
+			&len,
+			&remaining,
+			&data);
+
+	if (result == Success) {
+		Atom *atoms = (Atom *)data;
+		Atom wm_fullscreen = XInternAtom(x11_display, "_NET_WM_STATE_FULLSCREEN", False);
+		for (uint64_t i = 0; i < len; i++) {
+			if (atoms[i] == wm_fullscreen) {
+				retval = true;
+				break;
+			}
+		}
 		XFree(data);
 	}
 
@@ -2511,7 +2606,7 @@ void OS_X11::process_xevents() {
 					} break;
 					case XI_RawMotion: {
 						XIRawEvent *raw_event = (XIRawEvent *)event_data;
-						int device_id = raw_event->deviceid;
+						int device_id = raw_event->sourceid;
 
 						// Determine the axis used (called valuators in XInput for some forsaken reason)
 						//  Mask is a bitmask indicating which axes are involved.
@@ -2575,6 +2670,11 @@ void OS_X11::process_xevents() {
 							}
 
 							values++;
+						}
+
+						Map<int, bool>::Element *pen_inverted = xi.pen_inverted_devices.find(device_id);
+						if (pen_inverted) {
+							xi.pen_inverted = pen_inverted->value();
 						}
 
 						// https://bugs.freedesktop.org/show_bug.cgi?id=71609
@@ -2661,6 +2761,7 @@ void OS_X11::process_xevents() {
 		switch (event.type) {
 			case Expose: {
 				DEBUG_LOG_X11("[%u] Expose window=%lu, count='%u' \n", frame, event.xexpose.window, event.xexpose.count);
+				current_videomode.fullscreen = window_fullscreen_check();
 
 				Main::force_redraw();
 			} break;
@@ -2920,6 +3021,7 @@ void OS_X11::process_xevents() {
 				} else {
 					mm->set_pressure((get_mouse_button_state() & (1 << (BUTTON_LEFT - 1))) ? 1.0f : 0.0f);
 				}
+				mm->set_pen_inverted(xi.pen_inverted);
 				mm->set_tilt(xi.tilt);
 
 				// Make the absolute position integral so it doesn't look _too_ weird :)
@@ -3076,6 +3178,91 @@ void OS_X11::process_xevents() {
 
 MainLoop *OS_X11::get_main_loop() const {
 	return main_loop;
+}
+
+uint64_t OS_X11::get_embedded_pck_offset() const {
+	FileAccessRef f = FileAccess::open(get_executable_path(), FileAccess::READ);
+	if (!f) {
+		return 0;
+	}
+
+	// Read and check ELF magic number.
+	{
+		uint32_t magic = f->get_32();
+		if (magic != 0x464c457f) { // 0x7F + "ELF"
+			return 0;
+		}
+	}
+
+	// Read program architecture bits from class field.
+	int bits = f->get_8() * 32;
+
+	// Get info about the section header table.
+	int64_t section_table_pos;
+	int64_t section_header_size;
+	if (bits == 32) {
+		section_header_size = 40;
+		f->seek(0x20);
+		section_table_pos = f->get_32();
+		f->seek(0x30);
+	} else { // 64
+		section_header_size = 64;
+		f->seek(0x28);
+		section_table_pos = f->get_64();
+		f->seek(0x3c);
+	}
+	int num_sections = f->get_16();
+	int string_section_idx = f->get_16();
+
+	// Load the strings table.
+	uint8_t *strings;
+	{
+		// Jump to the strings section header.
+		f->seek(section_table_pos + string_section_idx * section_header_size);
+
+		// Read strings data size and offset.
+		int64_t string_data_pos;
+		int64_t string_data_size;
+		if (bits == 32) {
+			f->seek(f->get_position() + 0x10);
+			string_data_pos = f->get_32();
+			string_data_size = f->get_32();
+		} else { // 64
+			f->seek(f->get_position() + 0x18);
+			string_data_pos = f->get_64();
+			string_data_size = f->get_64();
+		}
+
+		// Read strings data.
+		f->seek(string_data_pos);
+		strings = (uint8_t *)memalloc(string_data_size);
+		if (!strings) {
+			return 0;
+		}
+		f->get_buffer(strings, string_data_size);
+	}
+
+	// Search for the "pck" section.
+	int64_t off = 0;
+	for (int i = 0; i < num_sections; ++i) {
+		int64_t section_header_pos = section_table_pos + i * section_header_size;
+		f->seek(section_header_pos);
+
+		uint32_t name_offset = f->get_32();
+		if (strcmp((char *)strings + name_offset, "pck") == 0) {
+			if (bits == 32) {
+				f->seek(section_header_pos + 0x10);
+				off = f->get_32();
+			} else { // 64
+				f->seek(section_header_pos + 0x18);
+				off = f->get_64();
+			}
+			break;
+		}
+	}
+	memfree(strings);
+
+	return off;
 }
 
 void OS_X11::delete_main_loop() {

@@ -52,6 +52,10 @@
 #include <X11/extensions/Xrandr.h>
 #include <X11/keysym.h>
 
+#if defined(SPEECHD_ENABLED)
+#include "tts_linux.h"
+#endif
+
 // Hints for X11 fullscreen
 typedef struct {
 	unsigned long flags;
@@ -133,11 +137,13 @@ class OS_X11 : public OS_Unix {
 		Map<int, Vector2> pen_pressure_range;
 		Map<int, Vector2> pen_tilt_x_range;
 		Map<int, Vector2> pen_tilt_y_range;
+		Map<int, bool> pen_inverted_devices;
 		XIEventMask all_event_mask;
 		XIEventMask all_master_event_mask;
 		Map<int, Vector2> state;
 		double pressure;
 		bool pressure_supported;
+		bool pen_inverted;
 		Vector2 tilt;
 		Vector2 mouse_pos_to_filter;
 		Vector2 relative_motion;
@@ -212,6 +218,10 @@ class OS_X11 : public OS_Unix {
 	AudioDriverPulseAudio driver_pulseaudio;
 #endif
 
+#ifdef SPEECHD_ENABLED
+	TTS_Linux *tts = nullptr;
+#endif
+
 	PowerX11 *power_manager;
 
 	bool layered_window;
@@ -247,10 +257,22 @@ protected:
 	void _window_changed(XEvent *event);
 
 	bool window_maximize_check(const char *p_atom_name) const;
+	bool window_fullscreen_check() const;
 	bool is_window_maximize_allowed() const;
 
 public:
 	virtual String get_name() const;
+
+#ifdef SPEECHD_ENABLED
+	virtual bool tts_is_speaking() const;
+	virtual bool tts_is_paused() const;
+	virtual Array tts_get_voices() const;
+
+	virtual void tts_speak(const String &p_text, const String &p_voice, int p_volume = 50, float p_pitch = 1.f, float p_rate = 1.f, int p_utterance_id = 0, bool p_interrupt = false);
+	virtual void tts_pause();
+	virtual void tts_resume();
+	virtual void tts_stop();
+#endif
 
 	virtual void set_cursor_shape(CursorShape p_shape);
 	virtual CursorShape get_cursor_shape() const;
@@ -268,6 +290,8 @@ public:
 	virtual void set_icon(const Ref<Image> &p_icon);
 
 	virtual MainLoop *get_main_loop() const;
+
+	virtual uint64_t get_embedded_pck_offset() const;
 
 	virtual bool can_draw() const;
 
@@ -371,4 +395,4 @@ public:
 	OS_X11();
 };
 
-#endif
+#endif // OS_X11_H

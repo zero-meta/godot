@@ -30,6 +30,7 @@
 
 #include "os_android.h"
 
+#include "core/array.h"
 #include "core/project_settings.h"
 #include "drivers/gles2/rasterizer_gles2.h"
 #include "drivers/gles3/rasterizer_gles3.h"
@@ -42,6 +43,7 @@
 
 #include "dir_access_jandroid.h"
 #include "file_access_android.h"
+#include "file_access_filesystem_jandroid.h"
 #include "net_socket_android.h"
 
 #include <android/input.h>
@@ -50,6 +52,7 @@
 
 #include "java_godot_io_wrapper.h"
 #include "java_godot_wrapper.h"
+#include "tts_android.h"
 
 const char *OS_Android::ANDROID_EXEC_PATH = "apk";
 
@@ -79,6 +82,34 @@ public:
 	virtual ~AndroidLogger() {}
 };
 
+bool OS_Android::tts_is_speaking() const {
+	return TTS_Android::is_speaking();
+}
+
+bool OS_Android::tts_is_paused() const {
+	return TTS_Android::is_paused();
+}
+
+Array OS_Android::tts_get_voices() const {
+	return TTS_Android::get_voices();
+}
+
+void OS_Android::tts_speak(const String &p_text, const String &p_voice, int p_volume, float p_pitch, float p_rate, int p_utterance_id, bool p_interrupt) {
+	TTS_Android::speak(p_text, p_voice, p_volume, p_pitch, p_rate, p_utterance_id, p_interrupt);
+}
+
+void OS_Android::tts_pause() {
+	TTS_Android::pause();
+}
+
+void OS_Android::tts_resume() {
+	TTS_Android::resume();
+}
+
+void OS_Android::tts_stop() {
+	TTS_Android::stop();
+}
+
 int OS_Android::get_video_driver_count() const {
 	return 2;
 }
@@ -90,7 +121,7 @@ const char *OS_Android::get_video_driver_name(int p_driver) const {
 		case VIDEO_DRIVER_GLES2:
 			return "GLES2";
 	}
-	ERR_FAIL_V_MSG(NULL, "Invalid video driver index: " + itos(p_driver) + ".");
+	ERR_FAIL_V_MSG(nullptr, "Invalid video driver index: " + itos(p_driver) + ".");
 }
 int OS_Android::get_audio_driver_count() const {
 	return 1;
@@ -106,32 +137,32 @@ void OS_Android::initialize_core() {
 #ifdef TOOLS_ENABLED
 	FileAccess::make_default<FileAccessUnix>(FileAccess::ACCESS_RESOURCES);
 #else
-	if (use_apk_expansion)
+	if (use_apk_expansion) {
 		FileAccess::make_default<FileAccessUnix>(FileAccess::ACCESS_RESOURCES);
-	else {
+	} else {
 		FileAccess::make_default<FileAccessAndroid>(FileAccess::ACCESS_RESOURCES);
 	}
 #endif
 	FileAccess::make_default<FileAccessUnix>(FileAccess::ACCESS_USERDATA);
-	FileAccess::make_default<FileAccessUnix>(FileAccess::ACCESS_FILESYSTEM);
+	FileAccess::make_default<FileAccessFilesystemJAndroid>(FileAccess::ACCESS_FILESYSTEM);
 
 #ifdef TOOLS_ENABLED
 	DirAccess::make_default<DirAccessUnix>(DirAccess::ACCESS_RESOURCES);
 #else
-	if (use_apk_expansion)
+	if (use_apk_expansion) {
 		DirAccess::make_default<DirAccessUnix>(DirAccess::ACCESS_RESOURCES);
-	else
+	} else {
 		DirAccess::make_default<DirAccessJAndroid>(DirAccess::ACCESS_RESOURCES);
+	}
 #endif
-
 	DirAccess::make_default<DirAccessUnix>(DirAccess::ACCESS_USERDATA);
-	DirAccess::make_default<DirAccessUnix>(DirAccess::ACCESS_FILESYSTEM);
+	DirAccess::make_default<DirAccessJAndroid>(DirAccess::ACCESS_FILESYSTEM);
 
 	NetSocketAndroid::make_default();
 }
 
 void OS_Android::set_opengl_extensions(const char *p_gl_extensions) {
-	ERR_FAIL_COND(!p_gl_extensions);
+	ERR_FAIL_NULL(p_gl_extensions);
 	gl_extensions = p_gl_extensions;
 }
 
@@ -147,7 +178,6 @@ Error OS_Android::initialize(const VideoMode &p_desired, int p_video_driver, int
 	while (true) {
 		if (use_gl3) {
 			if (RasterizerGLES3::is_viable() == OK) {
-				godot_java->gfx_init(false);
 				RasterizerGLES3::register_config();
 				RasterizerGLES3::make_current();
 				break;
@@ -163,7 +193,6 @@ Error OS_Android::initialize(const VideoMode &p_desired, int p_video_driver, int
 			}
 		} else {
 			if (RasterizerGLES2::is_viable() == OK) {
-				godot_java->gfx_init(true);
 				RasterizerGLES2::register_config();
 				RasterizerGLES2::make_current();
 				break;
@@ -198,8 +227,6 @@ Error OS_Android::initialize(const VideoMode &p_desired, int p_video_driver, int
 	input->set_use_input_buffering(true); // Needed because events will come directly from the UI thread
 	input->set_fallback_mapping(godot_java->get_input_fallback_mapping());
 
-	//power_manager = memnew(PowerAndroid);
-
 	return OK;
 }
 
@@ -225,7 +252,6 @@ GodotIOJavaWrapper *OS_Android::get_godot_io_java() {
 }
 
 void OS_Android::alert(const String &p_alert, const String &p_title) {
-	//print("ALERT: %s\n", p_alert.utf8().get_data());
 	godot_java->alert(p_alert, p_title);
 }
 
@@ -243,7 +269,7 @@ Vector<String> OS_Android::get_granted_permissions() const {
 
 Error OS_Android::open_dynamic_library(const String p_path, void *&p_library_handle, bool p_also_set_library_path) {
 	p_library_handle = dlopen(p_path.utf8().get_data(), RTLD_NOW);
-	ERR_FAIL_COND_V_MSG(!p_library_handle, ERR_CANT_OPEN, "Can't open dynamic library: " + p_path + ", error: " + dlerror() + ".");
+	ERR_FAIL_NULL_V_MSG(p_library_handle, ERR_CANT_OPEN, "Can't open dynamic library: " + p_path + ", error: " + dlerror() + ".");
 	return OK;
 }
 
@@ -302,6 +328,10 @@ Rect2 OS_Android::get_window_safe_area() const {
 	return Rect2(xywh[0], xywh[1], xywh[2], xywh[3]);
 }
 
+Array OS_Android::get_display_cutouts() const {
+	return godot_io_java->get_display_cutouts();
+}
+
 String OS_Android::get_name() const {
 	return "Android";
 }
@@ -315,13 +345,15 @@ bool OS_Android::can_draw() const {
 }
 
 void OS_Android::main_loop_begin() {
-	if (main_loop)
+	if (main_loop) {
 		main_loop->init();
+	}
 }
 
 bool OS_Android::main_loop_iterate(bool *r_should_swap_buffers) {
-	if (!main_loop)
+	if (!main_loop) {
 		return false;
+	}
 	uint64_t current_frames_drawn = Engine::get_singleton()->get_frames_drawn();
 	bool exit = Main::iteration();
 
@@ -343,14 +375,16 @@ void OS_Android::main_loop_end() {
 }
 
 void OS_Android::main_loop_focusout() {
-	if (main_loop)
+	if (main_loop) {
 		main_loop->notification(MainLoop::NOTIFICATION_WM_FOCUS_OUT);
+	}
 	audio_driver_android.set_pause(true);
 }
 
 void OS_Android::main_loop_focusin() {
-	if (main_loop)
+	if (main_loop) {
 		main_loop->notification(MainLoop::NOTIFICATION_WM_FOCUS_IN);
+	}
 	audio_driver_android.set_pause(false);
 }
 
@@ -380,17 +414,14 @@ bool OS_Android::has_virtual_keyboard() const {
 
 int OS_Android::get_virtual_keyboard_height() const {
 	return godot_io_java->get_vk_height();
-
-	// ERR_PRINT("Cannot obtain virtual keyboard height.");
-	// return 0;
 }
 
-void OS_Android::show_virtual_keyboard(const String &p_existing_text, const Rect2 &p_screen_rect, bool p_multiline, int p_max_input_length, int p_cursor_start, int p_cursor_end) {
+void OS_Android::show_virtual_keyboard(const String &p_existing_text, const Rect2 &p_screen_rect, VirtualKeyboardType p_type, int p_max_input_length, int p_cursor_start, int p_cursor_end) {
 	if (godot_io_java->has_vk()) {
-		godot_io_java->show_vk(p_existing_text, p_multiline, p_max_input_length, p_cursor_start, p_cursor_end);
+		godot_io_java->show_vk(p_existing_text, (int)p_type, p_max_input_length, p_cursor_start, p_cursor_end);
 	} else {
 		ERR_PRINT("Virtual keyboard not available");
-	};
+	}
 }
 
 void OS_Android::hide_virtual_keyboard() {
@@ -398,14 +429,7 @@ void OS_Android::hide_virtual_keyboard() {
 		godot_io_java->hide_vk();
 	} else {
 		ERR_PRINT("Virtual keyboard not available");
-	};
-}
-
-void OS_Android::init_video_mode(int p_video_width, int p_video_height) {
-	default_videomode.width = p_video_width;
-	default_videomode.height = p_video_height;
-	default_videomode.fullscreen = true;
-	default_videomode.resizable = false;
+	}
 }
 
 void OS_Android::set_display_size(Size2 p_size) {
@@ -463,9 +487,9 @@ bool OS_Android::has_clipboard() const {
 
 String OS_Android::get_model_name() const {
 	String model = godot_io_java->get_model();
-	if (model != "")
+	if (model != "") {
 		return model;
-
+	}
 	return OS_Unix::get_model_name();
 }
 
@@ -498,9 +522,9 @@ String OS_Android::get_executable_path() const {
 }
 
 String OS_Android::get_user_data_dir() const {
-	if (data_dir_cache != String())
+	if (data_dir_cache != String()) {
 		return data_dir_cache;
-
+	}
 	String data_dir = godot_io_java->get_user_data_dir();
 	if (data_dir != "") {
 		data_dir_cache = _remove_symlink(data_dir);
@@ -510,9 +534,9 @@ String OS_Android::get_user_data_dir() const {
 }
 
 String OS_Android::get_cache_path() const {
-	if (cache_dir_cache != String())
+	if (cache_dir_cache != String()) {
 		return cache_dir_cache;
-
+	}
 	String cache_dir = godot_io_java->get_cache_dir();
 	if (cache_dir != "") {
 		cache_dir_cache = _remove_symlink(cache_dir);
@@ -533,14 +557,41 @@ OS::ScreenOrientation OS_Android::get_screen_orientation() const {
 
 String OS_Android::get_unique_id() const {
 	String unique_id = godot_io_java->get_unique_id();
-	if (unique_id != "")
+	if (unique_id != "") {
 		return unique_id;
-
+	}
 	return OS::get_unique_id();
 }
 
 String OS_Android::get_system_dir(SystemDir p_dir, bool p_shared_storage) const {
 	return godot_io_java->get_system_dir(p_dir, p_shared_storage);
+}
+
+Error OS_Android::move_to_trash(const String &p_path) {
+	DirAccessRef da_ref = DirAccess::create_for_path(p_path);
+	if (!da_ref) {
+		return FAILED;
+	}
+
+	// Check if it's a directory
+	if (da_ref->dir_exists(p_path)) {
+		Error err = da_ref->change_dir(p_path);
+		if (err) {
+			return err;
+		}
+		// This is directory, let's erase its contents
+		err = da_ref->erase_contents_recursive();
+		if (err) {
+			return err;
+		}
+		// Remove the top directory
+		return da_ref->remove(p_path);
+	} else if (da_ref->file_exists(p_path)) {
+		// This is a file, let's remove it.
+		return da_ref->remove(p_path);
+	} else {
+		return FAILED;
+	}
 }
 
 void OS_Android::set_offscreen_gl_available(bool p_available) {
@@ -600,11 +651,6 @@ OS_Android::OS_Android(GodotJavaWrapper *p_godot_java, GodotIOJavaWrapper *p_god
 	default_videomode.height = 600;
 	default_videomode.fullscreen = true;
 	default_videomode.resizable = false;
-
-	main_loop = NULL;
-	gl_extensions = NULL;
-	//rasterizer = NULL;
-	use_gl2 = false;
 
 	godot_java = p_godot_java;
 	godot_io_java = p_godot_io_java;

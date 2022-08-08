@@ -490,53 +490,45 @@ void Control::_notification(int p_notification) {
 		case NOTIFICATION_ENTER_CANVAS: {
 			data.parent = Object::cast_to<Control>(get_parent());
 
+			if (data.theme.is_null() && data.parent && data.parent->data.theme_owner) {
+				data.theme_owner = data.parent->data.theme_owner;
+				notification(NOTIFICATION_THEME_CHANGED);
+			}
+
 			if (is_set_as_toplevel()) {
 				data.SI = get_viewport()->_gui_add_subwindow_control(this);
-
-				if (data.theme.is_null() && data.parent && data.parent->data.theme_owner) {
-					data.theme_owner = data.parent->data.theme_owner;
-					notification(NOTIFICATION_THEME_CHANGED);
-				}
-
 			} else {
-				Node *parent = this; //meh
-				Control *parent_control = nullptr;
-				bool subwindow = false;
+				Node *parent = get_parent();
+				bool is_subwindow = false;
+				bool has_parent_control = false;
 
 				while (parent) {
-					parent = parent->get_parent();
-
-					if (!parent) {
-						break;
-					}
-
 					CanvasItem *ci = Object::cast_to<CanvasItem>(parent);
 					if (ci && ci->is_set_as_toplevel()) {
-						subwindow = true;
+						is_subwindow = true;
 						break;
 					}
 
-					parent_control = Object::cast_to<Control>(parent);
-
+					Control *parent_control = Object::cast_to<Control>(parent);
 					if (parent_control) {
+						has_parent_control = true;
 						break;
 					} else if (ci) {
+						// Continue.
 					} else {
 						break;
 					}
+
+					parent = parent->get_parent();
 				}
 
-				if (parent_control) {
-					//do nothing, has a parent control
-					if (data.theme.is_null() && parent_control->data.theme_owner) {
-						data.theme_owner = parent_control->data.theme_owner;
-						notification(NOTIFICATION_THEME_CHANGED);
-					}
-				} else if (subwindow) {
-					//is a subwindow (process input before other controls for that canvas)
+				if (has_parent_control) {
+					// Do nothing, has a parent control.
+				} else if (is_subwindow) {
+					// Is a subwindow (process input before other controls for that canvas).
 					data.SI = get_viewport()->_gui_add_subwindow_control(this);
 				} else {
-					//is a regular root control
+					// Is a regular root control.
 					Viewport *viewport = get_viewport();
 					ERR_FAIL_COND(!viewport);
 					data.RI = viewport->_gui_add_root_control(this);
@@ -547,7 +539,7 @@ void Control::_notification(int p_notification) {
 				if (data.parent_canvas_item) {
 					data.parent_canvas_item->connect("item_rect_changed", this, "_size_changed");
 				} else {
-					//connect viewport
+					// Connect viewport.
 					Viewport *viewport = get_viewport();
 					ERR_FAIL_COND(!viewport);
 					viewport->connect("size_changed", this, "_size_changed");
@@ -652,6 +644,7 @@ void Control::_notification(int p_notification) {
 				//remove modalness
 			} else {
 				data.minimum_size_valid = false;
+				_update_minimum_size();
 				_size_changed();
 			}
 
@@ -1824,7 +1817,7 @@ void Control::set_focus_mode(FocusMode p_focus_mode) {
 
 static Control *_next_control(Control *p_from) {
 	if (p_from->is_set_as_toplevel()) {
-		return nullptr; // can't go above
+		return nullptr; // Can't go above.
 	}
 
 	Control *parent = Object::cast_to<Control>(p_from->get_parent());
@@ -1844,7 +1837,7 @@ static Control *_next_control(Control *p_from) {
 		return c;
 	}
 
-	//no next in parent, try the same in parent
+	// No next in parent, try the same in parent.
 	return _next_control(parent);
 }
 
@@ -1868,7 +1861,7 @@ Control *Control::find_next_valid_focus() const {
 			}
 		}
 
-		// find next child
+		// Find next child.
 
 		Control *next_child = nullptr;
 
@@ -1884,7 +1877,7 @@ Control *Control::find_next_valid_focus() const {
 
 		if (!next_child) {
 			next_child = _next_control(from);
-			if (!next_child) { //nothing else.. go up and find either window or subwindow
+			if (!next_child) { // Nothing else. Go up and find either window or subwindow.
 				next_child = const_cast<Control *>(this);
 				while (next_child && !next_child->is_set_as_toplevel()) {
 					next_child = cast_to<Control>(next_child->get_parent());
@@ -1902,7 +1895,7 @@ Control *Control::find_next_valid_focus() const {
 			}
 		}
 
-		if (next_child == this) { // no next control->
+		if (next_child == from || next_child == this) { // No next control.
 			return (get_focus_mode() == FOCUS_ALL) ? next_child : nullptr;
 		}
 		if (next_child) {
@@ -1934,7 +1927,7 @@ static Control *_prev_control(Control *p_from) {
 		return p_from;
 	}
 
-	//no prev in parent, try the same in parent
+	// No prev in parent, try the same in parent.
 	return _prev_control(child);
 }
 
@@ -1958,12 +1951,12 @@ Control *Control::find_prev_valid_focus() const {
 			}
 		}
 
-		// find prev child
+		// Find prev child.
 
 		Control *prev_child = nullptr;
 
 		if (from->is_set_as_toplevel() || !Object::cast_to<Control>(from->get_parent())) {
-			//find last of the children
+			// Find last of the children.
 
 			prev_child = _prev_control(from);
 
@@ -1986,7 +1979,7 @@ Control *Control::find_prev_valid_focus() const {
 			}
 		}
 
-		if (prev_child == this) { // no prev control->
+		if (prev_child == from || prev_child == this) { // No prev control.
 			return (get_focus_mode() == FOCUS_ALL) ? prev_child : nullptr;
 		}
 
@@ -2048,6 +2041,11 @@ void Control::show_modal(bool p_exclusive) {
 	data.modal_exclusive = p_exclusive;
 	data.MI = get_viewport()->_gui_show_modal(this);
 	data.modal_frame = Engine::get_singleton()->get_frames_drawn();
+}
+
+void Control::set_modal_exclusive(bool p_exclusive) {
+	ERR_FAIL_NULL_MSG(data.MI, "Modal exclusive can be set only if the Control is already shown as modal.");
+	data.modal_exclusive = p_exclusive;
 }
 
 void Control::_modal_set_prev_focus_owner(ObjectID p_prev) {
@@ -2546,7 +2544,7 @@ bool Control::is_visibility_clip_disabled() const {
 
 void Control::get_argument_options(const StringName &p_function, int p_idx, List<String> *r_options) const {
 #ifdef TOOLS_ENABLED
-	const String quote_style = EDITOR_DEF("text_editor/completion/use_single_quotes", 0) ? "'" : "\"";
+	const String quote_style = EDITOR_GET("text_editor/completion/use_single_quotes") ? "'" : "\"";
 #else
 	const String quote_style = "\"";
 #endif

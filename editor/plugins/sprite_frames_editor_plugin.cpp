@@ -424,6 +424,7 @@ void SpriteFramesEditor::_notification(int p_what) {
 			zoom_in->set_icon(get_icon("ZoomMore", "EditorIcons"));
 			new_anim->set_icon(get_icon("New", "EditorIcons"));
 			remove_anim->set_icon(get_icon("Remove", "EditorIcons"));
+			anim_search_box->set_right_icon(get_icon("Search", "EditorIcons"));
 			split_sheet_zoom_out->set_icon(get_icon("ZoomLess", "EditorIcons"));
 			split_sheet_zoom_reset->set_icon(get_icon("ZoomReset", "EditorIcons"));
 			split_sheet_zoom_in->set_icon(get_icon("ZoomMore", "EditorIcons"));
@@ -744,15 +745,19 @@ void SpriteFramesEditor::_animation_name_edited() {
 	undo_redo->add_undo_method(frames, "rename_animation", name, edited_anim);
 
 	for (List<Node *>::Element *E = nodes.front(); E; E = E->next()) {
-		String current = E->get()->call("get_animation");
+		StringName current = E->get()->call("get_animation");
+		if (current != edited_anim) {
+			continue;
+		}
+
 		undo_redo->add_do_method(E->get(), "set_animation", name);
-		undo_redo->add_undo_method(E->get(), "set_animation", edited_anim);
+		undo_redo->add_undo_method(E->get(), "set_animation", current);
 	}
 
 	undo_redo->add_do_method(this, "_update_library");
 	undo_redo->add_undo_method(this, "_update_library");
 
-	edited_anim = new_name;
+	edited_anim = name;
 
 	undo_redo->commit_action();
 }
@@ -774,8 +779,14 @@ void SpriteFramesEditor::_animation_add() {
 	undo_redo->add_do_method(this, "_update_library");
 	undo_redo->add_undo_method(this, "_update_library");
 
+	// Assign the newly added animation to the edited anim sprite and to all other anim sprites having invalid animation.
+	Object *edited_anim_sprite = EditorNode::get_singleton()->get_inspector()->get_edited_object();
 	for (List<Node *>::Element *E = nodes.front(); E; E = E->next()) {
-		String current = E->get()->call("get_animation");
+		StringName current = E->get()->call("get_animation");
+		if (frames->has_animation(current) && E->get() != edited_anim_sprite) {
+			continue;
+		}
+
 		undo_redo->add_do_method(E->get(), "set_animation", name);
 		undo_redo->add_undo_method(E->get(), "set_animation", current);
 	}
@@ -810,12 +821,41 @@ void SpriteFramesEditor::_animation_remove_confirmed() {
 		Ref<Texture> frame = frames->get_frame(edited_anim, i);
 		undo_redo->add_undo_method(frames, "add_frame", edited_anim, frame);
 	}
+
+	StringName new_edited_anim = StringName();
+
+	List<StringName> anim_names;
+	frames->get_animation_list(&anim_names);
+	anim_names.sort_custom<StringName::AlphCompare>();
+
+	// If removing not the last animation, make the first animation left the new edited one.
+	if (anim_names.size() > 1) {
+		new_edited_anim = edited_anim != anim_names.front()->get() ? anim_names.front()->get() : anim_names.front()->next()->get();
+
+		List<Node *> nodes;
+		_find_anim_sprites(EditorNode::get_singleton()->get_edited_scene(), &nodes, Ref<SpriteFrames>(frames));
+
+		for (List<Node *>::Element *E = nodes.front(); E; E = E->next()) {
+			StringName current = E->get()->call("get_animation");
+			if (current != edited_anim) {
+				continue;
+			}
+
+			undo_redo->add_do_method(E->get(), "set_animation", new_edited_anim);
+			undo_redo->add_undo_method(E->get(), "set_animation", current);
+		}
+	}
+
 	undo_redo->add_do_method(this, "_update_library");
 	undo_redo->add_undo_method(this, "_update_library");
 
-	edited_anim = StringName();
+	edited_anim = new_edited_anim;
 
 	undo_redo->commit_action();
+}
+
+void SpriteFramesEditor::_animation_search_text_changed(const String &p_text) {
+	_update_library();
 }
 
 void SpriteFramesEditor::_animation_loop_changed() {
@@ -902,13 +942,18 @@ void SpriteFramesEditor::_update_library(bool p_skip_selector) {
 		TreeItem *anim_root = animations->create_item();
 
 		List<StringName> anim_names;
-
 		frames->get_animation_list(&anim_names);
-
 		anim_names.sort_custom<StringName::AlphCompare>();
+
+		bool searching = anim_search_box->get_text().size();
+		String searched_string = searching ? anim_search_box->get_text().to_lower() : String();
 
 		for (List<StringName>::Element *E = anim_names.front(); E; E = E->next()) {
 			String name = E->get();
+
+			if (searching && name.to_lower().find(searched_string) < 0) {
+				continue;
+			}
 
 			TreeItem *it = animations->create_item(anim_root);
 
@@ -972,7 +1017,6 @@ void SpriteFramesEditor::_update_library(bool p_skip_selector) {
 	anim_loop->set_pressed(frames->get_animation_loop(edited_anim));
 
 	updating = false;
-	//player->add_resource("default",resource);
 }
 
 void SpriteFramesEditor::edit(SpriteFrames *p_frames) {
@@ -1144,6 +1188,7 @@ void SpriteFramesEditor::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("_animation_add"), &SpriteFramesEditor::_animation_add);
 	ClassDB::bind_method(D_METHOD("_animation_remove"), &SpriteFramesEditor::_animation_remove);
 	ClassDB::bind_method(D_METHOD("_animation_remove_confirmed"), &SpriteFramesEditor::_animation_remove_confirmed);
+	ClassDB::bind_method(D_METHOD("_animation_search_text_changed"), &SpriteFramesEditor::_animation_search_text_changed);
 	ClassDB::bind_method(D_METHOD("_animation_loop_changed"), &SpriteFramesEditor::_animation_loop_changed);
 	ClassDB::bind_method(D_METHOD("_animation_fps_changed"), &SpriteFramesEditor::_animation_fps_changed);
 	ClassDB::bind_method(D_METHOD("_tree_input"), &SpriteFramesEditor::_tree_input);
@@ -1187,6 +1232,13 @@ SpriteFramesEditor::SpriteFramesEditor() {
 	remove_anim->set_tooltip(TTR("Remove Animation"));
 	hbc_animlist->add_child(remove_anim);
 	remove_anim->connect("pressed", this, "_animation_remove");
+
+	anim_search_box = memnew(LineEdit);
+	hbc_animlist->add_child(anim_search_box);
+	anim_search_box->set_h_size_flags(SIZE_EXPAND_FILL);
+	anim_search_box->set_placeholder(TTR("Filter animations"));
+	anim_search_box->set_clear_button_enabled(true);
+	anim_search_box->connect("text_changed", this, "_animation_search_text_changed");
 
 	animations = memnew(Tree);
 	sub_vb->add_child(animations);
@@ -1467,6 +1519,10 @@ SpriteFramesEditor::SpriteFramesEditor() {
 	max_sheet_zoom = 16.0f * MAX(1.0f, EDSCALE);
 	min_sheet_zoom = 0.01f * MAX(1.0f, EDSCALE);
 	_zoom_reset();
+
+	// Ensure the anim search box is wide enough by default.
+	// Not by setting its minimum size so it can still be shrinked if desired.
+	set_split_offset(56 * EDSCALE);
 }
 
 void SpriteFramesEditorPlugin::edit(Object *p_object) {

@@ -426,12 +426,12 @@ void LineEdit::_gui_input(Ref<InputEvent> p_event) {
 					if (!k->get_alt())
 #endif
 					{
-						shift_selection_check_pre(k->get_shift());
 						if (selection.enabled && !k->get_shift()) {
 							set_cursor_position(selection.begin);
 							deselect();
 							break;
 						}
+						shift_selection_check_pre(k->get_shift());
 					}
 
 #ifdef APPLE_STYLE_KEYS
@@ -475,11 +475,15 @@ void LineEdit::_gui_input(Ref<InputEvent> p_event) {
 					FALLTHROUGH;
 				}
 				case KEY_RIGHT: {
-					if (selection.enabled && !k->get_shift()) {
-						set_cursor_position(selection.end);
-						deselect();
-						break;
-					} else {
+#ifndef APPLE_STYLE_KEYS
+					if (!k->get_alt())
+#endif
+					{
+						if (selection.enabled && !k->get_shift()) {
+							set_cursor_position(selection.end);
+							deselect();
+							break;
+						}
 						shift_selection_check_pre(k->get_shift());
 					}
 #ifdef APPLE_STYLE_KEYS
@@ -742,7 +746,7 @@ bool LineEdit::_is_over_clear_button(const Point2 &p_pos) const {
 		return false;
 	}
 	Ref<Texture> icon = Control::get_icon("clear");
-	int x_ofs = get_stylebox("normal")->get_offset().x;
+	int x_ofs = get_stylebox("normal")->get_margin(MARGIN_RIGHT);
 	return p_pos.x > get_size().width - icon->get_width() - x_ofs;
 }
 
@@ -751,9 +755,8 @@ void LineEdit::_notification(int p_what) {
 		case NOTIFICATION_ENTER_TREE: {
 #ifdef TOOLS_ENABLED
 			if (Engine::get_singleton()->is_editor_hint() && !get_tree()->is_node_being_edited(this)) {
-				EDITOR_DEF("text_editor/cursor/caret_blink", false);
 				cursor_set_blink_enabled(EditorSettings::get_singleton()->is_caret_blink_active());
-				cursor_set_blink_speed(EDITOR_DEF("text_editor/cursor/caret_blink_speed", 0.65));
+				cursor_set_blink_speed(EDITOR_GET("text_editor/cursor/caret_blink_speed"));
 
 				if (!EditorSettings::get_singleton()->is_connected("settings_changed", this, "_editor_settings_changed")) {
 					EditorSettings::get_singleton()->connect("settings_changed", this, "_editor_settings_changed");
@@ -1408,9 +1411,9 @@ void LineEdit::clear() {
 void LineEdit::show_virtual_keyboard() {
 	if (OS::get_singleton()->has_virtual_keyboard() && virtual_keyboard_enabled) {
 		if (selection.enabled) {
-			OS::get_singleton()->show_virtual_keyboard(text, get_global_rect(), false, max_length, selection.begin, selection.end);
+			OS::get_singleton()->show_virtual_keyboard(text, get_global_rect(), (OS::VirtualKeyboardType)virtual_keyboard_type, max_length, selection.begin, selection.end);
 		} else {
-			OS::get_singleton()->show_virtual_keyboard(text, get_global_rect(), false, max_length, cursor_pos);
+			OS::get_singleton()->show_virtual_keyboard(text, get_global_rect(), (OS::VirtualKeyboardType)virtual_keyboard_type, max_length, cursor_pos);
 		}
 	}
 }
@@ -1564,7 +1567,7 @@ Size2 LineEdit::get_minimum_size() const {
 	min_size.height = font->get_height();
 
 	// Take icons into account.
-	if (!text.empty() && is_editable() && clear_button_enabled) {
+	if (clear_button_enabled) {
 		min_size.width = MAX(min_size.width, Control::get_icon("clear")->get_width());
 		min_size.height = MAX(min_size.height, Control::get_icon("clear")->get_height());
 	}
@@ -1777,9 +1780,8 @@ PopupMenu *LineEdit::get_menu() const {
 
 void LineEdit::_editor_settings_changed() {
 #ifdef TOOLS_ENABLED
-	EDITOR_DEF("text_editor/cursor/caret_blink", false);
 	cursor_set_blink_enabled(EditorSettings::get_singleton()->is_caret_blink_active());
-	cursor_set_blink_speed(EDITOR_DEF("text_editor/cursor/caret_blink_speed", 0.65));
+	cursor_set_blink_speed(EDITOR_GET("text_editor/cursor/caret_blink_speed"));
 #endif
 }
 
@@ -1822,6 +1824,14 @@ void LineEdit::set_virtual_keyboard_enabled(bool p_enable) {
 
 bool LineEdit::is_virtual_keyboard_enabled() const {
 	return virtual_keyboard_enabled;
+}
+
+void LineEdit::set_virtual_keyboard_type(VirtualKeyboardType p_type) {
+	virtual_keyboard_type = p_type;
+}
+
+LineEdit::VirtualKeyboardType LineEdit::get_virtual_keyboard_type() const {
+	return virtual_keyboard_type;
 }
 
 void LineEdit::set_middle_mouse_paste_enabled(bool p_enabled) {
@@ -2007,6 +2017,8 @@ void LineEdit::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("is_context_menu_enabled"), &LineEdit::is_context_menu_enabled);
 	ClassDB::bind_method(D_METHOD("set_virtual_keyboard_enabled", "enable"), &LineEdit::set_virtual_keyboard_enabled);
 	ClassDB::bind_method(D_METHOD("is_virtual_keyboard_enabled"), &LineEdit::is_virtual_keyboard_enabled);
+	ClassDB::bind_method(D_METHOD("set_virtual_keyboard_type", "type"), &LineEdit::set_virtual_keyboard_type);
+	ClassDB::bind_method(D_METHOD("get_virtual_keyboard_type"), &LineEdit::get_virtual_keyboard_type);
 	ClassDB::bind_method(D_METHOD("set_clear_button_enabled", "enable"), &LineEdit::set_clear_button_enabled);
 	ClassDB::bind_method(D_METHOD("is_clear_button_enabled"), &LineEdit::is_clear_button_enabled);
 	ClassDB::bind_method(D_METHOD("set_shortcut_keys_enabled", "enable"), &LineEdit::set_shortcut_keys_enabled);
@@ -2038,6 +2050,15 @@ void LineEdit::_bind_methods() {
 	BIND_ENUM_CONSTANT(MENU_REDO);
 	BIND_ENUM_CONSTANT(MENU_MAX);
 
+	BIND_ENUM_CONSTANT(KEYBOARD_TYPE_DEFAULT);
+	BIND_ENUM_CONSTANT(KEYBOARD_TYPE_MULTILINE);
+	BIND_ENUM_CONSTANT(KEYBOARD_TYPE_NUMBER);
+	BIND_ENUM_CONSTANT(KEYBOARD_TYPE_NUMBER_DECIMAL);
+	BIND_ENUM_CONSTANT(KEYBOARD_TYPE_PHONE);
+	BIND_ENUM_CONSTANT(KEYBOARD_TYPE_EMAIL_ADDRESS);
+	BIND_ENUM_CONSTANT(KEYBOARD_TYPE_PASSWORD);
+	BIND_ENUM_CONSTANT(KEYBOARD_TYPE_URL);
+
 	ADD_PROPERTY(PropertyInfo(Variant::STRING, "text"), "set_text", "get_text");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "align", PROPERTY_HINT_ENUM, "Left,Center,Right,Fill"), "set_align", "get_align");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "max_length", PROPERTY_HINT_RANGE, "0,1000,1,or_greater"), "set_max_length", "get_max_length");
@@ -2047,6 +2068,7 @@ void LineEdit::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "expand_to_text_length"), "set_expand_to_text_length", "get_expand_to_text_length");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "context_menu_enabled"), "set_context_menu_enabled", "is_context_menu_enabled");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "virtual_keyboard_enabled"), "set_virtual_keyboard_enabled", "is_virtual_keyboard_enabled");
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "virtual_keyboard_type", PROPERTY_HINT_ENUM, "Default,Multiline,Number,Decimal,Phone,Email,Password,URL"), "set_virtual_keyboard_type", "get_virtual_keyboard_type");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "clear_button_enabled"), "set_clear_button_enabled", "is_clear_button_enabled");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "shortcut_keys_enabled"), "set_shortcut_keys_enabled", "is_shortcut_keys_enabled");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "middle_mouse_paste_enabled"), "set_middle_mouse_paste_enabled", "is_middle_mouse_paste_enabled");

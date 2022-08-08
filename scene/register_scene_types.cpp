@@ -62,6 +62,7 @@
 #include "scene/2d/position_2d.h"
 #include "scene/2d/ray_cast_2d.h"
 #include "scene/2d/remote_transform_2d.h"
+#include "scene/2d/shape_cast_2d.h"
 #include "scene/2d/skeleton_2d.h"
 #include "scene/2d/sprite.h"
 #include "scene/2d/tile_map.h"
@@ -78,6 +79,7 @@
 #include "scene/animation/animation_tree.h"
 #include "scene/animation/animation_tree_player.h"
 #include "scene/animation/root_motion_view.h"
+#include "scene/animation/scene_tree_tween.h"
 #include "scene/animation/tween.h"
 #include "scene/audio/audio_stream_player.h"
 #include "scene/gui/aspect_ratio_container.h"
@@ -189,6 +191,7 @@
 #include "scene/3d/gi_probe.h"
 #include "scene/3d/immediate_geometry.h"
 #include "scene/3d/interpolated_camera.h"
+#include "scene/3d/label_3d.h"
 #include "scene/3d/light.h"
 #include "scene/3d/listener.h"
 #include "scene/3d/mesh_instance.h"
@@ -211,6 +214,7 @@
 #include "scene/3d/room.h"
 #include "scene/3d/room_group.h"
 #include "scene/3d/room_manager.h"
+#include "scene/3d/shape_cast.h"
 #include "scene/3d/skeleton.h"
 #include "scene/3d/soft_body.h"
 #include "scene/3d/spring_arm.h"
@@ -392,6 +396,12 @@ void register_scene_types() {
 	ClassDB::register_class<Skeleton>();
 	ClassDB::register_class<AnimationPlayer>();
 	ClassDB::register_class<Tween>();
+	ClassDB::register_class<SceneTreeTween>();
+	ClassDB::register_virtual_class<Tweener>();
+	ClassDB::register_class<PropertyTweener>();
+	ClassDB::register_class<IntervalTweener>();
+	ClassDB::register_class<CallbackTweener>();
+	ClassDB::register_class<MethodTweener>();
 
 	ClassDB::register_class<AnimationTreePlayer>();
 	ClassDB::register_class<AnimationTree>();
@@ -434,6 +444,7 @@ void register_scene_types() {
 	ClassDB::register_virtual_class<SpriteBase3D>();
 	ClassDB::register_class<Sprite3D>();
 	ClassDB::register_class<AnimatedSprite3D>();
+	ClassDB::register_class<Label3D>();
 	ClassDB::register_virtual_class<Light>();
 	ClassDB::register_class<DirectionalLight>();
 	ClassDB::register_class<OmniLight>();
@@ -481,6 +492,7 @@ void register_scene_types() {
 	ClassDB::register_class<CollisionShape>();
 	ClassDB::register_class<CollisionPolygon>();
 	ClassDB::register_class<RayCast>();
+	ClassDB::register_class<ShapeCast>();
 	ClassDB::register_class<MultiMeshInstance>();
 
 	ClassDB::register_class<Curve3D>();
@@ -601,6 +613,7 @@ void register_scene_types() {
 	ClassDB::register_class<CollisionShape2D>();
 	ClassDB::register_class<CollisionPolygon2D>();
 	ClassDB::register_class<RayCast2D>();
+	ClassDB::register_class<ShapeCast2D>();
 	ClassDB::register_class<VisibilityNotifier2D>();
 	ClassDB::register_class<VisibilityEnabler2D>();
 	ClassDB::register_class<Polygon2D>();
@@ -651,6 +664,7 @@ void register_scene_types() {
 	ClassDB::register_class<PrismMesh>();
 	ClassDB::register_class<QuadMesh>();
 	ClassDB::register_class<SphereMesh>();
+	ClassDB::register_class<TextMesh>();
 	ClassDB::register_class<PointMesh>();
 	ClassDB::register_virtual_class<Material>();
 	ClassDB::register_class<SpatialMaterial>();
@@ -778,14 +792,19 @@ void register_scene_types() {
 	OS::get_singleton()->yield(); //may take time to init
 
 	for (int i = 0; i < 20; i++) {
-		GLOBAL_DEF("layer_names/2d_render/layer_" + itos(i + 1), "");
-		GLOBAL_DEF("layer_names/3d_render/layer_" + itos(i + 1), "");
+		GLOBAL_DEF(vformat("%s/layer_%d", PNAME("layer_names/2d_render"), i + 1), "");
+		GLOBAL_DEF(vformat("%s/layer_%d", PNAME("layer_names/3d_render"), i + 1), "");
 	}
 
 	for (int i = 0; i < 32; i++) {
-		GLOBAL_DEF("layer_names/2d_physics/layer_" + itos(i + 1), "");
-		GLOBAL_DEF("layer_names/3d_physics/layer_" + itos(i + 1), "");
+		GLOBAL_DEF(vformat("%s/layer_%d", PNAME("layer_names/2d_physics"), i + 1), "");
+		GLOBAL_DEF(vformat("%s/layer_%d", PNAME("layer_names/3d_physics"), i + 1), "");
 	}
+
+	for (int i = 0; i < 32; i++) {
+		GLOBAL_DEF(vformat("%s/layer_%d", PNAME("layer_names/2d_navigation"), i + 1), "");
+		GLOBAL_DEF(vformat("%s/layer_%d", PNAME("layer_names/3d_navigation"), i + 1), "");
+	};
 }
 
 void initialize_theme() {

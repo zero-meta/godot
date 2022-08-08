@@ -256,7 +256,6 @@ void EditorSettings::_load_defaults(Ref<ConfigFile> p_extra_config) {
 	{
 		String lang_hint = "en";
 		String host_lang = OS::get_singleton()->get_locale();
-		host_lang = TranslationServer::standardize_locale(host_lang);
 
 		// Some locales are not properly supported currently in Godot due to lack of font shaping
 		// (e.g. Arabic or Hindi), so even though we have work in progress translations for them,
@@ -264,6 +263,7 @@ void EditorSettings::_load_defaults(Ref<ConfigFile> p_extra_config) {
 		const Vector<String> locales_to_skip = String("ar,bn,fa,he,hi,ml,si,ta,te,ur").split(",");
 
 		String best;
+		int best_score = 0;
 		const Vector<String> &locales = get_editor_locales();
 		for (int i = 0; i < locales.size(); i++) {
 			const String &locale = locales[i];
@@ -278,16 +278,17 @@ void EditorSettings::_load_defaults(Ref<ConfigFile> p_extra_config) {
 			lang_hint += ",";
 			lang_hint += locale;
 
-			if (host_lang == locale) {
+			int score = TranslationServer::get_singleton()->compare_locales(host_lang, locale);
+			if (score > 0 && score >= best_score) {
 				best = locale;
-			}
-
-			if (best == String() && host_lang.begins_with(locale)) {
-				best = locale;
+				best_score = score;
+				if (score == 10) {
+					break; // Exact match, skip the rest.
+				}
 			}
 		}
 
-		if (best == String()) {
+		if (best_score == 0) {
 			best = "en";
 		}
 
@@ -438,6 +439,8 @@ void EditorSettings::_load_defaults(Ref<ConfigFile> p_extra_config) {
 	_initial_set("text_editor/navigation/minimap_width", 80);
 	hints["text_editor/navigation/minimap_width"] = PropertyInfo(Variant::INT, "text_editor/navigation/minimap_width", PROPERTY_HINT_RANGE, "50,250,1");
 	_initial_set("text_editor/navigation/mouse_extra_buttons_navigate_history", true);
+	_initial_set("text_editor/navigation/drag_and_drop_selection", true);
+	_initial_set("text_editor/navigation/stay_in_script_editor_on_node_selected", true);
 
 	// Appearance
 	_initial_set("text_editor/appearance/show_line_numbers", true);
@@ -460,6 +463,8 @@ void EditorSettings::_load_defaults(Ref<ConfigFile> p_extra_config) {
 	_initial_set("text_editor/files/trim_trailing_whitespace_on_save", false);
 	_initial_set("text_editor/files/autosave_interval_secs", 0);
 	_initial_set("text_editor/files/restore_scripts_on_load", true);
+	_initial_set("text_editor/files/auto_reload_and_parse_scripts_on_save", true);
+	_initial_set("text_editor/files/auto_reload_scripts_on_external_change", false);
 
 	// Tools
 	_initial_set("text_editor/tools/create_signal_callbacks", true);
@@ -498,6 +503,7 @@ void EditorSettings::_load_defaults(Ref<ConfigFile> p_extra_config) {
 
 	// GridMap
 	_initial_set("editors/grid_map/pick_distance", 5000.0);
+	_initial_set("editors/grid_map/preview_size", 64);
 
 	// 3D
 	_initial_set("editors/3d/primary_grid_color", Color(0.56, 0.56, 0.56, 0.5));
@@ -506,6 +512,9 @@ void EditorSettings::_load_defaults(Ref<ConfigFile> p_extra_config) {
 	// Use a similar color to the 2D editor selection.
 	_initial_set("editors/3d/selection_box_color", Color(1.0, 0.5, 0));
 	hints["editors/3d/selection_box_color"] = PropertyInfo(Variant::COLOR, "editors/3d/selection_box_color", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_RESTART_IF_CHANGED);
+	_initial_set("editors/3d_gizmos/gizmo_colors/instanced", Color(0.7, 0.7, 0.7, 0.6));
+	_initial_set("editors/3d_gizmos/gizmo_colors/joint", Color(0.5, 0.8, 1));
+	_initial_set("editors/3d_gizmos/gizmo_colors/shape", Color(0.5, 0.7, 1));
 
 	// If a line is a multiple of this, it uses the primary grid color.
 	// Use a power of 2 value by default as it's more common to use powers of 2 in level design.
@@ -659,6 +668,7 @@ void EditorSettings::_load_defaults(Ref<ConfigFile> p_extra_config) {
 
 	/* Extra config */
 
+	// TRANSLATORS: Project Manager here refers to the tool used to create/manage Godot projects.
 	_initial_set("project_manager/sorting_order", 0);
 	hints["project_manager/sorting_order"] = PropertyInfo(Variant::INT, "project_manager/sorting_order", PROPERTY_HINT_ENUM, "Name,Path,Last Modified");
 

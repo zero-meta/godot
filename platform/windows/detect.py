@@ -70,9 +70,9 @@ def get_opts():
         ("msvc_version", "MSVC version to use. Ignored if VCINSTALLDIR is set in shell env.", None),
         BoolVariable("use_mingw", "Use the Mingw compiler, even if MSVC is installed.", False),
         BoolVariable("use_llvm", "Use the LLVM compiler", False),
-        BoolVariable("use_thinlto", "Use ThinLTO", False),
         BoolVariable("use_static_cpp", "Link MinGW/MSVC C++ runtime libraries statically", True),
         BoolVariable("use_asan", "Use address sanitizer (ASAN)", False),
+        BoolVariable("incremental_link", "Use MSVC incremental linking. May increase or decrease build times.", False),
     ]
 
 
@@ -194,7 +194,6 @@ def configure_msvc(env, manual_msvc_config):
 
     elif env["target"] == "debug":
         env.AppendUnique(CCFLAGS=["/Zi", "/FS", "/Od", "/EHsc"])
-        # Allow big objects. Only needed for debug, see MinGW branch for rationale.
         env.Append(LINKFLAGS=["/DEBUG"])
 
     if env["windows_subsystem"] == "gui":
@@ -215,6 +214,10 @@ def configure_msvc(env, manual_msvc_config):
         env.AppendUnique(CCFLAGS=["/MT"])
     else:
         env.AppendUnique(CCFLAGS=["/MD"])
+
+    # MSVC incremental linking is broken and may _increase_ link time (GH-77968).
+    if not env["incremental_link"]:
+        env.Append(LINKFLAGS=["/INCREMENTAL:NO"])
 
     env.AppendUnique(CCFLAGS=["/Gd", "/GR", "/nologo"])
     env.AppendUnique(CCFLAGS=["/utf-8"])  # Force to use Unicode encoding.
@@ -282,7 +285,13 @@ def configure_msvc(env, manual_msvc_config):
 
     ## LTO
 
-    if env["use_lto"]:
+    if env["lto"] == "auto":  # No LTO by default for MSVC, doesn't help.
+        env["lto"] = "none"
+
+    if env["lto"] != "none":
+        if env["lto"] == "thin":
+            print("ThinLTO is only compatible with LLVM, use `use_llvm=yes` or `lto=full`.")
+            sys.exit(255)
         env.AppendUnique(CCFLAGS=["/GL"])
         env.AppendUnique(ARFLAGS=["/LTCG"])
         if env["progress"]:
@@ -393,17 +402,24 @@ def configure_mingw(env):
 
     env["x86_libtheora_opt_gcc"] = True
 
-    if env["use_lto"]:
-        if not env["use_llvm"] and env.GetOption("num_jobs") > 1:
+    ## LTO
+
+    if env["lto"] == "auto":  # Full LTO for production with MinGW.
+        env["lto"] = "full"
+
+    if env["lto"] != "none":
+        if env["lto"] == "thin":
+            if not env["use_llvm"]:
+                print("ThinLTO is only compatible with LLVM, use `use_llvm=yes` or `lto=full`.")
+                sys.exit(255)
+            env.Append(CCFLAGS=["-flto=thin"])
+            env.Append(LINKFLAGS=["-flto=thin"])
+        elif not env["use_llvm"] and env.GetOption("num_jobs") > 1:
             env.Append(CCFLAGS=["-flto"])
             env.Append(LINKFLAGS=["-flto=" + str(env.GetOption("num_jobs"))])
         else:
-            if env["use_thinlto"]:
-                env.Append(CCFLAGS=["-flto=thin"])
-                env.Append(LINKFLAGS=["-flto=thin"])
-            else:
-                env.Append(CCFLAGS=["-flto"])
-                env.Append(LINKFLAGS=["-flto"])
+            env.Append(CCFLAGS=["-flto"])
+            env.Append(LINKFLAGS=["-flto"])
 
     env.Append(LINKFLAGS=["-Wl,--stack," + str(STACK_SIZE)])
 

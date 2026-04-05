@@ -1,32 +1,32 @@
-/*************************************************************************/
-/*  audio_driver_wasapi.cpp                                              */
-/*************************************************************************/
-/*                       This file is part of:                           */
-/*                           GODOT ENGINE                                */
-/*                      https://godotengine.org                          */
-/*************************************************************************/
-/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
-/*                                                                       */
-/* Permission is hereby granted, free of charge, to any person obtaining */
-/* a copy of this software and associated documentation files (the       */
-/* "Software"), to deal in the Software without restriction, including   */
-/* without limitation the rights to use, copy, modify, merge, publish,   */
-/* distribute, sublicense, and/or sell copies of the Software, and to    */
-/* permit persons to whom the Software is furnished to do so, subject to */
-/* the following conditions:                                             */
-/*                                                                       */
-/* The above copyright notice and this permission notice shall be        */
-/* included in all copies or substantial portions of the Software.       */
-/*                                                                       */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,       */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF    */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.*/
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY  */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,  */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE     */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
-/*************************************************************************/
+/**************************************************************************/
+/*  audio_driver_wasapi.cpp                                               */
+/**************************************************************************/
+/*                         This file is part of:                          */
+/*                             GODOT ENGINE                               */
+/*                        https://godotengine.org                         */
+/**************************************************************************/
+/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
 
 #ifdef WASAPI_ENABLED
 
@@ -37,7 +37,7 @@
 
 #include <functiondiscoverykeys.h>
 
-#ifndef PKEY_Device_FriendlyName
+#ifndef PKEY_Device_FriendlyNameGodot
 
 #undef DEFINE_PROPERTYKEY
 /* clang-format off */
@@ -45,7 +45,7 @@
 	const PROPERTYKEY id = { { a, b, c, { d, e, f, g, h, i, j, k, } }, l };
 /* clang-format on */
 
-DEFINE_PROPERTYKEY(PKEY_Device_FriendlyName, 0xa45c254e, 0xdf1c, 0x4efd, 0x80, 0x20, 0x67, 0xd1, 0x46, 0xa8, 0x50, 0xe0, 14);
+DEFINE_PROPERTYKEY(PKEY_Device_FriendlyNameGodot, 0xa45c254e, 0xdf1c, 0x4efd, 0x80, 0x20, 0x67, 0xd1, 0x46, 0xa8, 0x50, 0xe0, 14);
 #endif
 
 const CLSID CLSID_MMDeviceEnumerator = __uuidof(MMDeviceEnumerator);
@@ -178,7 +178,7 @@ Error AudioDriverWASAPI::audio_device_init(AudioDeviceWASAPI *p_device, bool p_c
 			PROPVARIANT propvar;
 			PropVariantInit(&propvar);
 
-			hr = props->GetValue(PKEY_Device_FriendlyName, &propvar);
+			hr = props->GetValue(PKEY_Device_FriendlyNameGodot, &propvar);
 			ERR_BREAK(hr != S_OK);
 
 			if (p_device->device_name == String(propvar.pwszVal)) {
@@ -317,6 +317,14 @@ Error AudioDriverWASAPI::init_render_device(bool reinit) {
 		return err;
 
 	switch (audio_output.channels) {
+		case 1: // Mono
+		case 3: // Surround 2.1
+		case 5: // Surround 5.0
+		case 7: // Surround 7.0
+			// We will downmix as required.
+			channels = audio_output.channels + 1;
+			break;
+
 		case 2: // Stereo
 		case 4: // Surround 3.1
 		case 6: // Surround 5.1
@@ -343,7 +351,7 @@ Error AudioDriverWASAPI::init_render_device(bool reinit) {
 	input_position = 0;
 	input_size = 0;
 
-	print_verbose("WASAPI: detected " + itos(channels) + " channels");
+	print_verbose("WASAPI: detected " + itos(audio_output.channels) + " channels");
 	print_verbose("WASAPI: audio buffer frames: " + itos(buffer_frames) + " calculated latency: " + itos(buffer_frames * 1000 / mix_rate) + "ms");
 
 	return OK;
@@ -365,12 +373,12 @@ Error AudioDriverWASAPI::init_capture_device(bool reinit) {
 }
 
 Error AudioDriverWASAPI::audio_device_finish(AudioDeviceWASAPI *p_device) {
-	if (p_device->active) {
+	if (p_device->active.is_set()) {
 		if (p_device->audio_client) {
 			p_device->audio_client->Stop();
 		}
 
-		p_device->active = false;
+		p_device->active.clear();
 	}
 
 	SAFE_RELEASE(p_device->audio_client)
@@ -391,13 +399,10 @@ Error AudioDriverWASAPI::finish_capture_device() {
 Error AudioDriverWASAPI::init() {
 	mix_rate = GLOBAL_GET("audio/mix_rate");
 
-	Error err = init_render_device();
-	if (err != OK) {
-		ERR_PRINT("WASAPI: init_render_device error");
-	}
+	exit_thread.clear();
 
-	exit_thread = false;
-	thread_exited = false;
+	Error err = init_render_device();
+	ERR_FAIL_COND_V_MSG(err != OK, err, "WASAPI: init_render_device error.");
 
 	thread.start(thread_func, this);
 
@@ -444,7 +449,7 @@ Array AudioDriverWASAPI::audio_device_get_list(bool p_capture) {
 		PROPVARIANT propvar;
 		PropVariantInit(&propvar);
 
-		hr = props->GetValue(PKEY_Device_FriendlyName, &propvar);
+		hr = props->GetValue(PKEY_Device_FriendlyNameGodot, &propvar);
 		ERR_BREAK(hr != S_OK);
 
 		list.push_back(String(propvar.pwszVal));
@@ -543,7 +548,7 @@ void AudioDriverWASAPI::thread_func(void *p_udata) {
 	uint32_t avail_frames = 0;
 	uint32_t write_ofs = 0;
 
-	while (!ad->exit_thread) {
+	while (!ad->exit_thread.is_set()) {
 		uint32_t read_frames = 0;
 		uint32_t written_frames = 0;
 
@@ -551,7 +556,7 @@ void AudioDriverWASAPI::thread_func(void *p_udata) {
 			ad->lock();
 			ad->start_counting_ticks();
 
-			if (ad->audio_output.active) {
+			if (ad->audio_output.active.is_set()) {
 				ad->audio_server_process(ad->buffer_frames, ad->samples_in.ptrw());
 			} else {
 				for (int i = 0; i < ad->samples_in.size(); i++) {
@@ -585,6 +590,19 @@ void AudioDriverWASAPI::thread_func(void *p_udata) {
 							for (unsigned int i = 0; i < write_frames * ad->channels; i++) {
 								ad->write_sample(ad->audio_output.format_tag, ad->audio_output.bits_per_sample, buffer, i, ad->samples_in.write[write_ofs++]);
 							}
+						} else if (ad->channels == ad->audio_output.channels + 1) {
+							// Pass all channels except the last two as-is, and then mix the last two
+							// together as one channel. E.g. stereo -> mono, or 3.1 -> 2.1.
+							unsigned int last_chan = ad->audio_output.channels - 1;
+							for (unsigned int i = 0; i < write_frames; i++) {
+								for (unsigned int j = 0; j < last_chan; j++) {
+									ad->write_sample(ad->audio_output.format_tag, ad->audio_output.bits_per_sample, buffer, i * ad->audio_output.channels + j, ad->samples_in.write[write_ofs++]);
+								}
+								int32_t l = ad->samples_in.write[write_ofs++];
+								int32_t r = ad->samples_in.write[write_ofs++];
+								int32_t c = (int32_t)(((int64_t)l + (int64_t)r) / 2);
+								ad->write_sample(ad->audio_output.format_tag, ad->audio_output.bits_per_sample, buffer, i * ad->audio_output.channels + last_chan, c);
+							}
 						} else {
 							for (unsigned int i = 0; i < write_frames; i++) {
 								for (unsigned int j = 0; j < MIN(ad->channels, ad->audio_output.channels); j++) {
@@ -617,7 +635,7 @@ void AudioDriverWASAPI::thread_func(void *p_udata) {
 						}
 					} else {
 						ERR_PRINT("WASAPI: Get buffer error");
-						ad->exit_thread = true;
+						ad->exit_thread.set();
 					}
 				}
 			} else if (hr == AUDCLNT_E_DEVICE_INVALIDATED) {
@@ -666,7 +684,7 @@ void AudioDriverWASAPI::thread_func(void *p_udata) {
 			write_ofs = 0;
 		}
 
-		if (ad->audio_input.active) {
+		if (ad->audio_input.active.is_set()) {
 			UINT32 packet_length = 0;
 			BYTE *data;
 			UINT32 num_frames_available;
@@ -745,8 +763,6 @@ void AudioDriverWASAPI::thread_func(void *p_udata) {
 			OS::get_singleton()->delay_usec(1000);
 		}
 	}
-
-	ad->thread_exited = true;
 }
 
 void AudioDriverWASAPI::start() {
@@ -755,7 +771,7 @@ void AudioDriverWASAPI::start() {
 		if (hr != S_OK) {
 			ERR_PRINT("WASAPI: Start failed");
 		} else {
-			audio_output.active = true;
+			audio_output.active.set();
 		}
 	}
 }
@@ -769,7 +785,7 @@ void AudioDriverWASAPI::unlock() {
 }
 
 void AudioDriverWASAPI::finish() {
-	exit_thread = true;
+	exit_thread.set();
 	thread.wait_to_finish();
 
 	finish_capture_device();
@@ -783,19 +799,19 @@ Error AudioDriverWASAPI::capture_start() {
 		return err;
 	}
 
-	if (audio_input.active) {
+	if (audio_input.active.is_set()) {
 		return FAILED;
 	}
 
 	audio_input.audio_client->Start();
-	audio_input.active = true;
+	audio_input.active.set();
 	return OK;
 }
 
 Error AudioDriverWASAPI::capture_stop() {
-	if (audio_input.active) {
+	if (audio_input.active.is_set()) {
 		audio_input.audio_client->Stop();
-		audio_input.active = false;
+		audio_input.active.clear();
 
 		return OK;
 	}
@@ -827,9 +843,6 @@ AudioDriverWASAPI::AudioDriverWASAPI() {
 	channels = 0;
 	mix_rate = 0;
 	buffer_frames = 0;
-
-	thread_exited = false;
-	exit_thread = false;
 }
 
 #endif

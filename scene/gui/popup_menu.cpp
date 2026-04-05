@@ -1,39 +1,37 @@
-/*************************************************************************/
-/*  popup_menu.cpp                                                       */
-/*************************************************************************/
-/*                       This file is part of:                           */
-/*                           GODOT ENGINE                                */
-/*                      https://godotengine.org                          */
-/*************************************************************************/
-/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
-/*                                                                       */
-/* Permission is hereby granted, free of charge, to any person obtaining */
-/* a copy of this software and associated documentation files (the       */
-/* "Software"), to deal in the Software without restriction, including   */
-/* without limitation the rights to use, copy, modify, merge, publish,   */
-/* distribute, sublicense, and/or sell copies of the Software, and to    */
-/* permit persons to whom the Software is furnished to do so, subject to */
-/* the following conditions:                                             */
-/*                                                                       */
-/* The above copyright notice and this permission notice shall be        */
-/* included in all copies or substantial portions of the Software.       */
-/*                                                                       */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,       */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF    */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.*/
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY  */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,  */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE     */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
-/*************************************************************************/
+/**************************************************************************/
+/*  popup_menu.cpp                                                        */
+/**************************************************************************/
+/*                         This file is part of:                          */
+/*                             GODOT ENGINE                               */
+/*                        https://godotengine.org                         */
+/**************************************************************************/
+/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
 
 #include "popup_menu.h"
 #include "core/os/input.h"
 #include "core/os/keyboard.h"
 #include "core/os/os.h"
-#include "core/print_string.h"
-#include "core/translation.h"
 
 String PopupMenu::_get_accel_text(int p_item) const {
 	ERR_FAIL_INDEX_V(p_item, items.size(), String());
@@ -50,7 +48,8 @@ Size2 PopupMenu::get_minimum_size() const {
 	int vseparation = get_constant("vseparation");
 	int hseparation = get_constant("hseparation");
 
-	Size2 minsize = get_stylebox("panel")->get_minimum_size();
+	Size2 minsize = get_stylebox("panel")->get_minimum_size(); // Accounts for margin in the margin container
+	minsize.x += scroll_container->get_v_scrollbar()->get_size().width * 2; // Adds a buffer so that the scrollbar does not render over the top of content
 	Ref<Font> font = get_font("font");
 	Ref<Font> font_separator = get_font("font_separator");
 
@@ -65,13 +64,10 @@ Size2 PopupMenu::get_minimum_size() const {
 		int font_h = items[i].separator && text != String() ? font_separator->get_height() : font->get_height();
 
 		Size2 size;
-		if (!items[i].icon.is_null()) {
-			Size2 icon_size = items[i].icon->get_size();
-			size.height = MAX(icon_size.height, font_h);
-			icon_w = MAX(icon_size.width + hseparation, icon_w);
-		} else {
-			size.height = font_h;
-		}
+
+		Size2 icon_size = items[i].get_icon_size();
+		size.height = MAX(icon_size.height, font_h);
+		icon_w = MAX(icon_size.width, icon_w);
 
 		size.width += items[i].h_ofs;
 
@@ -102,7 +98,42 @@ Size2 PopupMenu::get_minimum_size() const {
 		minsize.width += check_w;
 	}
 
+	minsize.height = MIN(minsize.height, OS::get_singleton()->get_window_size().height);
+
+	if (max_height > 0 && minsize.height > max_height) {
+		minsize.height = max_height;
+	}
+
 	return minsize;
+}
+
+int PopupMenu::_get_items_total_height() const {
+	int font_height = get_font("font")->get_height();
+	int vsep = get_constant("vseparation");
+
+	// Get total height of all items by taking max of icon height and font height
+	int items_total_height = 0;
+	for (int i = 0; i < items.size(); i++) {
+		items_total_height += MAX(items[i].get_icon_size().height, font_height) + vsep;
+	}
+
+	return items_total_height;
+}
+
+void PopupMenu::_scroll_to_item(int p_item) {
+	ERR_FAIL_INDEX(p_item, items.size());
+
+	// Scroll item into view (upwards)
+	if (items[p_item]._ofs_cache < -control->get_position().y) {
+		int amnt_over = items[p_item]._ofs_cache + control->get_position().y;
+		scroll_container->set_v_scroll(scroll_container->get_v_scroll() + amnt_over);
+	}
+
+	// Scroll item into view (downwards)
+	if (items[p_item]._ofs_cache + items[p_item]._height_cache > -control->get_position().y + scroll_container->get_size().height) {
+		int amnt_over = items[p_item]._ofs_cache + items[p_item]._height_cache + control->get_position().y - scroll_container->get_size().height;
+		scroll_container->set_v_scroll(scroll_container->get_v_scroll() + amnt_over);
+	}
 }
 
 int PopupMenu::_get_mouse_over(const Point2 &p_over) const {
@@ -110,34 +141,17 @@ int PopupMenu::_get_mouse_over(const Point2 &p_over) const {
 		return -1;
 	}
 
-	Ref<StyleBox> style = get_stylebox("panel");
+	Ref<StyleBox> style = get_stylebox("panel"); // Accounts for margin in the margin container
 
-	Point2 ofs = style->get_offset();
-
-	if (ofs.y > p_over.y) {
-		return -1;
-	}
-
-	Ref<Font> font = get_font("font");
-	Ref<Font> font_separator = get_font("font_separator");
 	int vseparation = get_constant("vseparation");
+	float font_h = get_font("font")->get_height();
+
+	real_t ofs = style->get_margin(MARGIN_TOP) + control->get_position().y;
 
 	for (int i = 0; i < items.size(); i++) {
-		String text = items[i].xl_text;
-		float font_h = items[i].separator && text != String() ? font_separator->get_height() : font->get_height();
+		ofs += MAX(items[i].get_icon_size().height, font_h) + vseparation;
 
-		ofs.y += vseparation;
-		float h;
-
-		if (!items[i].icon.is_null()) {
-			Size2 icon_size = items[i].icon->get_size();
-			h = MAX(icon_size.height, font_h);
-		} else {
-			h = font_h;
-		}
-
-		ofs.y += h;
-		if (p_over.y < ofs.y) {
+		if (p_over.y < ofs) {
 			return i;
 		}
 	}
@@ -145,44 +159,61 @@ int PopupMenu::_get_mouse_over(const Point2 &p_over) const {
 	return -1;
 }
 
-void PopupMenu::_activate_submenu(int over) {
+void PopupMenu::_activate_submenu(int over, bool p_by_keyboard) {
 	Node *n = get_node(items[over].submenu);
 	ERR_FAIL_COND_MSG(!n, "Item subnode does not exist: " + items[over].submenu + ".");
-	Popup *pm = Object::cast_to<Popup>(n);
-	ERR_FAIL_COND_MSG(!pm, "Item subnode is not a Popup: " + items[over].submenu + ".");
-	if (pm->is_visible_in_tree()) {
+	Popup *submenu_popup = Object::cast_to<Popup>(n);
+	ERR_FAIL_COND_MSG(!submenu_popup, "Item subnode is not a Popup: " + items[over].submenu + ".");
+	if (submenu_popup->is_visible_in_tree()) {
 		return; // Already visible.
 	}
 
-	Point2 p = get_global_position();
-	Rect2 pr(p, get_size());
 	Ref<StyleBox> style = get_stylebox("panel");
+	int vsep = get_constant("vseparation");
 
-	Point2 pos = p + Point2(get_size().width, items[over]._ofs_cache - style->get_offset().y) * get_global_transform().get_scale();
-	Size2 size = pm->get_size();
-	// Fix pos.
-	if (pos.x + size.width > get_viewport_rect().size.width) {
-		pos.x = p.x - size.width;
+	Point2 this_pos = get_position();
+	Rect2 this_rect(this_pos, get_size());
+
+	float scroll_offset = control->get_position().y;
+
+	Point2 submenu_pos = this_pos + Point2(this_rect.size.width, items[over]._ofs_cache + scroll_offset);
+	Size2 submenu_size = submenu_popup->get_size();
+
+	// Fix pos if going outside parent rect
+	if (submenu_pos.x + submenu_size.width > get_viewport_rect().size.width) {
+		submenu_pos.x = this_pos.x - submenu_size.width;
 	}
 
-	pm->set_position(pos);
-	pm->set_scale(get_global_transform().get_scale());
-	pm->popup();
+	submenu_popup->set_position(submenu_pos);
+	submenu_popup->set_as_minsize(); // Shrink the popup size to it's contents.
+	submenu_popup->popup();
 
-	PopupMenu *pum = Object::cast_to<PopupMenu>(pm);
-	if (pum) {
-		// If not triggered by the mouse, start the popup with its first item selected.
-		if (pum->get_item_count() > 0 && Input::get_singleton()->is_action_just_pressed("ui_accept")) {
-			pum->set_current_index(0);
+	// Set autohide areas
+	PopupMenu *submenu_pum = Object::cast_to<PopupMenu>(submenu_popup);
+	if (submenu_pum) {
+		submenu_pum->activated_by_keyboard = p_by_keyboard;
+
+		// If not triggered by the mouse, start the popup with its first enabled item focused.
+		if (p_by_keyboard) {
+			for (int i = 0; i < submenu_pum->get_item_count(); i++) {
+				if (!submenu_pum->is_item_disabled(i)) {
+					submenu_pum->set_current_index(i);
+					break;
+				}
+			}
 		}
 
-		// Setting autohide areas *must* be done after `popup()` which can move the popup (to fit it into the viewport).
-		pr.position -= pum->get_global_position();
-		pum->clear_autohide_areas();
-		pum->add_autohide_area(Rect2(pr.position.x, pr.position.y, pr.size.x, items[over]._ofs_cache));
-		if (over < items.size() - 1) {
-			int from = items[over + 1]._ofs_cache;
-			pum->add_autohide_area(Rect2(pr.position.x, pr.position.y + from, pr.size.x, pr.size.y - from));
+		// Make the position of the parent popup relative to submenu popup
+		this_rect.position = this_rect.position - submenu_pum->get_position();
+
+		// Autohide area above the submenu item
+		submenu_pum->clear_autohide_areas();
+		submenu_pum->add_autohide_area(Rect2(this_rect.position.x, this_rect.position.y, this_rect.size.x, items[over]._ofs_cache + scroll_offset + style->get_offset().height - vsep / 2));
+
+		// If there is an area below the submenu item, add an autohide area there.
+		if (items[over]._ofs_cache + items[over]._height_cache + scroll_offset <= control->get_size().height) {
+			int from = items[over]._ofs_cache + items[over]._height_cache + scroll_offset + vsep / 2 + style->get_offset().height;
+			submenu_pum->add_autohide_area(Rect2(this_rect.position.x, this_rect.position.y + from, this_rect.size.x, this_rect.size.y - from));
 		}
 	}
 }
@@ -197,175 +228,144 @@ void PopupMenu::_submenu_timeout() {
 	submenu_over = -1;
 }
 
-void PopupMenu::_scroll(float p_factor, const Point2 &p_over) {
-	int vseparation = get_constant("vseparation");
-	Ref<Font> font = get_font("font");
-
-	float dy = (vseparation + font->get_height()) * 3 * p_factor * get_global_transform().get_scale().y;
-	if (dy > 0) {
-		const float global_top = get_global_position().y;
-		const float limit = global_top < 0 ? -global_top : 0;
-		dy = MIN(dy, limit);
-	} else if (dy < 0) {
-		const float global_bottom = get_global_position().y + get_size().y * get_global_transform().get_scale().y;
-		const float viewport_height = get_viewport_rect().size.y;
-		const float limit = global_bottom > viewport_height ? global_bottom - viewport_height : 0;
-		dy = -MIN(-dy, limit);
-	}
-	set_position(get_position() + Vector2(0, dy));
-
-	Ref<InputEventMouseMotion> ie;
-	ie.instance();
-	ie->set_position(p_over - Vector2(0, dy));
-	_gui_input(ie);
-}
-
 void PopupMenu::_gui_input(const Ref<InputEvent> &p_event) {
 	ERR_FAIL_COND(p_event.is_null());
 
-	if (p_event->is_action("ui_down") && p_event->is_pressed()) {
-		int search_from = mouse_over + 1;
-		if (search_from >= items.size()) {
-			search_from = 0;
-		}
-
-		bool match_found = false;
-		for (int i = search_from; i < items.size(); i++) {
-			if (i < 0 || i >= items.size()) {
-				continue;
+	if (!items.empty()) {
+		if (p_event->is_action("ui_down") && p_event->is_pressed() && mouse_over != items.size() - 1) {
+			int search_from = mouse_over + 1;
+			if (search_from >= items.size()) {
+				search_from = 0;
 			}
 
-			if (!items[i].separator && !items[i].disabled) {
-				mouse_over = i;
-				emit_signal("id_focused", i);
-				update();
-				accept_event();
-				match_found = true;
-				break;
-			}
-		}
-
-		if (!match_found) {
-			// If the last item is not selectable, try re-searching from the start.
-			for (int i = 0; i < search_from; i++) {
+			bool match_found = false;
+			for (int i = search_from; i < items.size(); i++) {
 				if (!items[i].separator && !items[i].disabled) {
 					mouse_over = i;
 					emit_signal("id_focused", i);
-					update();
-					accept_event();
+					_scroll_to_item(i);
+					control->update();
+					control->accept_event();
+					match_found = true;
 					break;
 				}
 			}
-		}
-	} else if (p_event->is_action("ui_up") && p_event->is_pressed()) {
-		int search_from = mouse_over - 1;
-		if (search_from < 0) {
-			search_from = items.size() - 1;
-		}
 
-		bool match_found = false;
-		for (int i = search_from; i >= 0; i--) {
-			if (i >= items.size()) {
-				continue;
+			if (!match_found) {
+				// If the last item is not selectable, try re-searching from the start.
+				for (int i = 0; i < search_from; i++) {
+					if (!items[i].separator && !items[i].disabled) {
+						mouse_over = i;
+						emit_signal("id_focused", i);
+						_scroll_to_item(i);
+						control->update();
+						control->accept_event();
+						break;
+					}
+				}
+			}
+		} else if (p_event->is_action("ui_up") && p_event->is_pressed() && mouse_over != 0) {
+			int search_from = mouse_over - 1;
+			if (search_from < 0) {
+				search_from = items.size() - 1;
 			}
 
-			if (!items[i].separator && !items[i].disabled) {
-				mouse_over = i;
-				emit_signal("id_focused", i);
-				update();
-				accept_event();
-				match_found = true;
-				break;
-			}
-		}
-
-		if (!match_found) {
-			// If the first item is not selectable, try re-searching from the end.
-			for (int i = items.size() - 1; i >= search_from; i--) {
+			bool match_found = false;
+			for (int i = search_from; i >= 0; i--) {
 				if (!items[i].separator && !items[i].disabled) {
 					mouse_over = i;
 					emit_signal("id_focused", i);
-					update();
-					accept_event();
+					_scroll_to_item(i);
+					control->update();
+					control->accept_event();
+					match_found = true;
 					break;
 				}
 			}
-		}
-	} else if (p_event->is_action("ui_left") && p_event->is_pressed()) {
-		Node *n = get_parent();
-		if (n && Object::cast_to<PopupMenu>(n)) {
-			hide();
-			accept_event();
-		}
-	} else if (p_event->is_action("ui_right") && p_event->is_pressed()) {
-		if (mouse_over >= 0 && mouse_over < items.size() && !items[mouse_over].separator && items[mouse_over].submenu != "" && submenu_over != mouse_over) {
-			_activate_submenu(mouse_over);
-			accept_event();
-		}
-	} else if (p_event->is_action("ui_accept") && p_event->is_pressed()) {
-		if (mouse_over >= 0 && mouse_over < items.size() && !items[mouse_over].separator) {
-			if (items[mouse_over].submenu != "" && submenu_over != mouse_over) {
-				_activate_submenu(mouse_over);
-			} else {
-				activate_item(mouse_over);
+
+			if (!match_found) {
+				// If the first item is not selectable, try re-searching from the end.
+				for (int i = items.size() - 1; i >= search_from; i--) {
+					if (!items[i].separator && !items[i].disabled) {
+						mouse_over = i;
+						emit_signal("id_focused", i);
+						_scroll_to_item(i);
+						control->update();
+						control->accept_event();
+						break;
+					}
+				}
 			}
-			accept_event();
+		} else if (p_event->is_action("ui_left") && p_event->is_pressed()) {
+			Node *n = get_parent();
+			if (n && Object::cast_to<PopupMenu>(n)) {
+				hide();
+				control->accept_event();
+			}
+		} else if (p_event->is_action("ui_right") && p_event->is_pressed()) {
+			if (mouse_over >= 0 && mouse_over < items.size() && !items[mouse_over].separator && items[mouse_over].submenu != "" && submenu_over != mouse_over) {
+				_activate_submenu(mouse_over, true);
+				control->accept_event();
+			}
+		} else if (p_event->is_action("ui_accept") && p_event->is_pressed()) {
+			if (mouse_over >= 0 && mouse_over < items.size() && !items[mouse_over].separator) {
+				if (items[mouse_over].submenu != "" && submenu_over != mouse_over) {
+					_activate_submenu(mouse_over, true);
+				} else {
+					activate_item(mouse_over);
+				}
+				control->accept_event();
+			}
 		}
 	}
+
+	// Make an area which does not include v scrollbar, so that items are not activated when dragging scrollbar.
+	Transform2D xform = get_global_transform_with_canvas();
+	Point2 item_origin = scroll_container->get_global_position();
+	float scroll_width = scroll_container->get_v_scrollbar()->is_visible_in_tree() ? scroll_container->get_v_scrollbar()->get_size().width : 0;
+	Size2 item_size = (control->get_global_rect().get_size() - Vector2(scroll_width, 0)) * xform.get_scale();
+	Rect2 item_clickable_area = Rect2(item_origin, item_size);
 
 	Ref<InputEventMouseButton> b = p_event;
 
 	if (b.is_valid()) {
-		if (b->is_pressed()) {
+		if (!item_clickable_area.has_point(b->get_global_position())) {
 			return;
 		}
 
 		int button_idx = b->get_button_index();
-		switch (button_idx) {
-			case BUTTON_WHEEL_DOWN: {
-				if (get_global_position().y + get_size().y * get_global_transform().get_scale().y > get_viewport_rect().size.y) {
-					_scroll(-b->get_factor(), b->get_position());
+		if (!b->is_pressed()) {
+			// Allow activating item by releasing the LMB or any that was down when the popup appeared.
+			// However, if button was not held when opening menu, do not allow release to activate item.
+			if (button_idx == BUTTON_LEFT || (initial_button_mask & (1 << (button_idx - 1)))) {
+				bool was_during_grabbed_click = during_grabbed_click;
+				during_grabbed_click = false;
+				initial_button_mask = 0;
+
+				int over = _get_mouse_over(b->get_position());
+
+				if (invalidated_click) {
+					invalidated_click = false;
+					return;
 				}
-			} break;
-			case BUTTON_WHEEL_UP: {
-				if (get_global_position().y < 0) {
-					_scroll(b->get_factor(), b->get_position());
+				if (over < 0) {
+					if (!was_during_grabbed_click) {
+						hide();
+					}
+					return;
 				}
-			} break;
-			default: {
-				// Allow activating item by releasing the LMB or any that was down when the popup appeared
-				if (button_idx == BUTTON_LEFT || (initial_button_mask & (1 << (button_idx - 1)))) {
-					bool was_during_grabbed_click = during_grabbed_click;
-					during_grabbed_click = false;
-					initial_button_mask = 0;
 
-					int over = _get_mouse_over(b->get_position());
-
-					if (invalidated_click) {
-						invalidated_click = false;
-						break;
-					}
-					if (over < 0) {
-						if (!was_during_grabbed_click) {
-							hide();
-						}
-						break; //non-activable
-					}
-
-					if (items[over].separator || items[over].disabled) {
-						break;
-					}
-
-					if (items[over].submenu != "") {
-						_activate_submenu(over);
-						return;
-					}
-					activate_item(over);
+				if (items[over].separator || items[over].disabled) {
+					return;
 				}
+
+				if (items[over].submenu != "") {
+					_activate_submenu(over);
+					return;
+				}
+				activate_item(over);
 			}
 		}
-
-		//update();
 	}
 
 	Ref<InputEventMouseMotion> m = p_event;
@@ -385,12 +385,16 @@ void PopupMenu::_gui_input(const Ref<InputEvent> &p_event) {
 			}
 		}
 
+		if (!item_clickable_area.has_point(m->get_global_position())) {
+			return;
+		}
+
 		int over = _get_mouse_over(m->get_position());
 		int id = (over < 0 || items[over].separator || items[over].disabled) ? -1 : (items[over].id >= 0 ? items[over].id : over);
 
 		if (id < 0) {
 			mouse_over = -1;
-			update();
+			control->update();
 			return;
 		}
 
@@ -401,14 +405,7 @@ void PopupMenu::_gui_input(const Ref<InputEvent> &p_event) {
 
 		if (over != mouse_over) {
 			mouse_over = over;
-			update();
-		}
-	}
-
-	Ref<InputEventPanGesture> pan_gesture = p_event;
-	if (pan_gesture.is_valid()) {
-		if (get_global_position().y + get_size().y > get_viewport_rect().size.y || get_global_position().y < 0) {
-			_scroll(-pan_gesture->get_delta().y, pan_gesture->get_position());
+			control->update();
 		}
 	}
 
@@ -444,12 +441,153 @@ void PopupMenu::_gui_input(const Ref<InputEvent> &p_event) {
 			if (items[i].text.findn(search_string) == 0) {
 				mouse_over = i;
 				emit_signal("id_focused", i);
-				update();
-				accept_event();
+				_scroll_to_item(i);
+				control->update();
+				control->accept_event();
 				break;
 			}
 		}
 	}
+}
+
+void PopupMenu::_draw_items() {
+	control->set_custom_minimum_size(Size2(0, _get_items_total_height()));
+	RID ci = control->get_canvas_item();
+
+	Size2 margin_size;
+	margin_size.width = margin_container->get_constant("margin_right") + margin_container->get_constant("margin_left");
+	margin_size.height = margin_container->get_constant("margin_top") + margin_container->get_constant("margin_bottom");
+
+	Ref<StyleBox> hover = get_stylebox("hover");
+	Ref<Font> font = get_font("font");
+	select_font(font);
+
+	// In Item::checkable_type enum order (less the non-checkable member)
+	Ref<Texture> check[] = { get_icon("checked"), get_icon("radio_checked") };
+	Ref<Texture> uncheck[] = { get_icon("unchecked"), get_icon("radio_unchecked") };
+	Ref<Texture> submenu = get_icon("submenu");
+	Ref<StyleBox> separator = get_stylebox("separator");
+	Ref<StyleBox> labeled_separator_left = get_stylebox("labeled_separator_left");
+	Ref<StyleBox> labeled_separator_right = get_stylebox("labeled_separator_right");
+
+	int vseparation = get_constant("vseparation");
+	int hseparation = get_constant("hseparation");
+	Color font_color = get_color("font_color");
+	Color font_color_disabled = get_color("font_color_disabled");
+	Color font_color_accel = get_color("font_color_accel");
+	Color font_color_hover = get_color("font_color_hover");
+	float font_h = font->get_height();
+
+	float scroll_width = scroll_container->get_v_scrollbar()->is_visible_in_tree() ? scroll_container->get_v_scrollbar()->get_size().width : 0;
+	float display_width = control->get_size().width - scroll_width;
+
+	// Find the widest icon and whether any items have a checkbox, and store the offsets for each.
+	float icon_ofs = 0.0;
+	bool has_check = false;
+	for (int i = 0; i < items.size(); i++) {
+		icon_ofs = MAX(items[i].get_icon_size().width, icon_ofs);
+
+		if (items[i].checkable_type) {
+			has_check = true;
+		}
+	}
+	if (icon_ofs > 0.0) {
+		icon_ofs += hseparation;
+	}
+
+	float check_ofs = 0.0;
+	if (has_check) {
+		check_ofs = MAX(get_icon("checked")->get_width(), get_icon("radio_checked")->get_width()) + hseparation;
+	}
+
+	Point2 ofs = Point2(0, vseparation / 2);
+
+	// Loop through all items and draw each.
+	for (int i = 0; i < items.size(); i++) {
+		// If not the first item, add the separation space between items.
+		if (i > 0) {
+			ofs.y += vseparation;
+		}
+
+		Point2 item_ofs = ofs;
+		Size2 icon_size = items[i].get_icon_size();
+		float h = MAX(icon_size.height, font_h);
+
+		if (i == mouse_over) {
+			hover->draw(ci, Rect2(item_ofs + Point2(-hseparation, -vseparation / 2), Size2(display_width + hseparation * 2, h + vseparation)));
+		}
+
+		String text = items[i].xl_text;
+
+		// Separator
+		item_ofs.x += items[i].h_ofs;
+		if (items[i].separator) {
+			int sep_h = separator->get_center_size().height + separator->get_minimum_size().height;
+			if (text != String()) {
+				int text_size = font->get_string_size(text).width;
+				int text_center = display_width / 2;
+				int text_left = text_center - text_size / 2;
+				int text_right = text_center + text_size / 2;
+				if (text_left > item_ofs.x) {
+					labeled_separator_left->draw(ci, Rect2(item_ofs + Point2(0, Math::floor((h - sep_h) / 2.0)), Size2(MAX(0, text_left - item_ofs.x), sep_h)));
+				}
+				if (text_right < display_width) {
+					labeled_separator_right->draw(ci, Rect2(Point2(text_right, item_ofs.y + Math::floor((h - sep_h) / 2.0)), Size2(MAX(0, display_width - text_right), sep_h)));
+				}
+			} else {
+				separator->draw(ci, Rect2(item_ofs + Point2(0, Math::floor((h - sep_h) / 2.0)), Size2(display_width, sep_h)));
+			}
+		}
+
+		Color icon_color(1, 1, 1, items[i].disabled ? 0.5 : 1);
+
+		// Checkboxes
+		if (items[i].checkable_type) {
+			Texture *icon = (items[i].checked ? check[items[i].checkable_type - 1] : uncheck[items[i].checkable_type - 1]).ptr();
+			icon->draw(ci, item_ofs + Point2(0, Math::floor((h - icon->get_height()) / 2.0)), icon_color);
+		}
+
+		// Icon
+		if (!items[i].icon.is_null()) {
+			items[i].icon->draw(ci, item_ofs + Size2(check_ofs, 0) + Point2(0, Math::floor((h - icon_size.height) / 2.0)), icon_color);
+		}
+
+		// Submenu arrow on right hand side
+		if (items[i].submenu != "") {
+			submenu->draw(ci, Point2(display_width - submenu->get_width(), item_ofs.y + Math::floor(h - submenu->get_height()) / 2), icon_color);
+		}
+
+		// Text
+		item_ofs.y += font->get_ascent();
+		if (items[i].separator) {
+			if (text != String()) {
+				int center = (display_width - font->get_string_size(text).width) / 2;
+				font->draw(ci, Point2(center, item_ofs.y + Math::floor((h - font_h) / 2.0)), text, font_color_disabled);
+			}
+		} else {
+			item_ofs.x += icon_ofs + check_ofs;
+			font->draw(ci, item_ofs + Point2(0, Math::floor((h - font_h) / 2.0)), text, items[i].disabled ? font_color_disabled : (i == mouse_over ? font_color_hover : font_color));
+		}
+
+		// Accelerator / Shortcut
+		if (items[i].accel || (items[i].shortcut.is_valid() && items[i].shortcut->is_valid())) {
+			String sc_text = _get_accel_text(i);
+			item_ofs.x = display_width - font->get_string_size(sc_text).width;
+			font->draw(ci, item_ofs + Point2(0, Math::floor((h - font_h) / 2.0)), sc_text, i == mouse_over ? font_color_hover : font_color_accel);
+		}
+
+		// Cache the item vertical offset from the first item and the height
+		items.write[i]._ofs_cache = ofs.y;
+		items.write[i]._height_cache = h;
+
+		ofs.y += h;
+	}
+}
+
+void PopupMenu::_draw_background() {
+	Ref<StyleBox> style = get_stylebox("panel");
+	RID ci2 = margin_container->get_canvas_item();
+	style->draw(ci2, Rect2(Point2(), margin_container->get_size()));
 }
 
 bool PopupMenu::has_point(const Point2 &p_point) const {
@@ -481,138 +619,7 @@ void PopupMenu::_notification(int p_what) {
 			}
 
 			minimum_size_changed();
-			update();
-		} break;
-		case NOTIFICATION_DRAW: {
-			RID ci = get_canvas_item();
-			Size2 size = get_size();
-
-			Ref<StyleBox> style = get_stylebox("panel");
-			Ref<StyleBox> hover = get_stylebox("hover");
-			Ref<Font> font = get_font("font");
-			Ref<Font> font_separator = get_font("font_separator");
-			// In Item::checkable_type enum order (less the non-checkable member)
-			Ref<Texture> check[] = { get_icon("checked"), get_icon("radio_checked") };
-			Ref<Texture> uncheck[] = { get_icon("unchecked"), get_icon("radio_unchecked") };
-			Ref<Texture> submenu = get_icon("submenu");
-			Ref<StyleBox> separator = get_stylebox("separator");
-			Ref<StyleBox> labeled_separator_left = get_stylebox("labeled_separator_left");
-			Ref<StyleBox> labeled_separator_right = get_stylebox("labeled_separator_right");
-
-			style->draw(ci, Rect2(Point2(), size));
-			Point2 ofs = style->get_offset();
-			int vseparation = get_constant("vseparation");
-			int hseparation = get_constant("hseparation");
-			Color font_color = get_color("font_color");
-			Color font_color_disabled = get_color("font_color_disabled");
-			Color font_color_accel = get_color("font_color_accel");
-			Color font_color_hover = get_color("font_color_hover");
-			Color font_color_separator = get_color("font_color_separator");
-
-			// Add the check and the wider icon to the offset of all items.
-			float icon_ofs = 0.0;
-			bool has_check = false;
-			for (int i = 0; i < items.size(); i++) {
-				if (!items[i].icon.is_null()) {
-					icon_ofs = MAX(items[i].icon->get_size().width, icon_ofs);
-				}
-
-				if (items[i].checkable_type) {
-					has_check = true;
-				}
-			}
-			if (icon_ofs > 0.0) {
-				icon_ofs += hseparation;
-			}
-
-			float check_ofs = 0.0;
-			if (has_check) {
-				check_ofs = MAX(get_icon("checked")->get_width(), get_icon("radio_checked")->get_width()) + hseparation;
-			}
-
-			for (int i = 0; i < items.size(); i++) {
-				String text = items[i].xl_text;
-				float font_h = items[i].separator && text != String() ? font_separator->get_height() : font->get_height();
-
-				if (i == 0) {
-					ofs.y += vseparation / 2;
-				} else {
-					ofs.y += vseparation;
-				}
-				Point2 item_ofs = ofs;
-				Size2 icon_size;
-				float h;
-
-				if (!items[i].icon.is_null()) {
-					icon_size = items[i].icon->get_size();
-					h = MAX(icon_size.height, font_h);
-				} else {
-					h = font_h;
-				}
-
-				if (i == mouse_over) {
-					hover->draw(ci, Rect2(item_ofs + Point2(0, -vseparation / 2), Size2(size.width - style->get_minimum_size().width, h + vseparation)));
-				}
-
-				item_ofs.x += items[i].h_ofs;
-				if (items[i].separator) {
-					if (text != String()) {
-						int ss = font_separator->get_string_size(text).width / 2;
-						int center = get_size().width / 2;
-						int l = center - ss;
-						int r = center + ss;
-						if (l > item_ofs.x) {
-							int sep_h = labeled_separator_left->get_center_size().height + labeled_separator_left->get_minimum_size().height;
-							labeled_separator_left->draw(ci, Rect2(item_ofs + Point2(0, Math::floor((h - sep_h) / 2.0)), Size2(MAX(0, l - item_ofs.x), sep_h)));
-						}
-						if (r < get_size().width - style->get_margin(MARGIN_RIGHT)) {
-							int sep_h = labeled_separator_right->get_center_size().height + labeled_separator_right->get_minimum_size().height;
-							labeled_separator_right->draw(ci, Rect2(Point2(r, item_ofs.y + Math::floor((h - sep_h) / 2.0)), Size2(MAX(0, get_size().width - style->get_margin(MARGIN_RIGHT) - r), sep_h)));
-						}
-					} else {
-						int sep_h = separator->get_center_size().height + separator->get_minimum_size().height;
-						separator->draw(ci, Rect2(item_ofs + Point2(0, Math::floor((h - sep_h) / 2.0)), Size2(get_size().width - style->get_minimum_size().width, sep_h)));
-					}
-				}
-
-				Color icon_color(1, 1, 1, items[i].disabled ? 0.5 : 1);
-
-				if (items[i].checkable_type) {
-					Texture *icon = (items[i].checked ? check[items[i].checkable_type - 1] : uncheck[items[i].checkable_type - 1]).ptr();
-					icon->draw(ci, item_ofs + Point2(0, Math::floor((h - icon->get_height()) / 2.0)), icon_color);
-				}
-
-				if (!items[i].icon.is_null()) {
-					items[i].icon->draw(ci, item_ofs + Size2(check_ofs, 0) + Point2(0, Math::floor((h - icon_size.height) / 2.0)), icon_color);
-				}
-
-				if (items[i].submenu != "") {
-					submenu->draw(ci, Point2(size.width - style->get_margin(MARGIN_RIGHT) - submenu->get_width(), item_ofs.y + Math::floor(h - submenu->get_height()) / 2), icon_color);
-				}
-
-				if (items[i].separator) {
-					if (text != String()) {
-						item_ofs.y += font_separator->get_ascent();
-						int center = (get_size().width - font_separator->get_string_size(text).width) / 2;
-						font_separator->draw(ci, Point2(center, item_ofs.y + Math::floor((h - font_h) / 2.0)), text, font_color_separator);
-					}
-				} else {
-					item_ofs.x += icon_ofs + check_ofs;
-					item_ofs.y += font->get_ascent();
-					font->draw(ci, item_ofs + Point2(0, Math::floor((h - font_h) / 2.0)), text, items[i].disabled ? font_color_disabled : (i == mouse_over ? font_color_hover : font_color));
-				}
-
-				if (items[i].accel || (items[i].shortcut.is_valid() && items[i].shortcut->is_valid())) {
-					//accelerator
-					String text2 = _get_accel_text(i);
-					item_ofs.x = size.width - style->get_margin(MARGIN_RIGHT) - font->get_string_size(text2).width;
-					font->draw(ci, item_ofs + Point2(0, Math::floor((h - font_h) / 2.0)), text2, i == mouse_over ? font_color_hover : font_color_accel);
-				}
-
-				items.write[i]._ofs_cache = ofs.y;
-
-				ofs.y += h;
-			}
+			control->update();
 		} break;
 		case MainLoop::NOTIFICATION_WM_FOCUS_OUT: {
 			if (hide_on_window_lose_focus) {
@@ -625,17 +632,25 @@ void PopupMenu::_notification(int p_what) {
 		case NOTIFICATION_MOUSE_EXIT: {
 			if (mouse_over >= 0 && (items[mouse_over].submenu == "" || submenu_over != -1)) {
 				mouse_over = -1;
-				update();
+				control->update();
 			}
 		} break;
 		case NOTIFICATION_POST_POPUP: {
 			initial_button_mask = Input::get_singleton()->get_mouse_button_mask();
 			during_grabbed_click = (bool)initial_button_mask;
 		} break;
+		case NOTIFICATION_VISIBILITY_CHANGED: {
+			// Set margin on the margin container
+			Ref<StyleBox> panel_style = get_stylebox("panel");
+			margin_container->add_constant_override("margin_top", panel_style->get_margin(Margin::MARGIN_TOP));
+			margin_container->add_constant_override("margin_bottom", panel_style->get_margin(Margin::MARGIN_BOTTOM));
+			margin_container->add_constant_override("margin_left", panel_style->get_margin(Margin::MARGIN_LEFT));
+			margin_container->add_constant_override("margin_right", panel_style->get_margin(Margin::MARGIN_RIGHT));
+		} break;
 		case NOTIFICATION_POPUP_HIDE: {
 			if (mouse_over >= 0) {
 				mouse_over = -1;
-				update();
+				control->update();
 			}
 
 			for (int i = 0; i < items.size(); i++) {
@@ -673,7 +688,7 @@ void PopupMenu::add_item(const String &p_label, int p_id, uint32_t p_accel) {
 	Item item;
 	ITEM_SETUP_WITH_ACCEL(p_label, p_id, p_accel);
 	items.push_back(item);
-	update();
+	control->update();
 	minimum_size_changed();
 }
 
@@ -682,7 +697,7 @@ void PopupMenu::add_icon_item(const Ref<Texture> &p_icon, const String &p_label,
 	ITEM_SETUP_WITH_ACCEL(p_label, p_id, p_accel);
 	item.icon = p_icon;
 	items.push_back(item);
-	update();
+	control->update();
 	minimum_size_changed();
 }
 
@@ -691,7 +706,7 @@ void PopupMenu::add_check_item(const String &p_label, int p_id, uint32_t p_accel
 	ITEM_SETUP_WITH_ACCEL(p_label, p_id, p_accel);
 	item.checkable_type = Item::CHECKABLE_TYPE_CHECK_BOX;
 	items.push_back(item);
-	update();
+	control->update();
 	minimum_size_changed();
 }
 
@@ -701,7 +716,7 @@ void PopupMenu::add_icon_check_item(const Ref<Texture> &p_icon, const String &p_
 	item.icon = p_icon;
 	item.checkable_type = Item::CHECKABLE_TYPE_CHECK_BOX;
 	items.push_back(item);
-	update();
+	control->update();
 	minimum_size_changed();
 }
 
@@ -710,7 +725,7 @@ void PopupMenu::add_radio_check_item(const String &p_label, int p_id, uint32_t p
 	ITEM_SETUP_WITH_ACCEL(p_label, p_id, p_accel);
 	item.checkable_type = Item::CHECKABLE_TYPE_RADIO_BUTTON;
 	items.push_back(item);
-	update();
+	control->update();
 	minimum_size_changed();
 }
 
@@ -720,7 +735,7 @@ void PopupMenu::add_icon_radio_check_item(const Ref<Texture> &p_icon, const Stri
 	item.icon = p_icon;
 	item.checkable_type = Item::CHECKABLE_TYPE_RADIO_BUTTON;
 	items.push_back(item);
-	update();
+	control->update();
 	minimum_size_changed();
 }
 
@@ -730,7 +745,7 @@ void PopupMenu::add_multistate_item(const String &p_label, int p_max_states, int
 	item.max_states = p_max_states;
 	item.state = p_default_state;
 	items.push_back(item);
-	update();
+	control->update();
 	minimum_size_changed();
 }
 
@@ -747,7 +762,7 @@ void PopupMenu::add_shortcut(const Ref<ShortCut> &p_shortcut, int p_id, bool p_g
 	Item item;
 	ITEM_SETUP_WITH_SHORTCUT(p_shortcut, p_id, p_global);
 	items.push_back(item);
-	update();
+	control->update();
 	minimum_size_changed();
 }
 
@@ -756,7 +771,7 @@ void PopupMenu::add_icon_shortcut(const Ref<Texture> &p_icon, const Ref<ShortCut
 	ITEM_SETUP_WITH_SHORTCUT(p_shortcut, p_id, p_global);
 	item.icon = p_icon;
 	items.push_back(item);
-	update();
+	control->update();
 	minimum_size_changed();
 }
 
@@ -765,7 +780,7 @@ void PopupMenu::add_check_shortcut(const Ref<ShortCut> &p_shortcut, int p_id, bo
 	ITEM_SETUP_WITH_SHORTCUT(p_shortcut, p_id, p_global);
 	item.checkable_type = Item::CHECKABLE_TYPE_CHECK_BOX;
 	items.push_back(item);
-	update();
+	control->update();
 	minimum_size_changed();
 }
 
@@ -775,7 +790,7 @@ void PopupMenu::add_icon_check_shortcut(const Ref<Texture> &p_icon, const Ref<Sh
 	item.icon = p_icon;
 	item.checkable_type = Item::CHECKABLE_TYPE_CHECK_BOX;
 	items.push_back(item);
-	update();
+	control->update();
 	minimum_size_changed();
 }
 
@@ -784,7 +799,7 @@ void PopupMenu::add_radio_check_shortcut(const Ref<ShortCut> &p_shortcut, int p_
 	ITEM_SETUP_WITH_SHORTCUT(p_shortcut, p_id, p_global);
 	item.checkable_type = Item::CHECKABLE_TYPE_RADIO_BUTTON;
 	items.push_back(item);
-	update();
+	control->update();
 	minimum_size_changed();
 }
 
@@ -794,7 +809,7 @@ void PopupMenu::add_icon_radio_check_shortcut(const Ref<Texture> &p_icon, const 
 	item.icon = p_icon;
 	item.checkable_type = Item::CHECKABLE_TYPE_RADIO_BUTTON;
 	items.push_back(item);
-	update();
+	control->update();
 	minimum_size_changed();
 }
 
@@ -805,7 +820,7 @@ void PopupMenu::add_submenu_item(const String &p_label, const String &p_submenu,
 	item.id = p_id == -1 ? items.size() : p_id;
 	item.submenu = p_submenu;
 	items.push_back(item);
-	update();
+	control->update();
 	minimum_size_changed();
 }
 
@@ -819,14 +834,14 @@ void PopupMenu::set_item_text(int p_idx, const String &p_text) {
 	items.write[p_idx].text = p_text;
 	items.write[p_idx].xl_text = tr(p_text);
 
-	update();
+	control->update();
 	minimum_size_changed();
 }
 void PopupMenu::set_item_icon(int p_idx, const Ref<Texture> &p_icon) {
 	ERR_FAIL_INDEX(p_idx, items.size());
 	items.write[p_idx].icon = p_icon;
 
-	update();
+	control->update();
 	minimum_size_changed();
 }
 void PopupMenu::set_item_checked(int p_idx, bool p_checked) {
@@ -834,14 +849,14 @@ void PopupMenu::set_item_checked(int p_idx, bool p_checked) {
 
 	items.write[p_idx].checked = p_checked;
 
-	update();
+	control->update();
 	minimum_size_changed();
 }
 void PopupMenu::set_item_id(int p_idx, int p_id) {
 	ERR_FAIL_INDEX(p_idx, items.size());
 	items.write[p_idx].id = p_id;
 
-	update();
+	control->update();
 	minimum_size_changed();
 }
 
@@ -849,35 +864,35 @@ void PopupMenu::set_item_accelerator(int p_idx, uint32_t p_accel) {
 	ERR_FAIL_INDEX(p_idx, items.size());
 	items.write[p_idx].accel = p_accel;
 
-	update();
+	control->update();
 	minimum_size_changed();
 }
 
 void PopupMenu::set_item_metadata(int p_idx, const Variant &p_meta) {
 	ERR_FAIL_INDEX(p_idx, items.size());
 	items.write[p_idx].metadata = p_meta;
-	update();
+	control->update();
 	minimum_size_changed();
 }
 
 void PopupMenu::set_item_disabled(int p_idx, bool p_disabled) {
 	ERR_FAIL_INDEX(p_idx, items.size());
 	items.write[p_idx].disabled = p_disabled;
-	update();
+	control->update();
 	minimum_size_changed();
 }
 
 void PopupMenu::set_item_submenu(int p_idx, const String &p_submenu) {
 	ERR_FAIL_INDEX(p_idx, items.size());
 	items.write[p_idx].submenu = p_submenu;
-	update();
+	control->update();
 	minimum_size_changed();
 }
 
 void PopupMenu::toggle_item_checked(int p_idx) {
 	ERR_FAIL_INDEX(p_idx, items.size());
 	items.write[p_idx].checked = !items[p_idx].checked;
-	update();
+	control->update();
 	minimum_size_changed();
 }
 
@@ -959,7 +974,7 @@ int PopupMenu::get_item_state(int p_idx) const {
 void PopupMenu::set_item_as_separator(int p_idx, bool p_separator) {
 	ERR_FAIL_INDEX(p_idx, items.size());
 	items.write[p_idx].separator = p_separator;
-	update();
+	control->update();
 }
 
 bool PopupMenu::is_item_separator(int p_idx) const {
@@ -970,19 +985,19 @@ bool PopupMenu::is_item_separator(int p_idx) const {
 void PopupMenu::set_item_as_checkable(int p_idx, bool p_checkable) {
 	ERR_FAIL_INDEX(p_idx, items.size());
 	items.write[p_idx].checkable_type = p_checkable ? Item::CHECKABLE_TYPE_CHECK_BOX : Item::CHECKABLE_TYPE_NONE;
-	update();
+	control->update();
 }
 
 void PopupMenu::set_item_as_radio_checkable(int p_idx, bool p_radio_checkable) {
 	ERR_FAIL_INDEX(p_idx, items.size());
 	items.write[p_idx].checkable_type = p_radio_checkable ? Item::CHECKABLE_TYPE_RADIO_BUTTON : Item::CHECKABLE_TYPE_NONE;
-	update();
+	control->update();
 }
 
 void PopupMenu::set_item_tooltip(int p_idx, const String &p_tooltip) {
 	ERR_FAIL_INDEX(p_idx, items.size());
 	items.write[p_idx].tooltip = p_tooltip;
-	update();
+	control->update();
 }
 
 void PopupMenu::set_item_shortcut(int p_idx, const Ref<ShortCut> &p_shortcut, bool p_global) {
@@ -997,26 +1012,26 @@ void PopupMenu::set_item_shortcut(int p_idx, const Ref<ShortCut> &p_shortcut, bo
 		_ref_shortcut(items[p_idx].shortcut);
 	}
 
-	update();
+	control->update();
 }
 
 void PopupMenu::set_item_h_offset(int p_idx, int p_offset) {
 	ERR_FAIL_INDEX(p_idx, items.size());
 	items.write[p_idx].h_ofs = p_offset;
-	update();
+	control->update();
 	minimum_size_changed();
 }
 
 void PopupMenu::set_item_multistate(int p_idx, int p_state) {
 	ERR_FAIL_INDEX(p_idx, items.size());
 	items.write[p_idx].state = p_state;
-	update();
+	control->update();
 }
 
 void PopupMenu::set_item_shortcut_disabled(int p_idx, bool p_disabled) {
 	ERR_FAIL_INDEX(p_idx, items.size());
 	items.write[p_idx].shortcut_is_disabled = p_disabled;
-	update();
+	control->update();
 }
 
 void PopupMenu::toggle_item_multistate(int p_idx) {
@@ -1030,7 +1045,7 @@ void PopupMenu::toggle_item_multistate(int p_idx) {
 		items.write[p_idx].state = 0;
 	}
 
-	update();
+	control->update();
 }
 
 bool PopupMenu::is_item_checkable(int p_idx) const {
@@ -1049,9 +1064,16 @@ bool PopupMenu::is_item_shortcut_disabled(int p_idx) const {
 }
 
 void PopupMenu::set_current_index(int p_idx) {
-	ERR_FAIL_INDEX(p_idx, items.size());
+	if (p_idx != -1) {
+		ERR_FAIL_INDEX(p_idx, items.size());
+	}
+
+	if (mouse_over == p_idx) {
+		return;
+	}
+
 	mouse_over = p_idx;
-	update();
+	control->update();
 }
 
 int PopupMenu::get_current_index() const {
@@ -1181,7 +1203,7 @@ void PopupMenu::remove_item(int p_idx) {
 	}
 
 	items.remove(p_idx);
-	update();
+	control->update();
 	minimum_size_changed();
 }
 
@@ -1194,7 +1216,7 @@ void PopupMenu::add_separator(const String &p_text, int p_id) {
 		sep.xl_text = tr(p_text);
 	}
 	items.push_back(sep);
-	update();
+	control->update();
 }
 
 void PopupMenu::clear() {
@@ -1205,7 +1227,7 @@ void PopupMenu::clear() {
 	}
 	items.clear();
 	mouse_over = -1;
-	update();
+	control->update();
 	minimum_size_changed();
 }
 
@@ -1332,6 +1354,15 @@ bool PopupMenu::get_allow_search() const {
 	return allow_search;
 }
 
+void PopupMenu::set_max_height(real_t p_max_height) {
+	max_height = p_max_height;
+	minimum_size_changed();
+}
+
+real_t PopupMenu::get_max_height() const {
+	return max_height;
+}
+
 void PopupMenu::set_hide_on_window_lose_focus(bool p_enabled) {
 	hide_on_window_lose_focus = p_enabled;
 }
@@ -1456,12 +1487,19 @@ void PopupMenu::_bind_methods() {
 
 	ClassDB::bind_method(D_METHOD("_submenu_timeout"), &PopupMenu::_submenu_timeout);
 
+	ClassDB::bind_method(D_METHOD("_draw_items"), &PopupMenu::_draw_items);
+	ClassDB::bind_method(D_METHOD("_draw_background"), &PopupMenu::_draw_background);
+
+	ClassDB::bind_method(D_METHOD("set_max_height", "max_height"), &PopupMenu::set_max_height);
+	ClassDB::bind_method(D_METHOD("get_max_height"), &PopupMenu::get_max_height);
+
 	ADD_PROPERTY(PropertyInfo(Variant::ARRAY, "items", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NOEDITOR | PROPERTY_USAGE_INTERNAL), "_set_items", "_get_items");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "hide_on_item_selection"), "set_hide_on_item_selection", "is_hide_on_item_selection");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "hide_on_checkable_item_selection"), "set_hide_on_checkable_item_selection", "is_hide_on_checkable_item_selection");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "hide_on_state_item_selection"), "set_hide_on_state_item_selection", "is_hide_on_state_item_selection");
 	ADD_PROPERTY(PropertyInfo(Variant::REAL, "submenu_popup_delay"), "set_submenu_popup_delay", "get_submenu_popup_delay");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "allow_search"), "set_allow_search", "get_allow_search");
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "max_height"), "set_max_height", "get_max_height");
 
 	ADD_SIGNAL(MethodInfo("id_pressed", PropertyInfo(Variant::INT, "id")));
 	ADD_SIGNAL(MethodInfo("id_focused", PropertyInfo(Variant::INT, "id")));
@@ -1476,6 +1514,31 @@ void PopupMenu::popup(const Rect2 &p_bounds) {
 }
 
 PopupMenu::PopupMenu() {
+	activated_by_keyboard = false;
+
+	// Margin Container
+	margin_container = memnew(MarginContainer);
+	margin_container->set_anchors_and_margins_preset(Control::PRESET_WIDE);
+	margin_container->set_mouse_filter(MouseFilter::MOUSE_FILTER_IGNORE);
+	add_child(margin_container);
+	margin_container->connect("draw", this, "_draw_background");
+
+	// Scroll Container
+	scroll_container = memnew(ScrollContainer);
+	scroll_container->set_clip_contents(true);
+	scroll_container->set_mouse_filter(MouseFilter::MOUSE_FILTER_PASS);
+	margin_container->add_child(scroll_container);
+
+	// The control which will display the items
+	control = memnew(Control);
+	control->set_clip_contents(false);
+	control->set_anchors_and_margins_preset(Control::PRESET_WIDE);
+	control->set_h_size_flags(Control::SIZE_EXPAND_FILL);
+	control->set_v_size_flags(Control::SIZE_EXPAND_FILL);
+	control->set_mouse_filter(MouseFilter::MOUSE_FILTER_IGNORE);
+	scroll_container->add_child(control);
+	control->connect("draw", this, "_draw_items");
+
 	mouse_over = -1;
 	submenu_over = -1;
 	initial_button_mask = 0;
@@ -1484,6 +1547,8 @@ PopupMenu::PopupMenu() {
 	allow_search = false;
 	search_time_msec = 0;
 	search_string = "";
+
+	max_height = 0;
 
 	set_focus_mode(FOCUS_ALL);
 	set_as_toplevel(true);

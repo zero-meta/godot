@@ -1,32 +1,32 @@
-/*************************************************************************/
-/*  library_godot_display.js                                             */
-/*************************************************************************/
-/*                       This file is part of:                           */
-/*                           GODOT ENGINE                                */
-/*                      https://godotengine.org                          */
-/*************************************************************************/
-/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
-/*                                                                       */
-/* Permission is hereby granted, free of charge, to any person obtaining */
-/* a copy of this software and associated documentation files (the       */
-/* "Software"), to deal in the Software without restriction, including   */
-/* without limitation the rights to use, copy, modify, merge, publish,   */
-/* distribute, sublicense, and/or sell copies of the Software, and to    */
-/* permit persons to whom the Software is furnished to do so, subject to */
-/* the following conditions:                                             */
-/*                                                                       */
-/* The above copyright notice and this permission notice shall be        */
-/* included in all copies or substantial portions of the Software.       */
-/*                                                                       */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,       */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF    */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.*/
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY  */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,  */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE     */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
-/*************************************************************************/
+/**************************************************************************/
+/*  library_godot_display.js                                              */
+/**************************************************************************/
+/*                         This file is part of:                          */
+/*                             GODOT ENGINE                               */
+/*                        https://godotengine.org                         */
+/**************************************************************************/
+/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
 
 const GodotDisplayVK = {
 
@@ -173,7 +173,7 @@ const GodotDisplayCursor = {
 	$GodotDisplayCursor__deps: ['$GodotOS', '$GodotConfig'],
 	$GodotDisplayCursor__postset: 'GodotOS.atexit(function(resolve, reject) { GodotDisplayCursor.clear(); resolve(); });',
 	$GodotDisplayCursor: {
-		shape: 'auto',
+		shape: 'default',
 		visible: true,
 		cursors: {},
 		set_style: function (style) {
@@ -184,7 +184,7 @@ const GodotDisplayCursor = {
 			let css = shape;
 			if (shape in GodotDisplayCursor.cursors) {
 				const c = GodotDisplayCursor.cursors[shape];
-				css = `url("${c.url}") ${c.x} ${c.y}, auto`;
+				css = `url("${c.url}") ${c.x} ${c.y}, default`;
 			}
 			if (GodotDisplayCursor.visible) {
 				GodotDisplayCursor.set_style(css);
@@ -192,7 +192,7 @@ const GodotDisplayCursor = {
 		},
 		clear: function () {
 			GodotDisplayCursor.set_style('');
-			GodotDisplayCursor.shape = 'auto';
+			GodotDisplayCursor.shape = 'default';
 			GodotDisplayCursor.visible = true;
 			Object.keys(GodotDisplayCursor.cursors).forEach(function (key) {
 				URL.revokeObjectURL(GodotDisplayCursor.cursors[key]);
@@ -335,26 +335,12 @@ const GodotDisplay = {
 	$GodotDisplay__deps: ['$GodotConfig', '$GodotRuntime', '$GodotDisplayCursor', '$GodotEventListeners', '$GodotDisplayScreen', '$GodotDisplayVK'],
 	$GodotDisplay: {
 		window_icon: '',
-		findDPI: function () {
-			function testDPI(dpi) {
-				return window.matchMedia(`(max-resolution: ${dpi}dpi)`).matches;
-			}
-			function bisect(low, high, func) {
-				const mid = parseInt(((high - low) / 2) + low, 10);
-				if (high - low <= 1) {
-					return func(high) ? high : low;
-				}
-				if (func(mid)) {
-					return bisect(low, mid, func);
-				}
-				return bisect(mid, high, func);
-			}
-			try {
-				const dpi = bisect(0, 800, testDPI);
-				return dpi >= 96 ? dpi : 96;
-			} catch (e) {
-				return 96;
-			}
+		getDPI: function () {
+			// devicePixelRatio is given in dppx
+			// https://drafts.csswg.org/css-values/#resolution
+			// > due to the 1:96 fixed ratio of CSS *in* to CSS *px*, 1dppx is equivalent to 96dpi.
+			const dpi = Math.round(window.devicePixelRatio * 96);
+			return dpi >= 96 ? dpi : 96;
 		},
 	},
 
@@ -472,7 +458,7 @@ const GodotDisplay = {
 
 	godot_js_display_screen_dpi_get__sig: 'i',
 	godot_js_display_screen_dpi_get: function () {
-		return GodotDisplay.findDPI();
+		return GodotDisplay.getDPI();
 	},
 
 	godot_js_display_pixel_ratio_get__sig: 'f',

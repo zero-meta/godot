@@ -1,32 +1,32 @@
-/*************************************************************************/
-/*  rasterizer_canvas_gles3.cpp                                          */
-/*************************************************************************/
-/*                       This file is part of:                           */
-/*                           GODOT ENGINE                                */
-/*                      https://godotengine.org                          */
-/*************************************************************************/
-/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
-/*                                                                       */
-/* Permission is hereby granted, free of charge, to any person obtaining */
-/* a copy of this software and associated documentation files (the       */
-/* "Software"), to deal in the Software without restriction, including   */
-/* without limitation the rights to use, copy, modify, merge, publish,   */
-/* distribute, sublicense, and/or sell copies of the Software, and to    */
-/* permit persons to whom the Software is furnished to do so, subject to */
-/* the following conditions:                                             */
-/*                                                                       */
-/* The above copyright notice and this permission notice shall be        */
-/* included in all copies or substantial portions of the Software.       */
-/*                                                                       */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,       */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF    */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.*/
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY  */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,  */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE     */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
-/*************************************************************************/
+/**************************************************************************/
+/*  rasterizer_canvas_gles3.cpp                                           */
+/**************************************************************************/
+/*                         This file is part of:                          */
+/*                             GODOT ENGINE                               */
+/*                        https://godotengine.org                         */
+/**************************************************************************/
+/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
 
 #include "rasterizer_canvas_gles3.h"
 
@@ -134,7 +134,7 @@ void RasterizerCanvasGLES3::_legacy_canvas_render_item(Item *p_ci, RenderItemSta
 		}
 
 		if (skeleton) {
-			glActiveTexture(GL_TEXTURE0 + storage->config.max_texture_image_units - 4);
+			WRAPPED_GL_ACTIVE_TEXTURE(GL_TEXTURE0 + storage->config.max_texture_image_units - 4);
 			glBindTexture(GL_TEXTURE_2D, skeleton->texture);
 			state.using_skeleton = true;
 		} else {
@@ -186,7 +186,7 @@ void RasterizerCanvasGLES3::_legacy_canvas_render_item(Item *p_ci, RenderItemSta
 			ShaderLanguage::ShaderNode::Uniform::Hint *texture_hints = shader_ptr->texture_hints.ptrw();
 
 			for (int i = 0; i < tc; i++) {
-				glActiveTexture(GL_TEXTURE2 + i);
+				WRAPPED_GL_ACTIVE_TEXTURE(GL_TEXTURE2 + i);
 
 				RasterizerStorageGLES3::Texture *t = storage->texture_owner.getornull(textures[i]);
 				if (!t) {
@@ -403,7 +403,7 @@ void RasterizerCanvasGLES3::_legacy_canvas_render_item(Item *p_ci, RenderItemSta
 
 				if (has_shadow) {
 					RasterizerStorageGLES3::CanvasLightShadow *cls = storage->canvas_light_shadow_owner.get(light->shadow_buffer);
-					glActiveTexture(GL_TEXTURE0 + storage->config.max_texture_image_units - 2);
+					WRAPPED_GL_ACTIVE_TEXTURE(GL_TEXTURE0 + storage->config.max_texture_image_units - 2);
 					glBindTexture(GL_TEXTURE_2D, cls->distance);
 
 					/*canvas_shader.set_uniform(CanvasShaderGLES3::SHADOW_MATRIX,light->shadow_matrix_cache);
@@ -411,7 +411,7 @@ void RasterizerCanvasGLES3::_legacy_canvas_render_item(Item *p_ci, RenderItemSta
 					canvas_shader.set_uniform(CanvasShaderGLES3::LIGHT_SHADOW_COLOR,light->shadow_color);*/
 				}
 
-				glActiveTexture(GL_TEXTURE0 + storage->config.max_texture_image_units - 1);
+				WRAPPED_GL_ACTIVE_TEXTURE(GL_TEXTURE0 + storage->config.max_texture_image_units - 1);
 				RasterizerStorageGLES3::Texture *t = storage->texture_owner.getornull(light->texture);
 				if (!t) {
 					glBindTexture(GL_TEXTURE_2D, storage->resources.white_tex);
@@ -421,7 +421,7 @@ void RasterizerCanvasGLES3::_legacy_canvas_render_item(Item *p_ci, RenderItemSta
 					glBindTexture(t->target, t->tex_id);
 				}
 
-				glActiveTexture(GL_TEXTURE0);
+				WRAPPED_GL_ACTIVE_TEXTURE(GL_TEXTURE0);
 				_legacy_canvas_item_render_commands(p_ci, r_ris.current_clip, reclip, nullptr); //redraw using light
 			}
 
@@ -850,6 +850,16 @@ void RasterizerCanvasGLES3::render_batches(Item *p_current_clip, bool &r_reclip,
 								break;
 							}
 
+							int amount = MIN(multi_mesh->size, multi_mesh->visible_instances);
+
+							if (amount == -1) {
+								amount = multi_mesh->size;
+							}
+
+							if (!amount) {
+								break;
+							}
+
 							RasterizerStorageGLES3::Texture *texture = _bind_canvas_texture(mmesh->texture, mmesh->normal_map);
 
 							state.canvas_shader.set_conditional(CanvasShaderGLES3::USE_INSTANCE_CUSTOM, multi_mesh->custom_data_format != VS::MULTIMESH_CUSTOM_DATA_NONE);
@@ -861,12 +871,6 @@ void RasterizerCanvasGLES3::render_batches(Item *p_current_clip, bool &r_reclip,
 							if (texture) {
 								Size2 texpixel_size(1.0 / texture->width, 1.0 / texture->height);
 								state.canvas_shader.set_uniform(CanvasShaderGLES3::COLOR_TEXPIXEL_SIZE, texpixel_size);
-							}
-
-							int amount = MIN(multi_mesh->size, multi_mesh->visible_instances);
-
-							if (amount == -1) {
-								amount = multi_mesh->size;
 							}
 
 							glVertexAttrib4f(VS::ARRAY_COLOR, 1.0, 1.0, 1.0, 1.0);
@@ -1216,7 +1220,7 @@ void RasterizerCanvasGLES3::render_joined_item(const BItemJoined &p_bij, RenderI
 		}
 
 		if (skeleton) {
-			glActiveTexture(GL_TEXTURE0 + storage->config.max_texture_image_units - 4);
+			WRAPPED_GL_ACTIVE_TEXTURE(GL_TEXTURE0 + storage->config.max_texture_image_units - 4);
 			glBindTexture(GL_TEXTURE_2D, skeleton->texture);
 			state.using_skeleton = true;
 		} else {
@@ -1269,7 +1273,7 @@ void RasterizerCanvasGLES3::render_joined_item(const BItemJoined &p_bij, RenderI
 			ShaderLanguage::ShaderNode::Uniform::Hint *texture_hints = shader_ptr->texture_hints.ptrw();
 
 			for (int i = 0; i < tc; i++) {
-				glActiveTexture(GL_TEXTURE2 + i);
+				WRAPPED_GL_ACTIVE_TEXTURE(GL_TEXTURE2 + i);
 
 				RasterizerStorageGLES3::Texture *t = storage->texture_owner.getornull(textures[i]);
 				if (!t) {
@@ -1510,7 +1514,7 @@ void RasterizerCanvasGLES3::render_joined_item(const BItemJoined &p_bij, RenderI
 
 				if (has_shadow) {
 					RasterizerStorageGLES3::CanvasLightShadow *cls = storage->canvas_light_shadow_owner.get(light->shadow_buffer);
-					glActiveTexture(GL_TEXTURE0 + storage->config.max_texture_image_units - 2);
+					WRAPPED_GL_ACTIVE_TEXTURE(GL_TEXTURE0 + storage->config.max_texture_image_units - 2);
 					glBindTexture(GL_TEXTURE_2D, cls->distance);
 
 					/*canvas_shader.set_uniform(CanvasShaderGLES3::SHADOW_MATRIX,light->shadow_matrix_cache);
@@ -1518,7 +1522,7 @@ void RasterizerCanvasGLES3::render_joined_item(const BItemJoined &p_bij, RenderI
 					canvas_shader.set_uniform(CanvasShaderGLES3::LIGHT_SHADOW_COLOR,light->shadow_color);*/
 				}
 
-				glActiveTexture(GL_TEXTURE0 + storage->config.max_texture_image_units - 1);
+				WRAPPED_GL_ACTIVE_TEXTURE(GL_TEXTURE0 + storage->config.max_texture_image_units - 1);
 				RasterizerStorageGLES3::Texture *t = storage->texture_owner.getornull(light->texture);
 				if (!t) {
 					glBindTexture(GL_TEXTURE_2D, storage->resources.white_tex);
@@ -1528,7 +1532,7 @@ void RasterizerCanvasGLES3::render_joined_item(const BItemJoined &p_bij, RenderI
 					glBindTexture(t->target, t->tex_id);
 				}
 
-				glActiveTexture(GL_TEXTURE0);
+				WRAPPED_GL_ACTIVE_TEXTURE(GL_TEXTURE0);
 
 				// redraw using light.
 				// if there is no clip item, we can consider scissoring to the intersection area between the light and the item
@@ -1874,6 +1878,12 @@ bool RasterizerCanvasGLES3::try_join_item(Item *p_ci, RenderItemState &r_ris, bo
 		join = false;
 	}
 
+	if (r_ris.prev_distance_field != p_ci->distance_field) {
+		r_ris.prev_distance_field = p_ci->distance_field;
+		join = false;
+		r_batch_break = true;
+	}
+
 	// non rects will break the batching anyway, we don't want to record item changes, detect this
 	if (!r_batch_break && _detect_item_batch_break(r_ris, p_ci, r_batch_break)) {
 		join = false;
@@ -1899,7 +1909,7 @@ void RasterizerCanvasGLES3::canvas_render_items_implementation(Item *p_item_list
 	state.current_tex = RID();
 	state.current_tex_ptr = nullptr;
 	state.current_normal = RID();
-	glActiveTexture(GL_TEXTURE0);
+	WRAPPED_GL_ACTIVE_TEXTURE(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, storage->resources.white_tex);
 
 	//	state.canvas_shader.set_conditional(CanvasShaderGLES3::USE_SKELETON, false);
@@ -1907,7 +1917,7 @@ void RasterizerCanvasGLES3::canvas_render_items_implementation(Item *p_item_list
 	//	state.current_tex_ptr = NULL;
 	//	state.current_normal = RID();
 	//	state.canvas_texscreen_used = false;
-	//	glActiveTexture(GL_TEXTURE0);
+	//	WRAPPED_GL_ACTIVE_TEXTURE(GL_TEXTURE0);
 	//	glBindTexture(GL_TEXTURE_2D, storage->resources.white_tex);
 
 	if (bdata.settings_use_batching) {

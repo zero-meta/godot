@@ -358,7 +358,7 @@
 			<argument index="0" name="delimiter" type="String" />
 			<argument index="1" name="slice" type="int" />
 			<description>
-				Splits a string using a [code]delimiter[/code] and returns a substring at index [code]slice[/code]. Returns an empty string if the index doesn't exist.
+				Splits a string using a [code]delimiter[/code] and returns a substring at index [code]slice[/code]. Returns the original string if [code]delimiter[/code] does not occur in the string. Returns an empty string if the index doesn't exist.
 				This is a more performant alternative to [method split] for cases when you need only one element from the array at a fixed index.
 				Example:
 				[codeblock]
@@ -559,14 +559,14 @@
 			<return type="bool" />
 			<argument index="0" name="expr" type="String" />
 			<description>
-				Does a simple case-sensitive expression match, where [code]"*"[/code] matches zero or more arbitrary characters and [code]"?"[/code] matches any single character except a period ([code]"."[/code]). An empty string or empty expression always evaluates to [code]false[/code].
+				Does a simple expression match (also called "glob" or "globbing"), where [code]*[/code] matches zero or more arbitrary characters and [code]?[/code] matches any single character except a period ([code].[/code]). An empty string or empty expression always evaluates to [code]false[/code].
 			</description>
 		</method>
 		<method name="matchn">
 			<return type="bool" />
 			<argument index="0" name="expr" type="String" />
 			<description>
-				Does a simple case-insensitive expression match, where [code]"*"[/code] matches zero or more arbitrary characters and [code]"?"[/code] matches any single character except a period ([code]"."[/code]). An empty string or empty expression always evaluates to [code]false[/code].
+				Does a simple [b]case-insensitive[/b] expression match, where [code]*[/code] matches zero or more arbitrary characters and [code]?[/code] matches any single character except a period ([code].[/code]). An empty string or empty expression always evaluates to [code]false[/code].
 			</description>
 		</method>
 		<method name="md5_buffer">
@@ -626,13 +626,13 @@
 		<method name="percent_decode">
 			<return type="String" />
 			<description>
-				Decode a percent-encoded string. See [method percent_encode].
+				Decode a percent-encoded string (also called URI-encoded string). See also [method percent_encode].
 			</description>
 		</method>
 		<method name="percent_encode">
 			<return type="String" />
 			<description>
-				Percent-encodes a string. Encodes parameters in a URL when sending a HTTP GET request (and bodies of form-urlencoded POST requests).
+				Percent-encodes a string (also called URI-encoded string). Encodes parameters in a URL when sending a HTTP GET request (and bodies of form-urlencoded POST requests). See also [method percent_decode].
 			</description>
 		</method>
 		<method name="plus_file">
@@ -696,6 +696,7 @@
 			<description>
 				Splits the string by a [code]delimiter[/code] string and returns an array of the substrings, starting from right.
 				The splits in the returned array are sorted in the same order as the original string, from left to right.
+				If [code]allow_empty[/code] is [code]true[/code], and there are two adjacent delimiters in the string, it will add an empty string to the array of substrings at this position.
 				If [code]maxsplit[/code] is specified, it defines the number of splits to do from the right up to [code]maxsplit[/code]. The default value of 0 means that all items are split, thus giving the same result as [method split].
 				Example:
 				[codeblock]
@@ -765,6 +766,7 @@
 			<argument index="2" name="maxsplit" type="int" default="0" />
 			<description>
 				Splits the string by a [code]delimiter[/code] string and returns an array of the substrings. The [code]delimiter[/code] can be of any length.
+				If [code]allow_empty[/code] is [code]true[/code], and there are two adjacent delimiters in the string, it will add an empty string to the array of substrings at this position.
 				If [code]maxsplit[/code] is specified, it defines the number of splits to do from the left up to [code]maxsplit[/code]. The default value of [code]0[/code] means that all items are split.
 				If you need only one element from the array at a specific index, [method get_slice] is a more performant option.
 				Example:
@@ -785,6 +787,7 @@
 			<description>
 				Splits the string in floats by using a delimiter string and returns an array of the substrings.
 				For example, [code]"1,2.5,3"[/code] will return [code][1,2.5,3][/code] if split by [code]","[/code].
+				If [code]allow_empty[/code] is [code]true[/code], and there are two adjacent delimiters in the string, it will add an empty string to the array of substrings at this position.
 			</description>
 		</method>
 		<method name="strip_edges">

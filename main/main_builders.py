@@ -3,6 +3,7 @@
 All such functions are invoked in a subprocess on Windows to prevent build flakiness.
 
 """
+
 from platform_methods import subprocess_main
 from compat import byte_to_str
 from collections import OrderedDict
@@ -105,10 +106,10 @@ def make_default_controller_mappings(target, source, env):
                 platform_mappings[current_platform][guid] = line
 
     platform_variables = {
-        "Linux": "#if X11_ENABLED",
+        "Linux": "#ifdef X11_ENABLED",
         "Windows": "#ifdef WINDOWS_ENABLED",
         "Mac OS X": "#ifdef OSX_ENABLED",
-        "Android": "#if defined(__ANDROID__)",
+        "Android": "#ifdef ANDROID_ENABLED",
         "iOS": "#ifdef IPHONE_ENABLED",
         "Javascript": "#ifdef JAVASCRIPT_ENABLED",
         "UWP": "#ifdef UWP_ENABLED",

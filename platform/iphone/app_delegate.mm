@@ -1,32 +1,32 @@
-/*************************************************************************/
-/*  app_delegate.mm                                                      */
-/*************************************************************************/
-/*                       This file is part of:                           */
-/*                           GODOT ENGINE                                */
-/*                      https://godotengine.org                          */
-/*************************************************************************/
-/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
-/*                                                                       */
-/* Permission is hereby granted, free of charge, to any person obtaining */
-/* a copy of this software and associated documentation files (the       */
-/* "Software"), to deal in the Software without restriction, including   */
-/* without limitation the rights to use, copy, modify, merge, publish,   */
-/* distribute, sublicense, and/or sell copies of the Software, and to    */
-/* permit persons to whom the Software is furnished to do so, subject to */
-/* the following conditions:                                             */
-/*                                                                       */
-/* The above copyright notice and this permission notice shall be        */
-/* included in all copies or substantial portions of the Software.       */
-/*                                                                       */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,       */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF    */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.*/
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY  */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,  */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE     */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
-/*************************************************************************/
+/**************************************************************************/
+/*  app_delegate.mm                                                       */
+/**************************************************************************/
+/*                         This file is part of:                          */
+/*                             GODOT ENGINE                               */
+/*                        https://godotengine.org                         */
+/**************************************************************************/
+/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
 
 #import "app_delegate.h"
 
@@ -49,17 +49,52 @@ extern void iphone_finish();
 
 @implementation AppDelegate
 
+enum {
+	SESSION_CATEGORY_AMBIENT,
+	SESSION_CATEGORY_MULTI_ROUTE,
+	SESSION_CATEGORY_PLAY_AND_RECORD,
+	SESSION_CATEGORY_PLAYBACK,
+	SESSION_CATEGORY_RECORD,
+	SESSION_CATEGORY_SOLO_AMBIENT,
+};
+
 static ViewController *mainViewController = nil;
 
 + (ViewController *)viewController {
 	return mainViewController;
 }
 
-- (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
-	// Create a full-screen window
-	CGRect windowBounds = [[UIScreen mainScreen] bounds];
-	self.window = [[UIWindow alloc] initWithFrame:windowBounds];
+static AppDelegate *delegate_singleton = nil;
 
++ (AppDelegate *)getSingleton {
+	if (!delegate_singleton) {
+		delegate_singleton = [AppDelegate new];
+	}
+	return delegate_singleton;
+}
+
+- (void)createViewController {
+	ViewController *viewController = [[ViewController alloc] init];
+	viewController.godotView.useCADisplayLink = bool(GLOBAL_DEF("display.iOS/use_cadisplaylink", true)) ? YES : NO;
+	viewController.godotView.renderingInterval = 1.0 / kRenderingFrequency;
+
+	self.window.rootViewController = viewController;
+
+	// Show the window
+	[self.window makeKeyAndVisible];
+
+	mainViewController = viewController;
+}
+
+- (void)scene:(UIScene *)scene willConnectToSession:(UISceneSession *)session options:(UISceneConnectionOptions *)connectionOptions API_AVAILABLE(ios(13.0), tvos(13.0), visionos(1.0)) {
+	if ([scene isKindOfClass:[UIWindowScene class]]) {
+		UIWindowScene *window_scene = (UIWindowScene *)scene;
+		self.window = [[UIWindow alloc] initWithWindowScene:window_scene];
+		[self createViewController];
+	}
+}
+
+- (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
 	NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory,
 			NSUserDomainMask, YES);
 	NSString *documentsDirectory = [paths objectAtIndex:0];
@@ -74,18 +109,14 @@ static ViewController *mainViewController = nil;
 		return FALSE;
 	}
 
-	// WARNING: We must *always* create the GodotView after we have constructed the
-	// OS with iphone_main. This allows the GodotView to access project settings so
-	// it can properly initialize the OpenGL context
-
-	ViewController *viewController = [[ViewController alloc] init];
-	viewController.godotView.useCADisplayLink = bool(GLOBAL_DEF("display.iOS/use_cadisplaylink", true)) ? YES : NO;
-	viewController.godotView.renderingInterval = 1.0 / kRenderingFrequency;
-
-	self.window.rootViewController = viewController;
-
-	// Show the window
-	[self.window makeKeyAndVisible];
+	if (@available(iOS 13, tvOS 13, *)) {
+		// NOP
+	} else {
+		// Create a full-screen window
+		CGRect windowBounds = [[UIScreen mainScreen] bounds];
+		self.window = [[UIWindow alloc] initWithFrame:windowBounds];
+		[self createViewController];
+	}
 
 	[[NSNotificationCenter defaultCenter]
 			addObserver:self
@@ -93,10 +124,28 @@ static ViewController *mainViewController = nil;
 				   name:AVAudioSessionInterruptionNotification
 				 object:[AVAudioSession sharedInstance]];
 
-	mainViewController = viewController;
+	int sessionCategorySetting = GLOBAL_GET("audio/general/ios/session_category");
 
-	// prevent to stop music in another background app
-	[[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategoryAmbient error:nil];
+	// Initialize with default Ambient category.
+	AVAudioSessionCategory category = AVAudioSessionCategoryAmbient;
+
+	if (sessionCategorySetting == SESSION_CATEGORY_MULTI_ROUTE) {
+		category = AVAudioSessionCategoryMultiRoute;
+	} else if (sessionCategorySetting == SESSION_CATEGORY_PLAY_AND_RECORD) {
+		category = AVAudioSessionCategoryPlayAndRecord;
+	} else if (sessionCategorySetting == SESSION_CATEGORY_PLAYBACK) {
+		category = AVAudioSessionCategoryPlayback;
+	} else if (sessionCategorySetting == SESSION_CATEGORY_RECORD) {
+		category = AVAudioSessionCategoryRecord;
+	} else if (sessionCategorySetting == SESSION_CATEGORY_SOLO_AMBIENT) {
+		category = AVAudioSessionCategorySoloAmbient;
+	}
+
+	if (GLOBAL_GET("audio/general/ios/mix_with_others")) {
+		[[AVAudioSession sharedInstance] setCategory:category withOptions:AVAudioSessionCategoryOptionMixWithOthers error:nil];
+	} else {
+		[[AVAudioSession sharedInstance] setCategory:category error:nil];
+	}
 
 	bool keep_screen_on = bool(GLOBAL_DEF("display/window/energy_saving/keep_screen_on", true));
 	OSIPhone::get_singleton()->set_keep_screen_on(keep_screen_on);
@@ -137,12 +186,40 @@ static ViewController *mainViewController = nil;
 // if you open the app list without switching to another app or open/close the
 // notification panel by swiping from the upper part of the screen.
 
+- (void)sceneDidDisconnect:(UIScene *)scene API_AVAILABLE(ios(13.0), tvos(13.0), visionos(1.0)) {
+	OSIPhone::get_singleton()->on_focus_out();
+}
+
 - (void)applicationWillResignActive:(UIApplication *)application {
+	OSIPhone::get_singleton()->on_focus_out();
+}
+
+- (void)sceneWillResignActive:(UIScene *)scene API_AVAILABLE(ios(13.0), tvos(13.0), visionos(1.0)) {
 	OSIPhone::get_singleton()->on_focus_out();
 }
 
 - (void)applicationDidBecomeActive:(UIApplication *)application {
 	OSIPhone::get_singleton()->on_focus_in();
+}
+
+- (void)sceneDidBecomeActive:(UIScene *)scene API_AVAILABLE(ios(13.0), tvos(13.0), visionos(1.0)) {
+	OSIPhone::get_singleton()->on_focus_in();
+}
+
+- (void)applicationDidEnterBackground:(UIApplication *)application {
+	OSIPhone::get_singleton()->on_enter_background();
+}
+
+- (void)sceneDidEnterBackground:(UIScene *)scene API_AVAILABLE(ios(13.0), tvos(13.0), visionos(1.0)) {
+	OSIPhone::get_singleton()->on_enter_background();
+}
+
+- (void)applicationWillEnterForeground:(UIApplication *)application {
+	OSIPhone::get_singleton()->on_exit_background();
+}
+
+- (void)sceneWillEnterForeground:(UIScene *)scene API_AVAILABLE(ios(13.0), tvos(13.0), visionos(1.0)) {
+	OSIPhone::get_singleton()->on_exit_background();
 }
 
 - (void)dealloc {

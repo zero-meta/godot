@@ -1,34 +1,35 @@
-/*************************************************************************/
-/*  export.cpp                                                           */
-/*************************************************************************/
-/*                       This file is part of:                           */
-/*                           GODOT ENGINE                                */
-/*                      https://godotengine.org                          */
-/*************************************************************************/
-/* Copyright (c) 2007-2022 Juan Linietsky, Ariel Manzur.                 */
-/* Copyright (c) 2014-2022 Godot Engine contributors (cf. AUTHORS.md).   */
-/*                                                                       */
-/* Permission is hereby granted, free of charge, to any person obtaining */
-/* a copy of this software and associated documentation files (the       */
-/* "Software"), to deal in the Software without restriction, including   */
-/* without limitation the rights to use, copy, modify, merge, publish,   */
-/* distribute, sublicense, and/or sell copies of the Software, and to    */
-/* permit persons to whom the Software is furnished to do so, subject to */
-/* the following conditions:                                             */
-/*                                                                       */
-/* The above copyright notice and this permission notice shall be        */
-/* included in all copies or substantial portions of the Software.       */
-/*                                                                       */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,       */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF    */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.*/
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY  */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,  */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE     */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
-/*************************************************************************/
+/**************************************************************************/
+/*  export.cpp                                                            */
+/**************************************************************************/
+/*                         This file is part of:                          */
+/*                             GODOT ENGINE                               */
+/*                        https://godotengine.org                         */
+/**************************************************************************/
+/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
 
 #include "export.h"
+
 #include "core/bind/core_bind.h"
 #include "core/crypto/crypto_core.h"
 #include "core/io/marshalls.h"
@@ -41,6 +42,12 @@
 #include "editor/editor_export.h"
 #include "editor/editor_node.h"
 #include "platform/uwp/logo.gen.h"
+
+// Mono build doesn't support UWP, so we show a specific error.
+// We don't bypass the whole logic so that it doesn't lose potential UWP presets
+// added to export_presets.cfg from a non-Mono build (and in case third-parties
+// actually have Mono-enabled UWP templates they can use).
+#include "modules/modules_enabled.gen.h" // For mono.
 
 #include "thirdparty/minizip/unzip.h"
 #include "thirdparty/minizip/zip.h"
@@ -1073,7 +1080,7 @@ public:
 		}
 	}
 
-	virtual bool can_export(const Ref<EditorExportPreset> &p_preset, String &r_error, bool &r_missing_templates) const {
+	virtual bool has_valid_export_configuration(const Ref<EditorExportPreset> &p_preset, String &r_error, bool &r_missing_templates) const {
 		String err;
 		bool valid = false;
 
@@ -1110,7 +1117,38 @@ public:
 		}
 
 		valid = dvalid || rvalid;
+
+#ifdef MODULE_MONO_ENABLED
+		// If this is a Mono build, provide a custom error so that users are not confused.
+		// We don't bypass the whole logic to check templates because third-parties might have
+		// Mono-enabled UWP builds using this path.
+		r_missing_templates = false; // Don't warn about those.
+		r_error = TTR("Godot's Mono version does not support the UWP platform. Use the standard build (no C# support) if you wish to target UWP.");
+#else
 		r_missing_templates = !valid;
+
+		if (!err.empty()) {
+			r_error = err;
+		}
+#endif // MODULE_MONO_ENABLED
+
+		return valid;
+	}
+
+	virtual bool has_valid_project_configuration(const Ref<EditorExportPreset> &p_preset, String &r_error) const {
+		String err;
+		bool valid = true;
+
+#ifdef MODULE_MONO_ENABLED
+		// Don't warn about project configuration issue if this is a Mono build
+		// without custom-provided Mono-enabled UWP templates.
+		// We check if we have valid templates to decide if we should actually
+		// validate the config.
+		bool tmp;
+		if (!has_valid_export_configuration(p_preset, err, tmp)) {
+			return false;
+		}
+#endif // MODULE_MONO_ENABLED
 
 		// Validate the rest of the configuration.
 
@@ -1182,6 +1220,51 @@ public:
 		r_error = err;
 		return valid;
 	}
+
+#ifdef WINDOWS_ENABLED
+	void extract_all_files_from_zip(String zip_file_path, String extract_path) {
+		FileAccess *src_f = nullptr;
+		zlib_filefunc_def io = zipio_create_io_from_file(&src_f);
+
+		unzFile pkg = unzOpen2(zip_file_path.utf8().get_data(), &io);
+
+		int ret = unzGoToFirstFile(pkg);
+
+		while (ret == UNZ_OK) {
+			// get file name
+			unz_file_info info;
+			char fname[16384];
+			ret = unzGetCurrentFileInfo(pkg, &info, fname, 16384, nullptr, 0, nullptr, 0);
+
+			String path = String::utf8(fname);
+
+			//write the files
+			Vector<uint8_t> data;
+
+			//read
+			data.resize(info.uncompressed_size);
+			unzOpenCurrentFile(pkg);
+			unzReadCurrentFile(pkg, data.ptrw(), data.size());
+			unzCloseCurrentFile(pkg);
+
+			//check if the subfolder doesn't exist and create it
+			String file_path = extract_path + "/" + path.get_base_dir();
+			DirAccess *da = DirAccess::create(DirAccess::ACCESS_FILESYSTEM);
+			if (!da->dir_exists(file_path)) {
+				da->make_dir_recursive(file_path);
+			}
+			memdelete(da);
+
+			FileAccess *unzipped_file = FileAccess::open(extract_path + "/" + path, FileAccess::WRITE);
+			unzipped_file->store_buffer(data.ptrw(), data.size());
+			unzipped_file->close();
+
+			ret = unzGoToNextFile(pkg);
+		}
+
+		unzClose(pkg);
+	}
+#endif
 
 	virtual Error export_project(const Ref<EditorExportPreset> &p_preset, bool p_debug, const String &p_path, int p_flags = 0) {
 		ExportNotifier notifier(*this, p_preset, p_debug, p_path, p_flags);
@@ -1372,6 +1455,50 @@ public:
 		packager.finish();
 
 #ifdef WINDOWS_ENABLED
+		// Repackage it with makeappx if available
+		String makeappx_path = EditorSettings::get_singleton()->get("export/uwp/makeappx");
+		if (makeappx_path != String()) {
+			if (FileAccess::exists(makeappx_path)) {
+				// Get uwp_temp_path
+				String uwp_temp_path = EditorSettings::get_singleton()->get_cache_dir() + "/uwptemp";
+
+				// Extract current appx file
+				extract_all_files_from_zip(p_path, uwp_temp_path);
+
+				// Call makeappx
+				List<String> args_makeappx;
+				args_makeappx.push_back("pack");
+				args_makeappx.push_back("/d");
+				args_makeappx.push_back(uwp_temp_path);
+				args_makeappx.push_back("/p");
+				args_makeappx.push_back(p_path);
+				args_makeappx.push_back("/o");
+
+				OS::get_singleton()->execute(makeappx_path, args_makeappx, true);
+
+				// Delete uwp_temp_path folder recursively
+				DirAccess *da = DirAccess::create(DirAccess::ACCESS_FILESYSTEM);
+				Error err = da->change_dir(uwp_temp_path);
+				if (err == OK) {
+					err = da->erase_contents_recursive();
+					if (err != OK) {
+						ERR_PRINT("Could not delete UWP temporary folder: '" + uwp_temp_path + "'.");
+						return err;
+					} else {
+						da->remove(uwp_temp_path);
+					}
+				} else {
+					ERR_PRINT("Could not change dir to UWP temporary folder: '" + uwp_temp_path + "'.");
+					ERR_PRINT("Could not delete UWP temporary folder: '" + uwp_temp_path + "'.");
+					return err;
+				}
+				memdelete(da);
+			} else {
+				ERR_PRINT("Could not find makeappx executable at " + makeappx_path + ", aborting.");
+				return ERR_FILE_NOT_FOUND;
+			}
+		}
+
 		// Sign with signtool
 		String signtool_path = EditorSettings::get_singleton()->get("export/uwp/signtool");
 		if (signtool_path == String()) {
@@ -1449,6 +1576,8 @@ void register_uwp_exporter() {
 #ifdef WINDOWS_ENABLED
 	EDITOR_DEF("export/uwp/signtool", "");
 	EditorSettings::get_singleton()->add_property_hint(PropertyInfo(Variant::STRING, "export/uwp/signtool", PROPERTY_HINT_GLOBAL_FILE, "*.exe"));
+	EDITOR_DEF("export/uwp/makeappx", "");
+	EditorSettings::get_singleton()->add_property_hint(PropertyInfo(Variant::STRING, "export/uwp/makeappx", PROPERTY_HINT_GLOBAL_FILE, "*.exe"));
 	EDITOR_DEF("export/uwp/debug_certificate", "");
 	EditorSettings::get_singleton()->add_property_hint(PropertyInfo(Variant::STRING, "export/uwp/debug_certificate", PROPERTY_HINT_GLOBAL_FILE, "*.pfx"));
 	EDITOR_DEF("export/uwp/debug_password", "");

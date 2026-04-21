@@ -8,7 +8,6 @@
 // using N = uint32_t;
 
 class Earcut : public Object {
-
 	GDCLASS(Earcut, Object);
 
 	static Earcut *singleton;
@@ -17,7 +16,6 @@ protected:
 	static void _bind_methods();
 
 public:
-
 	static Earcut *get_singleton();
 
 	Vector<int> execute(const Vector<Vector2> &p_polygon, const Vector<int> &p_holes);

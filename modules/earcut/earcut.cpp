@@ -20,18 +20,17 @@ Vector<int> Earcut::execute(const Vector<Vector2> &p_vertices, const Vector<int>
 	if (p_holes.empty()) {
 		Points points;
 		for (int i = 0; i < p_vertices.size(); ++i) {
-			points.push_back({p_vertices[i].x, p_vertices[i].y});
+			points.push_back({ p_vertices[i].x, p_vertices[i].y });
 		}
 		polygon.push_back(points);
-	}
-	else {
+	} else {
 		// ERR_EXPLAIN("Holes indexed wrong");
 		ERR_FAIL_COND_V(p_holes[p_holes.size() - 1] > p_vertices.size(), Vector<int>());
 		int start = 0;
 		for (int i = 0; i < p_holes.size(); ++i) {
 			Points points;
 			for (int j = start; j < p_holes[i]; ++j) {
-				points.push_back({p_vertices[j].x, p_vertices[j].y});
+				points.push_back({ p_vertices[j].x, p_vertices[j].y });
 			}
 			polygon.push_back(points);
 			start = p_holes[i];
